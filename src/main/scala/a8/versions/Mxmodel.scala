@@ -29,23 +29,26 @@ import model.Identifier
 trait MxRepo {
 
   implicit val jsonReads: Reads[Repo] = (
+    (JsPath \ "header").xreadNullableWithDefault[String](None) and
     (JsPath \ "organization").read[String] and
     (JsPath \ "modules").read[Iterable[Module]]
   )(Repo.apply _)
   
   implicit val jsonWrites: Writes[Repo] = (
+    (JsPath \ "header").writeNullable[String] and
     (JsPath \ "organization").write[String] and
     (JsPath \ "modules").write[Iterable[Module]]
   )(unlift(Repo.unapply))
   
   object lenses {
+    val header: Lens[Repo,Option[String]] = LensImpl[Repo,Option[String]]("header", _.header, (d,v) => d.copy(header = v))
     val organization: Lens[Repo,String] = LensImpl[Repo,String]("organization", _.organization, (d,v) => d.copy(organization = v))
     val modules: Lens[Repo,Iterable[Module]] = LensImpl[Repo,Iterable[Module]]("modules", _.modules, (d,v) => d.copy(modules = v))
   }
   
-  val allLenses = List(lenses.organization,lenses.modules)
+  val allLenses = List(lenses.header,lenses.organization,lenses.modules)
   
-  val allLensesHList = lenses.organization :: lenses.modules :: shapeless.HNil
+  val allLensesHList = lenses.header :: lenses.organization :: lenses.modules :: shapeless.HNil
 
 }
     
@@ -56,35 +59,40 @@ trait MxModule {
 
   implicit val jsonReads: Reads[Module] = (
     (JsPath \ "sbtName").read[String] and
+    (JsPath \ "projectType").readNullable[String] and
     (JsPath \ "artifactName").readNullable[String] and
     (JsPath \ "directory").readNullable[String] and
     (JsPath \ "dependsOn").xreadWithDefault[Iterable[String]](Nil) and
-    (JsPath \ "dependenciesStr").readNullable[String] and
-    (JsPath \ "dependencies").xreadWithDefault[Iterable[Dependency]](Nil
-      )
+    (JsPath \ "dependencies").readNullable[String] and
+    (JsPath \ "jvmDependencies").readNullable[String] and
+    (JsPath \ "jsDependencies").readNullable[String]
   )(Module.apply _)
   
   implicit val jsonWrites: Writes[Module] = (
     (JsPath \ "sbtName").write[String] and
+    (JsPath \ "projectType").writeNullable[String] and
     (JsPath \ "artifactName").writeNullable[String] and
     (JsPath \ "directory").writeNullable[String] and
     (JsPath \ "dependsOn").write[Iterable[String]] and
-    (JsPath \ "dependenciesStr").writeNullable[String] and
-    (JsPath \ "dependencies").write[Iterable[Dependency]]
+    (JsPath \ "dependencies").writeNullable[String] and
+    (JsPath \ "jvmDependencies").writeNullable[String] and
+    (JsPath \ "jsDependencies").writeNullable[String]
   )(unlift(Module.unapply))
   
   object lenses {
     val sbtName: Lens[Module,String] = LensImpl[Module,String]("sbtName", _.sbtName, (d,v) => d.copy(sbtName = v))
+    val projectType: Lens[Module,Option[String]] = LensImpl[Module,Option[String]]("projectType", _.projectType, (d,v) => d.copy(projectType = v))
     val artifactName: Lens[Module,Option[String]] = LensImpl[Module,Option[String]]("artifactName", _.artifactName, (d,v) => d.copy(artifactName = v))
     val directory: Lens[Module,Option[String]] = LensImpl[Module,Option[String]]("directory", _.directory, (d,v) => d.copy(directory = v))
     val dependsOn: Lens[Module,Iterable[String]] = LensImpl[Module,Iterable[String]]("dependsOn", _.dependsOn, (d,v) => d.copy(dependsOn = v))
-    val dependenciesStr: Lens[Module,Option[String]] = LensImpl[Module,Option[String]]("dependenciesStr", _.dependenciesStr, (d,v) => d.copy(dependenciesStr = v))
-    val dependencies: Lens[Module,Iterable[Dependency]] = LensImpl[Module,Iterable[Dependency]]("dependencies", _.dependencies, (d,v) => d.copy(dependencies = v))
+    val dependencies: Lens[Module,Option[String]] = LensImpl[Module,Option[String]]("dependencies", _.dependencies, (d,v) => d.copy(dependencies = v))
+    val jvmDependencies: Lens[Module,Option[String]] = LensImpl[Module,Option[String]]("jvmDependencies", _.jvmDependencies, (d,v) => d.copy(jvmDependencies = v))
+    val jsDependencies: Lens[Module,Option[String]] = LensImpl[Module,Option[String]]("jsDependencies", _.jsDependencies, (d,v) => d.copy(jsDependencies = v))
   }
   
-  val allLenses = List(lenses.sbtName,lenses.artifactName,lenses.directory,lenses.dependsOn,lenses.dependenciesStr,lenses.dependencies)
+  val allLenses = List(lenses.sbtName,lenses.projectType,lenses.artifactName,lenses.directory,lenses.dependsOn,lenses.dependencies,lenses.jvmDependencies,lenses.jsDependencies)
   
-  val allLensesHList = lenses.sbtName :: lenses.artifactName :: lenses.directory :: lenses.dependsOn :: lenses.dependenciesStr :: lenses.dependencies :: shapeless.HNil
+  val allLensesHList = lenses.sbtName :: lenses.projectType :: lenses.artifactName :: lenses.directory :: lenses.dependsOn :: lenses.dependencies :: lenses.jvmDependencies :: lenses.jsDependencies :: shapeless.HNil
 
 }
     

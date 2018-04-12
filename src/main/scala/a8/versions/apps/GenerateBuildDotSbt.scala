@@ -5,7 +5,8 @@ import a8.versions.model.Repo
 import a8.common.CommonOps._
 
 object GenerateBuildDotSbt extends App {
-  val g = new GenerateBuildDotSbt(m3.fs.dir("/Users/glen/code/model3/"))
+  val g = new GenerateBuildDotSbt(m3.fs.dir("/Users/glen/code/manna/"))
+//  val g = new GenerateBuildDotSbt(m3.fs.dir("/Users/glen/code/model3/"))
   println(g.content)
 }
 
@@ -49,6 +50,9 @@ class GenerateBuildDotSbt(repoDir: m3.fs.Directory) {
 
   lazy val content = s"""
 
+${
+    repo.header.getOrElse("import a8.sbt_a8.{SharedSettings => Common}")
+}
 
 scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
@@ -60,44 +64,40 @@ credentials in Global += Credentials(Path.userHome / ".sbt" / "credentials")
 
 scalaVersion in Global := "${scalaVersion}"
 
-organization in Global := "a8"
+organization in Global := "${repo.organization}"
 
 version in Global := a8.sbt_a8.versionStamp(file("."))
 
-
-import a8.sbt_a8.{SharedSettings => Common}
 
 ${
   repo.modules.map { module =>
 s"""
 lazy val ${module.sbtName} =
   Common
-    .jvmProject("${module.resolveArtifactName}", file("${module.resolveDirectory}"))
+    .${module.resolveProjectType}Project("${module.resolveArtifactName}", file("${module.resolveDirectory}"))
 ${
 
   val dependsOnLines = module.dependsOn.map(d => s".dependsOn(${d})")
-  val settingsLines = List(
-    ".settings(",
-    "  libraryDependencies ++= Seq("
-  )
-  val dependenciesLines = module.resolveDependencies.map(_.asSbt(versionDotPropsMap)).map("    " + _.trim + ",")
+  val dependenciesLines = module.allDependencyLines(versionDotPropsMap)
 
-  val trailingLines = List("  )", ")")
-
-  val allLines = dependsOnLines ++ settingsLines ++ dependenciesLines ++ trailingLines
+  val allLines = dependsOnLines ++ dependenciesLines
 
   allLines.map("    " + _).mkString("\n")
 
 }"""}
   .mkString("\n\n")
-
+}${
+  repo.modules.flatMap(_.subModuleLines) match {
+    case l if l.isEmpty => ""
+    case l =>
+      l.mkString("\n\n","\n","\n")
+  }
 }
-
 
 lazy val root =
   Common.jvmProject("root", file("."), id = Some("root"))
     .settings( publish := {} )
-    .aggregate(${repo.modules.map(_.sbtName).mkString(", ")})
+    .aggregate(${repo.modules.flatMap(_.aggregateModules).mkString(", ")})
 
 
    """

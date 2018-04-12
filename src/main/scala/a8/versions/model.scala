@@ -30,6 +30,7 @@ object model {
 
   @CompanionGen
   case class Repo(
+    header: Option[String] = None,
     organization: String,
     modules: Iterable[Module]
   )
@@ -40,21 +41,72 @@ object model {
   @CompanionGen
   case class Module(
     sbtName: String,
+    projectType: Option[String],
     artifactName: Option[String],
     directory: Option[String],
     dependsOn: Iterable[String] = Nil,
-    dependenciesStr: Option[String],
-    dependencies: Iterable[Dependency] = Nil
+    dependencies: Option[String],
+    jvmDependencies: Option[String],
+    jsDependencies: Option[String],
   ) {
-    def resolveArtifactName = artifactName.getOrElse(sbtName)
-    def resolveDirectory: String = directory.getOrElse(sbtName)
-    def resolveDependencies: Iterable[Dependency] = {
-      val d1 =
-        dependenciesStr
-          .toList
-          .flatMap(d => SbtDependencyParser.parse(d))
-      dependencies ++ d1
+
+    lazy val aggregateModules =
+      subModuleNames.getOrElse(List(sbtName))
+
+    lazy val subModuleNames =
+      submodules.map(_.map(_._1))
+
+    lazy val subModuleLines =
+      submodules.toList.flatMap(_.map(sm => "lazy val " + sm._1 + " = " + sm._2))
+
+    lazy val submodules =
+      if ( projectType == Some("cross") ) Some(List("jvm", "js").map(s => (sbtName + s.toUpperCase, sbtName + "." + s.toLowerCase)))
+      else None
+
+    lazy val resolveProjectType = projectType.getOrElse("jvm")
+    lazy val resolveArtifactName = artifactName.getOrElse(sbtName)
+    lazy val resolveDirectory: String = directory.getOrElse(sbtName)
+    lazy val resolveDependencies: Iterable[Dependency] = {
+      dependencies
+        .toList
+        .flatMap(d => SbtDependencyParser.parse(d))
     }
+    lazy val resolveJvmDependencies: Iterable[Dependency] = {
+      jvmDependencies
+        .toList
+        .flatMap(d => SbtDependencyParser.parse(d))
+    }
+    lazy val resolveJsDependencies: Iterable[Dependency] = {
+      jsDependencies
+        .toList
+        .flatMap(d => SbtDependencyParser.parse(d))
+    }
+
+    def allDependencyLines(versionDotPropsMap: Map[String,String]) = {
+      (
+        dependencyLines("settings", resolveDependencies, versionDotPropsMap) ++
+          dependencyLines("jvmSettings", resolveJvmDependencies, versionDotPropsMap) ++
+          dependencyLines("jsSettings", resolveJsDependencies, versionDotPropsMap)
+      )
+    }
+
+    def dependencyLines(settingName: String, deps: Iterable[Dependency], versionDotPropsMap: Map[String,String]): Iterable[String] = {
+      if ( deps.nonEmpty ) {
+        val header = List(
+          s".${settingName}(",
+          "  libraryDependencies ++= Seq("
+        )
+        val dependenciesLines = deps.map(_.asSbt(versionDotPropsMap)).map("    " + _.trim + ",")
+
+        val trailer = List("  )", ")")
+
+        header ++ dependenciesLines ++ trailer
+
+      } else {
+        Nil
+      }
+    }
+
   }
 
 
