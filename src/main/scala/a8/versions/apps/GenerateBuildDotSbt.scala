@@ -5,7 +5,8 @@ import a8.versions.model.Repo
 import a8.common.CommonOps._
 
 object GenerateBuildDotSbt extends App {
-  val g = new GenerateBuildDotSbt(m3.fs.dir("/Users/glen/code/manna/"))
+  val g = new GenerateBuildDotSbt(m3.fs.dir("/Users/flow/code/manna/"))
+//  val g = new GenerateBuildDotSbt(m3.fs.dir("/Users/glen/code/manna/"))
 //  val g = new GenerateBuildDotSbt(m3.fs.dir("/Users/glen/code/model3/"))
   println(g.content)
 }
