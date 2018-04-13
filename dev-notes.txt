@@ -1,0 +1,39 @@
+
+
+* turn off generation of build info
+
+
+
+
+notes:
+
+* handle different organizations per repo
+
+* interesting settings
+
+    * cwd for run
+
+
+
+
+Done:
+
+    0) turn off git related stuff
+
+    1) generate project files
+
+      * elegantly handle js projects (need to auto add scalajs)
+      * create a common that supports scalajs and jsProject() and crossProject()
+
+    * version stamp working when not a git repo - we just hardcode the version to 1.0-SNAPSHOT
+
+
+    * provide a way to override settings
+
+      *
+        .enablePlugins(WorkbenchPlugin)
+          .settings(
+            workbenchDefaultRootObject := Some(("client/manna/default.html", ".")),
+            localUrl := ("localhost", 8000),
+            workbenchStartMode := WorkbenchStartModes.Manual,
+          )

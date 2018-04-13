@@ -12,8 +12,8 @@ object JsonFormats {
   implicit val formatDependency = Json.format[Dependency]
 
   implicit val formatIdentifier =
-    JsonAssist.utils.stringValueFormat[model.Identifier](
-      s => if ( s.charAt(0).isLetter ) model.VariableIdentifier(s) else model.StringIdentifier(s),
+    JsonAssist.utils.stringValueFormat[ast.Identifier](
+      s => if ( s.charAt(0).isLetter ) ast.VariableIdentifier(s) else ast.StringIdentifier(s),
       _.rawValue
     )
 

@@ -19,22 +19,19 @@ import a8.common.CommonOps._
 
 //====
 import JsonFormats._
-import model.Module
-import model.Repo
-import model.Dependency
-import model.Identifier
+import ast._
 //====
 
 
 trait MxRepo {
 
-  implicit val jsonReads: Reads[Repo] = (
+  implicit val jsonReads: Reads[ast.Repo] = (
     (JsPath \ "header").xreadNullableWithDefault[String](None) and
     (JsPath \ "organization").read[String] and
-    (JsPath \ "modules").read[Iterable[Module]]
-  )(Repo.apply _)
+    (JsPath \ "modules").read[Iterable[ast.Module]]
+  )(ast.Repo.apply _)
   
-  implicit val jsonWrites: Writes[Repo] = (
+  implicit val jsonWrites: Writes[ast.Repo] = (
     (JsPath \ "header").writeNullable[String] and
     (JsPath \ "organization").write[String] and
     (JsPath \ "modules").write[Iterable[Module]]
@@ -65,7 +62,8 @@ trait MxModule {
     (JsPath \ "dependsOn").xreadWithDefault[Iterable[String]](Nil) and
     (JsPath \ "dependencies").readNullable[String] and
     (JsPath \ "jvmDependencies").readNullable[String] and
-    (JsPath \ "jsDependencies").readNullable[String]
+    (JsPath \ "jsDependencies").readNullable[String] and
+    (JsPath \ "extraSettings").readNullable[String]
   )(Module.apply _)
   
   implicit val jsonWrites: Writes[Module] = (
@@ -76,7 +74,8 @@ trait MxModule {
     (JsPath \ "dependsOn").write[Iterable[String]] and
     (JsPath \ "dependencies").writeNullable[String] and
     (JsPath \ "jvmDependencies").writeNullable[String] and
-    (JsPath \ "jsDependencies").writeNullable[String]
+    (JsPath \ "jsDependencies").writeNullable[String] and
+    (JsPath \ "extraSettings").writeNullable[String]
   )(unlift(Module.unapply))
   
   object lenses {

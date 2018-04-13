@@ -1,7 +1,7 @@
 package a8.versions
 
 
-import a8.versions.model.{Dependency, Identifier, StringIdentifier, VariableIdentifier}
+import a8.versions.ast.{Dependency, Identifier, StringIdentifier, VariableIdentifier}
 
 
 object SbtDependencyParser {

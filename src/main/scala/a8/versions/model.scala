@@ -13,6 +13,7 @@ import a8.common.CommonOps._
 import a8.common.CompanionGen
 import m3.Chord
 import Chord._
+import a8.common.HoconOps._
 
 object model {
 
@@ -25,30 +26,117 @@ object model {
 
   import Json._
 
+  object CompositeBuild {
+    def apply(codeRoot: m3.fs.Directory): CompositeBuild = {
 
-  object Repo extends MxRepo
+      val f = codeRoot \ "modules.conf"
+      if ( f.exists ) {
+        CompositeBuild(List(f.parentDir -> None))
 
-  @CompanionGen
-  case class Repo(
-    header: Option[String] = None,
-    organization: String,
-    modules: Iterable[Module]
+      } else {
+
+//        println(codeRoot)
+//        println(codeRoot.entries.toList)
+
+        val moduleConfs =
+          codeRoot
+            .subdirs
+            .map(_ \ "modules.conf")
+//            .map{ p => println(p) ; p }
+            .filter(_.exists)
+
+        if ( moduleConfs.isEmpty ) {
+          sys.error("no modules.conf found")
+        }
+
+        val repos =
+          moduleConfs
+            .map { f =>
+              f.parentDir -> Some(RepoPrefix(f.parentDir.name, f.parentDir.name))
+            }
+        CompositeBuild(repos)
+      }
+    }
+  }
+
+  case class CompositeBuild(
+    repos: Iterable[(m3.fs.Directory, Option[RepoPrefix])]
+  ) {
+
+    lazy val resolvedRepos =
+      repos.map(t => ResolvedRepo(this, t._1, t._2))
+
+    lazy val resolvedModules =
+      for (
+        repo <- resolvedRepos ;
+        module <- repo.astRepo.modules
+      ) yield ResolvedModule(repo, module)
+  }
+
+  case class ResolvedRepo(
+    compositeBuild: CompositeBuild,
+    repoRootDir: m3.fs.Directory,
+    prefix: Option[RepoPrefix],
+  ) {
+
+    lazy val astRepo =
+      parseHocon(repoRootDir.file("modules.conf").readText)
+        .read[ast.Repo]
+
+    lazy val versionDotPropsMap =
+      repoRootDir
+        .file("version.properties")
+        .readText
+        .lines
+        .map(_.trim)
+        .filterNot(l => l.length == 0 || l.startsWith("#"))
+        .flatMap {
+          _.splitList("=", limit = 2, dropEmpty = false) match {
+            case List(l,r) => Some(l -> r)
+            case _ => None
+          }
+        }
+        .toMap
+  }
+
+  case class RepoPrefix(
+    dir: String,
+    prefix: String
   )
 
-
-  object Module extends MxModule
-
-  @CompanionGen
-  case class Module(
-    sbtName: String,
-    projectType: Option[String],
-    artifactName: Option[String],
-    directory: Option[String],
-    dependsOn: Iterable[String] = Nil,
-    dependencies: Option[String],
-    jvmDependencies: Option[String],
-    jsDependencies: Option[String],
+  case class ResolvedModule(
+    repo: ResolvedRepo,
+    astModule: ast.Module
   ) {
+
+    lazy val organization = repo.astRepo.organization
+
+    lazy val dependentModulesInComposite: Set[ResolvedModule] =
+      repo
+        .compositeBuild
+        .resolvedModules
+        .filter { m =>
+          dependenciesByOrgArtifact.contains(m.organization -> m.resolveArtifactName)
+        }
+        .toSet
+
+    lazy val dependenciesByOrgArtifact: Map[(String,String),ast.Dependency] =
+      rawResolvedDependencies
+        .map(d => (d.organization -> d.artifactName) -> d)
+        .toMap
+
+    lazy val prefix =
+      repo.prefix.map(_.prefix + "_").getOrElse("")
+
+    def prefixName(name: String): String =
+      prefix + name
+
+    lazy val dependsOn =
+      astModule
+        .dependsOn
+        .map(prefixName) ++ dependentModulesInComposite.map(_.sbtName)
+
+    lazy val sbtName = prefixName(astModule.sbtName)
 
     lazy val aggregateModules =
       subModuleNames.getOrElse(List(sbtName))
@@ -60,37 +148,68 @@ object model {
       submodules.toList.flatMap(_.map(sm => "lazy val " + sm._1 + " = " + sm._2))
 
     lazy val submodules =
-      if ( projectType == Some("cross") ) Some(List("jvm", "js").map(s => (sbtName + s.toUpperCase, sbtName + "." + s.toLowerCase)))
+      if ( resolveProjectType == "cross" ) Some(List("jvm", "js").map(s => (sbtName + s.toUpperCase, sbtName + "." + s.toLowerCase)))
       else None
 
-    lazy val resolveProjectType = projectType.getOrElse("jvm")
-    lazy val resolveArtifactName = artifactName.getOrElse(sbtName)
-    lazy val resolveDirectory: String = directory.getOrElse(sbtName)
-    lazy val resolveDependencies: Iterable[Dependency] = {
-      dependencies
+    lazy val resolveProjectType = astModule.projectType.getOrElse("jvm")
+    lazy val resolveArtifactName = astModule.artifactName.getOrElse(astModule.sbtName)
+    lazy val resolveDirectory: String = repo.prefix.map(_.dir + "/").getOrElse("") + astModule.directory.getOrElse(astModule.sbtName)
+    lazy val dependencies =
+      rawResolvedDependencies
+        .filterNot { d =>
+          dependentModulesInComposite.exists(m => m.organization == d.organization && m.resolveArtifactName == d.artifactName)
+        }
+
+    lazy val rawResolvedDependencies: Iterable[ast.Dependency] = {
+      astModule
+        .dependencies
         .toList
         .flatMap(d => SbtDependencyParser.parse(d))
     }
-    lazy val resolveJvmDependencies: Iterable[Dependency] = {
-      jvmDependencies
+    lazy val resolveJvmDependencies: Iterable[ast.Dependency] = {
+      astModule
+        .jvmDependencies
         .toList
         .flatMap(d => SbtDependencyParser.parse(d))
     }
-    lazy val resolveJsDependencies: Iterable[Dependency] = {
-      jsDependencies
+    lazy val resolveJsDependencies: Iterable[ast.Dependency] = {
+      astModule
+        .jsDependencies
         .toList
         .flatMap(d => SbtDependencyParser.parse(d))
     }
 
-    def allDependencyLines(versionDotPropsMap: Map[String,String]) = {
+
+    lazy val allDependencyLines = {
+      val versionDotPropsMap = repo.versionDotPropsMap
       (
-        dependencyLines("settings", resolveDependencies, versionDotPropsMap) ++
+        dependencyLines("settings", dependencies, versionDotPropsMap) ++
           dependencyLines("jvmSettings", resolveJvmDependencies, versionDotPropsMap) ++
           dependencyLines("jsSettings", resolveJsDependencies, versionDotPropsMap)
       )
     }
 
-    def dependencyLines(settingName: String, deps: Iterable[Dependency], versionDotPropsMap: Map[String,String]): Iterable[String] = {
+    lazy val extraSettingsLines = {
+      astModule.extraSettings match {
+        case None =>
+          Nil
+        case Some(es) =>
+          val lines = es.lines.filter(_.trim.length > 0).toList
+          val indent = lines.head.indexOf(lines.head.trim)
+          val unindentedLines =
+            lines.map(_.zipWithIndex.dropWhile(t => t._1.isWhitespace && t._2 < indent).map(_._1).mkString)
+          unindentedLines
+      }
+    }
+
+    lazy val settingsLines = {
+      val dependsOnLines = dependsOn.map(d => s".dependsOn(${d})")
+      val dependenciesLines = allDependencyLines
+      dependsOnLines ++ dependenciesLines ++ extraSettingsLines
+    }
+
+
+    def dependencyLines(settingName: String, deps: Iterable[ast.Dependency], versionDotPropsMap: Map[String,String]): Iterable[String] = {
       if ( deps.nonEmpty ) {
         val header = List(
           s".${settingName}(",
@@ -107,51 +226,6 @@ object model {
       }
     }
 
-  }
-
-
-  object Dependency extends MxDependency
-
-  @CompanionGen
-  case class Dependency(
-    organization: String,
-    scalaArtifactSeparator: String,
-    artifactName: String,
-    version: Identifier,
-    configuration: Option[String],
-    exclusions: Iterable[(String, String)],
-  ) {
-    import impl._
-
-    def exclusionsAsSbt =
-      exclusions
-        .map { exclusion =>
-          "exclude(" ~ q(exclusion._1) ~ "," * q(exclusion._2) ~ ")"
-        }
-        .mkChord(" ")
-
-    val configurationAsSbt =
-      configuration.map(c => "%" * q(c))
-
-    def asSbt(versionDotPropsMap: Map[String,String]) = {
-      q(organization) * scalaArtifactSeparator * q(artifactName) * "%" * version.resolve(versionDotPropsMap) * configurationAsSbt * exclusionsAsSbt
-    }
-  }
-
-
-  sealed trait Identifier {
-    def rawValue: String
-    def resolve(versions: Map[String,String]): Chord
-  }
-
-  case class VariableIdentifier(name: String) extends Identifier {
-    override def rawValue: String = name
-    override def resolve(versions: Map[String,String]) = impl.q(versions(name))
-  }
-
-  case class StringIdentifier(value: String) extends Identifier {
-    override def rawValue: String = value
-    override def resolve(versions: Map[String,String]) = impl.q(value)
   }
 
 

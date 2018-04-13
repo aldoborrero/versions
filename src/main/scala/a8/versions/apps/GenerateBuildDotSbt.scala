@@ -1,18 +1,84 @@
 package a8.versions.apps
 
 import a8.common.HoconOps._
-import a8.versions.model.Repo
 import a8.common.CommonOps._
+import a8.versions.model.CompositeBuild
 
 object GenerateBuildDotSbt extends App {
-//  val g = new GenerateBuildDotSbt(m3.fs.dir("/Users/flow/code/manna/"))
-  val g = new GenerateBuildDotSbt(m3.fs.dir("/Users/glen/code/manna/"))
+//  val g = new GenerateBuildDotSbt(m3.fs.dir("/Users/glen/code/manna/"))
 //  val g = new GenerateBuildDotSbt(m3.fs.dir("/Users/glen/code/model3/"))
+//  val g = new GenerateBuildDotSbt("codegen", m3.fs.dir("/Users/glen/code/accur8/codegen/"))
+  val g = new GenerateBuildDotSbt("aggregate", m3.fs.dir("/Users/glen/code/aggregates/"))
+  g.run()
   println(g.content)
 }
 
 
-class GenerateBuildDotSbt(repoDir: m3.fs.Directory) {
+class GenerateBuildDotSbt(name: String, codeRootDir: m3.fs.Directory) {
+
+  object files {
+    val buildDotSbtFile = codeRootDir \ "build.sbt"
+    val buildDotPropertiesFile = codeRootDir \\ "project" \ "build.properties"
+    val plugins = codeRootDir \\ "project" \ "plugins.sbt"
+    val common = codeRootDir \\ "project" \ "Common.scala"
+  }
+
+  def run() = {
+    files.buildDotSbtFile.write(content)
+
+    files.plugins.parentDir.makeDirectories()
+
+    files.buildDotPropertiesFile.write("1.1.4\n")
+
+    files.plugins.write(
+      """
+
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.22")
+addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.1")
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
+
+resolvers += "a8-sbt-plugins" at "https://accur8.artifactoryonline.com/accur8/sbt-plugins/"
+credentials += Credentials(Path.userHome / ".sbt" / "credentials")
+
+addSbtPlugin("com.lihaoyi" % "workbench" % "0.4.0")
+
+libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"
+addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.9.3")
+
+
+addSbtPlugin("a8" % "sbt-a8" % "1.1.0-20180412_1831")
+
+      """)
+
+    files.common.write("""
+import sbt._
+import Keys._
+import org.scalajs.sbtplugin.ScalaJSPlugin
+import org.scalajs.sbtplugin.cross.{CrossProject, CrossType}
+
+object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings {
+
+  def crossProject(artifactName: String, dir: java.io.File, id: String) =
+    CrossProject(id, dir, CrossType.Full)
+      .settings(settings: _*)
+      .settings(Keys.name := artifactName)
+      .jsSettings(jsSettings: _*)
+      .jvmSettings(jvmSettings: _*)
+
+
+  def jsProject(artifactName: String, dir: java.io.File, id: String) =
+    bareProject(artifactName, dir, id)
+      .settings(jsSettings: _*)
+      .enablePlugins(ScalaJSPlugin)
+
+  override def jvmSettings: Seq[Def.Setting[_]] =
+    super.jvmSettings ++
+    Seq(
+    )
+
+}
+    """.trim)
+  }
 
   import a8.versions.model.impl.q
   import m3.Chord
@@ -28,32 +94,22 @@ class GenerateBuildDotSbt(repoDir: m3.fs.Directory) {
 */
 
 
-  lazy val repo =
-    parseHocon(repoDir.file("modules.conf").readText)
-      .read[Repo]
+  lazy val compositeBuild = CompositeBuild(codeRootDir)
 
-  lazy val versionDotPropsMap =
-    repoDir
-      .file("version.properties")
-      .readText
-      .lines
-      .map(_.trim)
-      .filterNot(l => l.length == 0 || l.startsWith("#"))
-      .flatMap {
-        _.splitList("=", limit = 2, dropEmpty = false) match {
-          case List(l,r) => Some(l -> r)
-          case _ => None
-        }
-      }
-      .toMap
+  lazy val singleRepoOpt =
+    if ( compositeBuild.resolvedRepos.size == 1 ) compositeBuild.resolvedRepos.headOption
+    else None
 
-  lazy val scalaVersion = versionDotPropsMap("scalaVersion")
+  lazy val singleRepo = singleRepoOpt.isDefined
 
-  lazy val content = s"""
+  lazy val firstRepo = compositeBuild.resolvedRepos.head
 
-${
-    repo.header.getOrElse("import a8.sbt_a8.{SharedSettings => Common}")
-}
+  lazy val scalaVersion = firstRepo.versionDotPropsMap("scalaVersion")
+
+  lazy val content =
+    s"""
+
+${singleRepoOpt.flatMap(_.astRepo.header).getOrElse("")}
 
 scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
@@ -65,42 +121,60 @@ credentials in Global += Credentials(Path.userHome / ".sbt" / "credentials")
 
 scalaVersion in Global := "${scalaVersion}"
 
-organization in Global := "${repo.organization}"
+organization in Global := "${firstRepo.astRepo.organization}"
 
-version in Global := a8.sbt_a8.versionStamp(file("."))
+version in Global := ${if ( singleRepo ) s"a8.sbt_a8.versionStamp(file(${q(".")}))" else q("1.0-SNAPSHOT") }
 
 
 ${
-  repo.modules.map { module =>
+  compositeBuild.resolvedModules.map { module =>
 s"""
 lazy val ${module.sbtName} =
   Common
-    .${module.resolveProjectType}Project("${module.resolveArtifactName}", file("${module.resolveDirectory}"))
+    .${module.resolveProjectType}Project("${module.resolveArtifactName}", file("${module.resolveDirectory}"), ${q(module.sbtName)})
 ${
-
-  val dependsOnLines = module.dependsOn.map(d => s".dependsOn(${d})")
-  val dependenciesLines = module.allDependencyLines(versionDotPropsMap)
-
-  val allLines = dependsOnLines ++ dependenciesLines
-
-  allLines.map("    " + _).mkString("\n")
-
+  module.settingsLines.map("    " + _).mkString("\n")
 }"""}
   .mkString("\n\n")
 }${
-  repo.modules.flatMap(_.subModuleLines) match {
+    compositeBuild.resolvedModules.flatMap(_.subModuleLines) match {
     case l if l.isEmpty => ""
     case l =>
       l.mkString("\n\n","\n","\n")
   }
 }
+${
+      if ( singleRepo ) ""
+      else
+      s"""
+lazy val root_bloop =
+  Common.jvmProject("root_bloop", file("."), id = "root_bloop")
+    .settings( publish := {} )
+    ${
+//      val aggregateMethod = "aggregate"
+      val aggregateMethod = "dependsOn"
+      compositeBuild.resolvedModules.flatMap(_.aggregateModules).toList.sorted.map(m => s".${aggregateMethod}(${m})").mkString("\n    ")
+    }
 
 lazy val root =
-  Common.jvmProject("root", file("."), id = Some("root"))
+  Common.jvmProject("root", file("."), id = "root")
     .settings( publish := {} )
-    .aggregate(${repo.modules.flatMap(_.aggregateModules).mkString(", ")})
+    ${
+      val aggregateMethod = "aggregate"
+//      val aggregateMethod = "dependsOn"
+      compositeBuild.resolvedModules.flatMap(_.aggregateModules).toList.sorted.map(m => s".${aggregateMethod}(${m})").mkString("\n    ")
+    }
 
 
+lazy val ${name} =
+  Common.jvmProject(${q(name)}, file("."), id = ${q(name)})
+    .settings( publish := {} )
+    ${
+      val aggregateMethod = "aggregate"
+//      val aggregateMethod = "dependsOn"
+      compositeBuild.resolvedModules.flatMap(_.aggregateModules).toList.sorted.map(m => s".${aggregateMethod}(${m})").mkString("\n    ")
+    }
+"""}
    """
 
 }
