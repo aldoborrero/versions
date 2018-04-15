@@ -13,7 +13,8 @@ object AppInstallerDemo {
       AppInstallerConfig(
         groupId = "a8",
         artifactId = "a8-qubes-dist_2.12",
-        version = "2.7.0-20180410_0910_master",
+//        version = "2.7.0-20180410_0910_master",
+        version = "latest",
         appDir = Some("/Users/glen/_a/qubes-install"),
         symlinks = true,
       )

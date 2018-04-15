@@ -19,7 +19,6 @@ object MannaUpgradeDemo {
 
     upgrade(codeHome \\ "manna")
 
-    println(s"started at ${start}")
     println(s"started at ${new Date}")
     println(s"${(System.currentTimeMillis - start.getTime)/1000} seconds processing time")
 
