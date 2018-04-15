@@ -19,7 +19,7 @@ object Version {
       case Parsed.Success(v, _) =>
         v
       case f: Parsed.Failure[_,_] =>
-        throw new RuntimeException(f.msg)
+        throw new RuntimeException(s"unable to parse version ${v} -- ${f.msg}")
     }
   }
 

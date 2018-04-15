@@ -1,11 +1,11 @@
 package a8.versions
 
-import java.io.FileInputStream
+import java.io.{FileInputStream, StringReader}
 import java.util.Properties
 
 import a8.versions.Build.BuildType
 import com.softwaremill.sttp.{HttpURLConnectionBackend, Uri, sttp}
-import coursier.{Cache, Dependency, Fetch, Module, Resolution}
+import coursier.{Cache, Dependency, Fetch, FileError, Module, Resolution}
 import coursier.core.{Authentication, Module}
 import coursier.maven.MavenRepository
 import m3.fs.dir
@@ -13,12 +13,33 @@ import predef._
 
 object RepositoryOps {
 
+  case class DependencyTree(
+    resolution: Resolution,
+  ) {
+
+    import java.io.File
+    import scalaz.\/
+    import scalaz.concurrent.Task
+
+    lazy val rawLocalArtifacts: Seq[FileError \/ File] =
+      Task.gatherUnordered(
+        resolution.artifacts.map(Cache.file(_).run)
+      ).unsafePerformSync
+
+    lazy val localArtifacts: Seq[File] =
+      rawLocalArtifacts
+        .flatMap(_.toOption)
+        .filter{ f =>
+          f.getName.endsWith(".jar")
+        }
+
+  }
 
   lazy val userHome = dir(System.getProperty("user.home"))
 
   lazy val ivyLocal = userHome \\ ".ivy2" \\ "local"
 
-  def resolveDependencyTree(module: Module, resolvedVersion: Version)(implicit buildType: BuildType): Resolution = {
+  def resolveDependencyTree(module: Module, resolvedVersion: Version)(implicit buildType: BuildType): DependencyTree = {
 
     // a8-qubes-server_2.12/2.7.0-20180324_1028_master
 
@@ -45,7 +66,7 @@ object RepositoryOps {
     if ( errors.nonEmpty ) {
       throw new RuntimeException(errors.map(_._2.mkString("\n")).mkString("\n"))
     } else {
-      resolution
+      DependencyTree(resolution)
     }
   }
 
@@ -54,7 +75,7 @@ object RepositoryOps {
 
   lazy val remoteRepository = {
     val props = new Properties
-    props.load(new FileInputStream(System.getProperty("user.home") + "/.sbt/credentials"))
+    props.load(new StringReader(userHome \ ".sbt/credentials" readText))
     val user = props.getProperty("user")
     val password = props.getProperty("password")
     MavenRepository(

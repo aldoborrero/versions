@@ -42,9 +42,13 @@ object ast {
     scalaArtifactSeparator: String,
     artifactName: String,
     version: Identifier,
-    configuration: Option[String],
-    exclusions: Iterable[(String, String)],
+    configuration: Option[String] = None,
+    exclusions: Iterable[(String, String)] = Nil,
   ) {
+
+    lazy val asCoursierModule =
+      coursier.Module(organization, artifactName + (if (scalaArtifactSeparator == "%%") "_2.12" else ""))
+
 
     def exclusionsAsSbt =
       exclusions

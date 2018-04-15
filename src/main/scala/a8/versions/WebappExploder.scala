@@ -21,27 +21,7 @@ object WebappExploder extends ImplicitLogging {
 
   private val jarFilePrefix = "jar:file:"
   private val filePrefix = "file:"
-//
-//  def explodeFromClasspath(localSource: Option[Directory], target: Directory): Unit = {
-//
-//    logger.debug("started explosion")
-//
-//    target.deleteTree()
-//    target.makeDirectories()
-//
-//    val tracking = target.getParent.file("tracking.txt").createPrintStream()
-//
-//    localSource.foreach(explodeSingleDirectory(_, target, tracking))
-//
-//    ClassX.getResources(WebappPrefix)
-//      .asScala
-//      .foreach { url => explodeFromSingleUrl(url, target, tracking) }
-//
-//
-//    tracking.close()
-//
-//    logger.debug("finished explosion")
-//  }
+
 
   def explodeFromLibDirectory(libDirectory: Directory, target: Directory, checkForPublicDescriptor: Boolean = true): Unit = {
     explodeEntries(
@@ -95,10 +75,13 @@ object WebappExploder extends ImplicitLogging {
       }
     }
 
+    val o1 = urlAsFile.map(_.isFile)
+    val o2 = urlAsFile.map(_.getName.endsWith(".jar"))
+
     if ( urlstr.startsWith(jarFilePrefix) ) {
       val jarFilename = urlstr.split("!/")(0).substring(jarFilePrefix.length)
       processJarFile(jarFilename)
-    } else if ( urlAsFile.exists(file => file.isFile && file.toPath.endsWith(".jar")) ) {
+    } else if ( urlAsFile.exists(file => file.isFile && file.getName.endsWith(".jar")) ) {
       processJarFile(urlAsFile.get.getCanonicalPath)
     } else if ( urlAsFile.exists(_.isDirectory) ) {
       val dir = new Directory(url)

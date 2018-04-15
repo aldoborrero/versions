@@ -44,7 +44,7 @@ object Upgrade {
 
     def resolveDependencyTree(upgrades: Map[String, Upgrade])(implicit buildType: BuildType): Resolution = {
       val resolvedVersion = resolveVersion(upgrades)
-      RepositoryOps.resolveDependencyTree(module, resolvedVersion)
+      RepositoryOps.resolveDependencyTree(module, resolvedVersion).resolution
     }
 
   }
@@ -74,7 +74,7 @@ object Upgrade {
 
     def resolveDependencyTree(upgrades: Map[String, Upgrade])(implicit buildType: BuildType): Resolution = {
       val resolvedVersion = resolveVersion(upgrades)
-      RepositoryOps.resolveDependencyTree(module, resolvedVersion)
+      RepositoryOps.resolveDependencyTree(module, resolvedVersion).resolution
     }
 
   }
