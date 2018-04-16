@@ -61,7 +61,7 @@ case class InstallBuilder(
   lazy val rootVersion: Version = {
     if ( unresolvedArtifact.version.rawValue == "latest") {
       val versions = RepositoryOps.remoteVersions(unresolvedArtifact.asCoursierModule)
-      versions.toList.sorted.head
+      versions.toList.sorted.last
     } else {
       Version.parse(unresolvedArtifact.version.rawValue).get
     }
