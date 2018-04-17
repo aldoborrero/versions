@@ -1,10 +1,11 @@
 package a8.appinstaller
 
 
+import a8.common.JsonAssist
 import m3.fs._
 
 import language.postfixOps
-import m3.predef._
+import a8.versions.predef._
 
 object AppInstaller {
   val standardAppDirectores = Set(
@@ -33,8 +34,6 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
 
   def execute(): Unit = {
 
-    stopServer()
-
     backup()
 
     backupConfigFiles()
@@ -44,7 +43,8 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
     if ( config.webappExplode )
       WebappExploderAssist(config.resolvedAppDir)
 
-    startServer()
+
+    installBuilder.appDir \ "install-inventory.json" write(JsonAssist.toJsonPrettyStr(installBuilder.inventory))
 
   }
 
@@ -86,20 +86,6 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
             dir.copyTo(bd)
           }
       }
-  }
-
-  def stopServer() =
-    runCommand("stop server command", config.stopServerCommand)
-
-  def startServer() =
-    runCommand("start server command", config.startServerCommand)
-
-  def runCommand(context: String, command: Option[String]) = {
-    command.foreach { cmd =>
-      logger.info(s"running ${context} command -- ${cmd}")
-      import sys.process._
-      cmd!
-    }
   }
 
 }

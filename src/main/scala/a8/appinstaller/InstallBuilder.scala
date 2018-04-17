@@ -4,6 +4,7 @@ package a8.appinstaller
 import java.nio.file.{Files, Path, Paths}
 import java.util
 
+import a8.appinstaller.AppInstallerConfig.LibDirKind
 import a8.versions.Build.BuildType
 import a8.versions.RepositoryOps.DependencyTree
 import a8.versions.{RepositoryOps, Version, ast}
@@ -15,16 +16,21 @@ import predef._
 import a8.common.logging.Logging
 
 case class InstallBuilder(
-  config: AppInstallerConfig
+  unresolvedConfig: AppInstallerConfig
 ) extends Logging {
 
-  lazy val unresolvedArtifact = config.unresolvedArtifact
+  lazy val unresolvedArtifact = unresolvedConfig.unresolvedArtifact
 
-  lazy val appDir = config.resolvedAppDir
+  lazy val appDir = resolvedConfig.resolvedAppDir
+
+  lazy val resolvedConfig =
+    unresolvedConfig.copy(version = rootVersion.toString)
+
+  lazy val libDir: Directory = appDir \\ "lib"
 
   def build(): Unit = {
     buildLibDir()
-    val jarFileName = config.artifactId + "-" + rootVersion.toString + ".jar"
+    val jarFileName = resolvedConfig.artifactId + "-" + resolvedConfig.version + ".jar"
     val jarFile =
       dependencyResult
         .localArtifacts
@@ -37,7 +43,6 @@ case class InstallBuilder(
     RepositoryOps.resolveDependencyTree(unresolvedArtifact.asCoursierModule, rootVersion)(BuildType.ArtifactoryBuild)
 
   private def buildLibDir() {
-    val libDir: Directory = appDir \\ "lib"
     libDir.makeDirectories
     libDir.entries.foreach {
       case f: File => f.delete()
@@ -46,21 +51,43 @@ case class InstallBuilder(
 
     for (fromFile <- dependencyResult.localArtifacts) {
       val toFile: File = libDir \ fromFile.getName
-      if ( config.symlinks ) {
-        logger.debug("symlinking artifact " + fromFile)
-        val link: Path = Paths.get(toFile.getCanonicalPath)
-        val target: Path = Paths.get(fromFile.getCanonicalPath)
-        Files.createSymbolicLink(link, target)
-      } else {
-        logger.debug("copying artifact " + fromFile)
-        Files.copy(Paths.get(fromFile.getCanonicalPath), Paths.get(toFile.getCanonicalPath))
+      resolvedConfig.resolvedLibDirKind match {
+        case LibDirKind.Symlink =>
+          logger.debug("symlinking artifact " + fromFile)
+          val link: Path = Paths.get(toFile.getCanonicalPath)
+          val target: Path = Paths.get(fromFile.getCanonicalPath)
+          Files.createSymbolicLink(link, target)
+        case LibDirKind.Copy =>
+          logger.debug("copying artifact " + fromFile)
+          Files.copy(Paths.get(fromFile.getCanonicalPath), Paths.get(toFile.getCanonicalPath))
+        case LibDirKind.Repo =>
+          // noop
       }
     }
   }
 
+  lazy val inventory =
+    InstallInventory(
+      resolvedConfig,
+      classpath = classpath
+    )
+
+  lazy val classpath =
+    dependencyResult.localArtifacts.flatMap { file =>
+      resolvedConfig.resolvedLibDirKind match {
+        case LibDirKind.Symlink | LibDirKind.Copy =>
+          None
+        case LibDirKind.Repo =>
+          Some(file.getCanonicalPath)
+      }
+    }
+
   lazy val rootVersion: Version = {
     if ( unresolvedArtifact.version.rawValue == "latest") {
-      val versions = RepositoryOps.remoteVersions(unresolvedArtifact.asCoursierModule)
+      val versions =
+        RepositoryOps
+          .remoteVersions(unresolvedArtifact.asCoursierModule)
+          .filter(v => resolvedConfig.branch.isEmpty || resolvedConfig.branch == v.buildInfo.map(_.branch))
       versions.toList.sorted.last
     } else {
       Version.parse(unresolvedArtifact.version.rawValue).get

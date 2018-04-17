@@ -1,5 +1,7 @@
 package example
 
+
+import a8.appinstaller.AppInstallerConfig.LibDirKind
 import a8.appinstaller.{AppInstaller, AppInstallerConfig, InstallBuilder}
 import a8.versions.predef._
 
@@ -16,7 +18,7 @@ object AppInstallerDemo {
 //        version = "2.7.0-20180410_0910_master",
         version = "latest",
         appDir = Some("/Users/glen/_a/qubes-install"),
-        symlinks = true,
+        libDir = Some(LibDirKind.Repo),
       )
 
     val installer = new AppInstaller(config)

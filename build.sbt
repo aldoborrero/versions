@@ -15,14 +15,14 @@ publishTo in Global := Some("a8-repo-publish" at "https://accur8.artifactoryonli
 credentials in Global += Credentials(Path.userHome / ".sbt" / "credentials")
 
 
-lazy val root = (project in file(".")).
+lazy val versions = (project in file(".")).
   settings(
     inThisBuild(List(
       organization := "a8",
       scalaVersion := "2.12.5",
       version      := appVersion
     )),
-    name := "a8-modules",
+    name := "a8-versions",
     libraryDependencies += scalaTest % Test,
     libraryDependencies ++= Seq(
       "io.get-coursier" %% "coursier" % "1.0.3",
@@ -32,5 +32,7 @@ lazy val root = (project in file(".")).
       "com.lihaoyi" %% "fastparse" % "1.0.0",
       "a8" %% "a8-common" % "0.1.0-20180410_2004_master",
       "a8" %% "m3-impl-api" % "2.7.0-20180410_2001_master",
+      "com.beachape" %% "enumeratum-play-json" % "1.5.14",
     )
   )
+  .withId("versions")

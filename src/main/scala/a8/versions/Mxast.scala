@@ -25,13 +25,13 @@ import ast._
 
 trait MxRepo {
 
-  implicit val jsonReads: Reads[ast.Repo] = (
+  implicit val jsonReads: Reads[Repo] = (
     (JsPath \ "header").xreadNullableWithDefault[String](None) and
     (JsPath \ "organization").read[String] and
-    (JsPath \ "modules").read[Iterable[ast.Module]]
-  )(ast.Repo.apply _)
+    (JsPath \ "modules").read[Iterable[Module]]
+  )(Repo.apply _)
   
-  implicit val jsonWrites: Writes[ast.Repo] = (
+  implicit val jsonWrites: Writes[Repo] = (
     (JsPath \ "header").writeNullable[String] and
     (JsPath \ "organization").write[String] and
     (JsPath \ "modules").write[Iterable[Module]]
@@ -87,11 +87,12 @@ trait MxModule {
     val dependencies: Lens[Module,Option[String]] = LensImpl[Module,Option[String]]("dependencies", _.dependencies, (d,v) => d.copy(dependencies = v))
     val jvmDependencies: Lens[Module,Option[String]] = LensImpl[Module,Option[String]]("jvmDependencies", _.jvmDependencies, (d,v) => d.copy(jvmDependencies = v))
     val jsDependencies: Lens[Module,Option[String]] = LensImpl[Module,Option[String]]("jsDependencies", _.jsDependencies, (d,v) => d.copy(jsDependencies = v))
+    val extraSettings: Lens[Module,Option[String]] = LensImpl[Module,Option[String]]("extraSettings", _.extraSettings, (d,v) => d.copy(extraSettings = v))
   }
   
-  val allLenses = List(lenses.sbtName,lenses.projectType,lenses.artifactName,lenses.directory,lenses.dependsOn,lenses.dependencies,lenses.jvmDependencies,lenses.jsDependencies)
+  val allLenses = List(lenses.sbtName,lenses.projectType,lenses.artifactName,lenses.directory,lenses.dependsOn,lenses.dependencies,lenses.jvmDependencies,lenses.jsDependencies,lenses.extraSettings)
   
-  val allLensesHList = lenses.sbtName :: lenses.projectType :: lenses.artifactName :: lenses.directory :: lenses.dependsOn :: lenses.dependencies :: lenses.jvmDependencies :: lenses.jsDependencies :: shapeless.HNil
+  val allLensesHList = lenses.sbtName :: lenses.projectType :: lenses.artifactName :: lenses.directory :: lenses.dependsOn :: lenses.dependencies :: lenses.jvmDependencies :: lenses.jsDependencies :: lenses.extraSettings :: shapeless.HNil
 
 }
     
@@ -105,8 +106,8 @@ trait MxDependency {
     (JsPath \ "scalaArtifactSeparator").read[String] and
     (JsPath \ "artifactName").read[String] and
     (JsPath \ "version").read[Identifier] and
-    (JsPath \ "configuration").readNullable[String] and
-    (JsPath \ "exclusions").read[Iterable[(String, String)]]
+    (JsPath \ "configuration").xreadNullableWithDefault[String](None) and
+    (JsPath \ "exclusions").xreadWithDefault[Iterable[(String, String)]](Nil)
   )(Dependency.apply _)
   
   implicit val jsonWrites: Writes[Dependency] = (
