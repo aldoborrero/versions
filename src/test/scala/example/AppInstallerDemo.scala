@@ -17,8 +17,9 @@ object AppInstallerDemo {
         artifactId = "a8-qubes-dist_2.12",
 //        version = "2.7.0-20180410_0910_master",
         version = "latest",
-        appDir = Some("/Users/glen/_a/qubes-install"),
-        libDir = Some(LibDirKind.Repo),
+        branch = Some("master"),
+        installDir = Some("/Users/glen/_a/qubes-install"),
+        libDirKind = Some(LibDirKind.Repo),
       )
 
     val installer = new AppInstaller(config)

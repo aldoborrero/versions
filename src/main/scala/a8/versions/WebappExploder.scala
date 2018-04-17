@@ -9,9 +9,10 @@ import java.util.jar.JarFile
 
 import net.model3.io.Pipe
 import net.model3.lang.ClassX
-import net.model3.newfile.Directory
-import net.model3.newfile.File
-import net.model3.newfile.Path
+import net.model3.newfile.{Directory, File, Path}
+//import net.model3.newfile.Directory
+//import net.model3.newfile.File
+//import net.model3.newfile.Path
 
 import predef._
 
@@ -23,13 +24,13 @@ object WebappExploder extends ImplicitLogging {
   private val filePrefix = "file:"
 
 
-  def explodeFromLibDirectory(libDirectory: Directory, target: Directory, checkForPublicDescriptor: Boolean = true): Unit = {
-    explodeEntries(
-      libDirectory.files().asScala.map(_.getCanonicalPath).map(m3.fs.file),
-      target,
-      checkForPublicDescriptor
-    )
-  }
+//  def explodeFromLibDirectory(libDirectory: Directory, target: Directory, checkForPublicDescriptor: Boolean = true): Unit = {
+//    explodeEntries(
+//      libDirectory.files().asScala.map(_.getCanonicalPath).map(m3.fs.file),
+//      target,
+//      checkForPublicDescriptor
+//    )
+//  }
 
   def explodeEntries(classpathEntries: Iterable[m3.fs.FileSystem#Path], target: Directory, checkForPublicDescriptor: Boolean = true): Unit = {
 

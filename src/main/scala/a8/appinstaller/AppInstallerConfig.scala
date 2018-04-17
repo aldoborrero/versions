@@ -25,15 +25,17 @@ case class AppInstallerConfig(
   version: String,
   branch: Option[String],
   installDir: Option[String] = None,
-  libDirKind: Option[LibDirKind],
-  webappExplode: Option[Boolean]
+  libDirKind: Option[LibDirKind] = None,
+  webappExplode: Option[Boolean] = None
 ) {
+
+  lazy val resolveWebappExplode = webappExplode.getOrElse(true)
 
   lazy val resolvedLibDirKind = libDirKind.getOrElse(LibDirKind.Repo)
 
   lazy val artifactCoords = s"${groupId}:${artifactId}:${version}"
 
-  lazy val resolvedAppDir: LocalFileSystem.Directory = dir(appDir.getOrElse("./target/app-installer"))
+  lazy val resolvedInstallDir: LocalFileSystem.Directory = dir(installDir.getOrElse("./target/app-installer"))
 
   lazy val unresolvedArtifact: Dependency =
     Dependency(groupId, "%", artifactId, ast.StringIdentifier(version))

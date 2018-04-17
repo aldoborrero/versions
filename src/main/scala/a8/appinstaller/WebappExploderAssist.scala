@@ -21,14 +21,11 @@ object WebappExploderAssist extends Logging {
 
   private val WebappPrefix = "webapp/"
 
-  def apply(installDir0: m3.fs.Directory): Unit = {
+  def apply(installDir: m3.fs.Directory, jarFiles: Iterable[m3.fs.File]): Unit = {
 
-    val installDir = new net.model3.newfile.Directory(installDir0.canonicalPath)
-    val libDir = installDir.subdir("lib").makeDirectories()
-
-    WebappExploder.explodeFromLibDirectory(
-      libDirectory = libDir,
-      target = installDir.subdir(WebappCompositeFolderName)
+    WebappExploder.explodeEntries(
+      classpathEntries = jarFiles,
+      target = new net.model3.newfile.Directory(installDir.subdir(WebappCompositeFolderName).canonicalPath),
     )
 
   }

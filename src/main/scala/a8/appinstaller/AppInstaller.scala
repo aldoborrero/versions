@@ -30,7 +30,7 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
 
   lazy val installBuilder = InstallBuilder(config)
 
-  lazy val backupDir: LocalFileSystem.TDirectory = config.resolvedAppDir \\ "_bak" \\ net.model3.newfile.Path.getFileSystemCompatibleTimestamp
+  lazy val backupDir: LocalFileSystem.TDirectory = config.resolvedInstallDir \\ "_bak" \\ net.model3.newfile.Path.getFileSystemCompatibleTimestamp
 
   def execute(): Unit = {
 
@@ -40,18 +40,17 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
 
     installBuilder.build()
 
-    if ( config.webappExplode )
-      WebappExploderAssist(config.resolvedAppDir)
-
+    if ( config.resolveWebappExplode )
+      WebappExploderAssist(config.resolvedInstallDir, installBuilder.inventory.classpath.map(m3.fs.file))
 
     installBuilder.appDir \ "install-inventory.json" write(JsonAssist.toJsonPrettyStr(installBuilder.inventory))
 
   }
 
-  def backup(): Unit = tryLog(s"backing up app install directory - ${config.resolvedAppDir.canonicalPath}") {
+  def backup(): Unit = tryLog(s"backing up app install directory - ${config.resolvedInstallDir.canonicalPath}") {
       backupDir.makeDirectories()
       config
-        .resolvedAppDir
+        .resolvedInstallDir
         .entries
         .filter(e => !AppInstaller.standardAppDirectores.contains(e.name))
         .foreach { p =>
@@ -59,10 +58,10 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
         }
   }
 
-  def backupConfigFiles(): Unit = tryLog(s"backing up config files - ${config.resolvedAppDir.canonicalPath}") {
+  def backupConfigFiles(): Unit = tryLog(s"backing up config files - ${config.resolvedInstallDir.canonicalPath}") {
 
     List("config", ".config")
-      .map(cd => (config.resolvedAppDir \\ cd))
+      .map(cd => (config.resolvedInstallDir \\ cd))
       .filter(_.exists)
       .foreach { cd =>
 

@@ -21,7 +21,7 @@ case class InstallBuilder(
 
   lazy val unresolvedArtifact = unresolvedConfig.unresolvedArtifact
 
-  lazy val appDir = resolvedConfig.resolvedAppDir
+  lazy val appDir = resolvedConfig.resolvedInstallDir
 
   lazy val resolvedConfig =
     unresolvedConfig.copy(version = rootVersion.toString)
@@ -87,7 +87,7 @@ case class InstallBuilder(
       val versions =
         RepositoryOps
           .remoteVersions(unresolvedArtifact.asCoursierModule)
-          .filter(v => resolvedConfig.branch.isEmpty || resolvedConfig.branch == v.buildInfo.map(_.branch))
+          .filter(v => unresolvedConfig.branch.isEmpty || unresolvedConfig.branch == v.buildInfo.map(_.branch))
       versions.toList.sorted.last
     } else {
       Version.parse(unresolvedArtifact.version.rawValue).get
