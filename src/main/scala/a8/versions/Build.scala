@@ -2,6 +2,7 @@ package a8.versions
 
 import java.util.Date
 
+import a8.versions.apps.GenerateBuildDotSbt
 import m3.Exec
 import m3.fs._
 
@@ -17,12 +18,15 @@ object Build {
     val ArtifactoryBuild = BuildType("publish", false)
   }
 
-  def upgrade(dir: Directory)(implicit buildType: BuildType) = {
+  def upgrade(dir: Directory, name: Option[String] = None)(implicit buildType: BuildType) = {
+    val resolvedName = name.getOrElse(dir.name)
     UpgradeVersionsMain.runUpgrade(dir.file("version.properties"))
+    val g = new BuildDotSbtGenerator(resolvedName, dir)
+    g.run()
   }
 
-  def upgradeAndPublish(dir: Directory)(implicit buildType: BuildType) = {
-    upgrade(dir)
+  def upgradeAndPublish(dir: Directory, name: Option[String] = None)(implicit buildType: BuildType) = {
+    upgrade(dir, name)
     publish(dir)
   }
 

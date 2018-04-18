@@ -1,13 +1,17 @@
 
 
-* turn off generation of build info
 
+* when doing a cross project build to share the same build number
+
+
+* turn off generation of build info and only turn it on for published builds
 
 
 
 notes:
 
 * handle different organizations per repo
+    * will be needed for AHS
 
 * interesting settings
 
@@ -18,7 +22,7 @@ notes:
 
 Done:
 
-    0) turn off git related stuff
+    0) turn off git related stuff if we aren't in a git repo
 
     1) generate project files
 

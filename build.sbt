@@ -25,6 +25,7 @@ lazy val versions = (project in file(".")).
     name := "a8-versions",
     libraryDependencies += scalaTest % Test,
     libraryDependencies ++= Seq(
+      "a8" %% "a8-common" % "0.1.0-20180410_2004_master",
       "io.get-coursier" %% "coursier" % "1.0.3",
       "io.get-coursier" %% "coursier-cache" % "1.0.3",
       "com.softwaremill.sttp" %% "core" % "1.1.11",

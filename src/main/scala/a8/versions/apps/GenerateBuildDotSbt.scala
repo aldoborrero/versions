@@ -9,11 +9,11 @@ object GenerateBuildDotSbt extends App {
 
   lazy val homeDir = m3.fs.dir(System.getProperty("user.home"))
 
-  run("ahs_aggregate", homeDir \\ "code/ahs/aggregate")
+//  run("ahs_aggregate", homeDir \\ "code/ahs/aggregate")
 
-//  run("manna", homeDir \\ "code/manna")
-//  run("model3", homeDir \\ "code/model3")
-//  run("qubes", homeDir \\ "code/qubes")
+  run("manna", homeDir \\ "code/manna")
+  run("model3", homeDir \\ "code/model3")
+  run("qubes", homeDir \\ "code/qubes")
 
 
   def run(name: String, d: m3.fs.Directory) = {

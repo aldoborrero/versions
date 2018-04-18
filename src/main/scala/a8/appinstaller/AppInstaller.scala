@@ -6,6 +6,7 @@ import m3.fs._
 
 import language.postfixOps
 import a8.versions.predef._
+import play.api.libs.json.{Json, Writes}
 
 object AppInstaller {
   val standardAppDirectores = Set(
@@ -43,8 +44,16 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
     if ( config.resolveWebappExplode )
       WebappExploderAssist(config.resolvedInstallDir, installBuilder.inventory.classpath.map(m3.fs.file))
 
-    installBuilder.appDir \ "install-inventory.json" write(JsonAssist.toJsonPrettyStr(installBuilder.inventory))
+    installBuilder.appDir \ "install-inventory.json" write(toJsonPrettyStr(installBuilder.inventory))
 
+  }
+
+
+  def toJsonPrettyStr[A : Writes](a: A): String = {
+    // because the json play pretty print is not that good
+    val jsonStr = JsonAssist.toJsonStr(a)
+    val jv = m3.json.JsonAssist.parseJson(jsonStr)
+    m3.json.JsonAssist.prettyPrint(jv)
   }
 
   def backup(): Unit = tryLog(s"backing up app install directory - ${config.resolvedInstallDir.canonicalPath}") {

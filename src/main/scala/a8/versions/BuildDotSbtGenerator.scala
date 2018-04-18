@@ -17,7 +17,7 @@ class BuildDotSbtGenerator(name: String, codeRootDir: m3.fs.Directory) {
 
     files.plugins.parentDir.makeDirectories()
 
-    files.buildDotPropertiesFile.write("1.1.4\n")
+    files.buildDotPropertiesFile.write("sbt.version=1.1.4\n")
 
     files.plugins.write(
       """
