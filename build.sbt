@@ -22,18 +22,20 @@ lazy val versions = (project in file(".")).
       scalaVersion := "2.12.5",
       version      := appVersion
     )),
+    scalacOptions += "-Ypartial-unification",
     name := "a8-versions",
     libraryDependencies += scalaTest % Test,
     libraryDependencies ++= Seq(
-      "a8" %% "a8-common" % "0.1.0-20180410_2004_master",
       "io.get-coursier" %% "coursier" % "1.0.3",
       "io.get-coursier" %% "coursier-cache" % "1.0.3",
       "com.softwaremill.sttp" %% "core" % "1.1.11",
       "org.scala-lang.modules" %% "scala-xml" % "1.1.0",
       "com.lihaoyi" %% "fastparse" % "1.0.0",
-      "a8" %% "a8-common" % "0.1.0-20180410_2004_master",
+      "a8" %% "a8-common" % "2.7.1-20180421_1437_master",
       "a8" %% "m3-impl-api" % "2.7.0-20180410_2001_master",
       "com.beachape" %% "enumeratum-play-json" % "1.5.14",
+      "org.rogach" %% "scallop" % "3.1.2",
+      "org.typelevel" %% "cats-core" % "1.0.1",
     )
   )
   .withId("versions")

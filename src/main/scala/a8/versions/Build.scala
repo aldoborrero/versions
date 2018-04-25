@@ -25,13 +25,18 @@ object Build {
     g.run()
   }
 
-  def upgradeAndPublish(dir: Directory, name: Option[String] = None)(implicit buildType: BuildType) = {
+  def upgradeAndPublish(dir: Directory, name: Option[String] = None)(implicit buildType: BuildType, buildTimestamp: Option[BuildTimestamp]) = {
     upgrade(dir, name)
     publish(dir)
   }
 
-  def publish(dir: Directory)(implicit buildType: BuildType) = {
-    Exec("sbt", buildType.sbtCommand)
+  def publish(dir: Directory)(implicit buildType: BuildType, buildTimestamp: Option[BuildTimestamp]) = {
+
+    val buildNumberProperty =
+      buildTimestamp
+        .map(ts => s"-DbuildNumber=${ts}_${GitOps.branchName(dir)}")
+
+    Exec(List("sbt") ++ buildNumberProperty ++ List(buildType.sbtCommand))
       .inDirectory(dir)
       .execInline()
   }

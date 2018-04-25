@@ -13,8 +13,8 @@ object AppInstallerDemo {
 
     val config =
       AppInstallerConfig(
-        groupId = "a8",
-        artifactId = "a8-qubes-dist_2.12",
+        organization = "a8",
+        artifact = "a8-qubes-dist_2.12",
 //        version = "2.7.0-20180410_0910_master",
         version = "latest",
         branch = Some("master"),

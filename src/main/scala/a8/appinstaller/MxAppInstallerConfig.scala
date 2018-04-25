@@ -25,18 +25,19 @@ import a8.appinstaller.AppInstallerConfig.LibDirKind
 trait MxAppInstallerConfig {
 
   implicit val jsonReads: Reads[AppInstallerConfig] = (
-    (JsPath \ "groupId").read[String] and
-    (JsPath \ "artifactId").read[String] and
+    (JsPath \ "organization").read[String] and
+    (JsPath \ "artifact").read[String] and
     (JsPath \ "version").read[String] and
     (JsPath \ "branch").readNullable[String] and
     (JsPath \ "installDir").xreadNullableWithDefault[String](None) and
-    (JsPath \ "libDirKind").readNullable[LibDirKind] and
-    (JsPath \ "webappExplode").readNullable[Boolean]
+    (JsPath \ "libDirKind").xreadNullableWithDefault[LibDirKind](None) and
+    (JsPath \ "webappExplode").xreadNullableWithDefault[Boolean](None
+    )
   )(AppInstallerConfig.apply _)
   
   implicit val jsonWrites: Writes[AppInstallerConfig] = (
-    (JsPath \ "groupId").write[String] and
-    (JsPath \ "artifactId").write[String] and
+    (JsPath \ "organization").write[String] and
+    (JsPath \ "artifact").write[String] and
     (JsPath \ "version").write[String] and
     (JsPath \ "branch").writeNullable[String] and
     (JsPath \ "installDir").writeNullable[String] and
@@ -45,8 +46,8 @@ trait MxAppInstallerConfig {
   )(unlift(AppInstallerConfig.unapply))
   
   object lenses {
-    val groupId: Lens[AppInstallerConfig,String] = LensImpl[AppInstallerConfig,String]("groupId", _.groupId, (d,v) => d.copy(groupId = v))
-    val artifactId: Lens[AppInstallerConfig,String] = LensImpl[AppInstallerConfig,String]("artifactId", _.artifactId, (d,v) => d.copy(artifactId = v))
+    val organization: Lens[AppInstallerConfig,String] = LensImpl[AppInstallerConfig,String]("organization", _.organization, (d,v) => d.copy(organization = v))
+    val artifact: Lens[AppInstallerConfig,String] = LensImpl[AppInstallerConfig,String]("artifact", _.artifact, (d,v) => d.copy(artifact = v))
     val version: Lens[AppInstallerConfig,String] = LensImpl[AppInstallerConfig,String]("version", _.version, (d,v) => d.copy(version = v))
     val branch: Lens[AppInstallerConfig,Option[String]] = LensImpl[AppInstallerConfig,Option[String]]("branch", _.branch, (d,v) => d.copy(branch = v))
     val installDir: Lens[AppInstallerConfig,Option[String]] = LensImpl[AppInstallerConfig,Option[String]]("installDir", _.installDir, (d,v) => d.copy(installDir = v))
@@ -54,9 +55,9 @@ trait MxAppInstallerConfig {
     val webappExplode: Lens[AppInstallerConfig,Option[Boolean]] = LensImpl[AppInstallerConfig,Option[Boolean]]("webappExplode", _.webappExplode, (d,v) => d.copy(webappExplode = v))
   }
   
-  val allLenses = List(lenses.groupId,lenses.artifactId,lenses.version,lenses.branch,lenses.installDir,lenses.libDirKind,lenses.webappExplode)
+  val allLenses = List(lenses.organization,lenses.artifact,lenses.version,lenses.branch,lenses.installDir,lenses.libDirKind,lenses.webappExplode)
   
-  val allLensesHList = lenses.groupId :: lenses.artifactId :: lenses.version :: lenses.branch :: lenses.installDir :: lenses.libDirKind :: lenses.webappExplode :: shapeless.HNil
+  val allLensesHList = lenses.organization :: lenses.artifact :: lenses.version :: lenses.branch :: lenses.installDir :: lenses.libDirKind :: lenses.webappExplode :: shapeless.HNil
 
 }
     

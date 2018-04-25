@@ -9,6 +9,7 @@ import a8.versions.predef._
 import play.api.libs.json.{Json, Writes}
 
 object AppInstaller {
+
   val standardAppDirectores = Set(
     "cache",
     ".cache",
@@ -24,6 +25,7 @@ object AppInstaller {
     ".tmp"
   )
   val excludeFromConfigDirBackup = List("cache", "cache.dir")
+
 }
 
 
@@ -48,13 +50,6 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
 
   }
 
-
-  def toJsonPrettyStr[A : Writes](a: A): String = {
-    // because the json play pretty print is not that good
-    val jsonStr = JsonAssist.toJsonStr(a)
-    val jv = m3.json.JsonAssist.parseJson(jsonStr)
-    m3.json.JsonAssist.prettyPrint(jv)
-  }
 
   def backup(): Unit = tryLog(s"backing up app install directory - ${config.resolvedInstallDir.canonicalPath}") {
       backupDir.makeDirectories()

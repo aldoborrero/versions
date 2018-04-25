@@ -20,8 +20,8 @@ object AppInstallerConfig extends MxAppInstallerConfig {
 
 @CompanionGen
 case class AppInstallerConfig(
-  groupId: String,
-  artifactId: String,
+  organization: String,
+  artifact: String,
   version: String,
   branch: Option[String],
   installDir: Option[String] = None,
@@ -33,11 +33,11 @@ case class AppInstallerConfig(
 
   lazy val resolvedLibDirKind = libDirKind.getOrElse(LibDirKind.Repo)
 
-  lazy val artifactCoords = s"${groupId}:${artifactId}:${version}"
+  lazy val artifactCoords = s"${organization}:${artifact}:${version}"
 
-  lazy val resolvedInstallDir: LocalFileSystem.Directory = dir(installDir.getOrElse("./target/app-installer"))
+  lazy val resolvedInstallDir: LocalFileSystem.Directory = dir(installDir.getOrElse(sys.error("installDir is required")))
 
   lazy val unresolvedArtifact: Dependency =
-    Dependency(groupId, "%", artifactId, ast.StringIdentifier(version))
+    Dependency(organization, "%", artifact, ast.StringIdentifier(version))
 
 }

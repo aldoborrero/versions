@@ -8,6 +8,18 @@ object BuildTimestamp {
   val ordering =
     Ordering.by[BuildTimestamp,(Int, Int, Int, Int, Int, Option[Int])](_.tupled)
 
+  def now(): BuildTimestamp = {
+    val n = java.time.LocalDateTime.now()
+    BuildTimestamp(
+      year = n.getYear,
+      month = 1+n.getMonth.ordinal,
+      day = n.getDayOfMonth,
+      hour = n.getHour,
+      minute = n.getMinute,
+      second = Some(n.getSecond),
+    )
+  }
+
 }
 
 
@@ -30,7 +42,7 @@ case class BuildTimestamp(
   }
 
   override def toString() = {
-    f"${year}${month}%02d${day}%02d_${hour}%02d${minute}%02d${second.map(s => f"${s}02d").getOrElse("")}"
+    f"${year}${month}%02d${day}%02d_${hour}%02d${minute}%02d${second.map(s => f"${s}%02d").getOrElse("")}"
   }
 
 }

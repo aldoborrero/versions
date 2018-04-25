@@ -2,7 +2,7 @@ package a8.versions.apps
 
 import java.util.Date
 
-import a8.versions.UpgradeVersionsMain
+import a8.versions.{BuildTimestamp, UpgradeVersionsMain}
 import m3.Exec
 import m3.fs._
 
@@ -16,6 +16,8 @@ object AhsVersionDance {
 //      implicit val buildType = BuildType.LocalBuild
 
     val start = new Date()
+
+    implicit val buildTimestamp = Some(BuildTimestamp.now())
 
     publish(codeHome \\ "model3")
     upgradeAndPublish(codeHome \\ "manna")

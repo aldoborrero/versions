@@ -30,7 +30,7 @@ case class InstallBuilder(
 
   def build(): Unit = {
     buildLibDir()
-    val jarFileName = resolvedConfig.artifactId + "-" + resolvedConfig.version + ".jar"
+    val jarFileName = resolvedConfig.artifact + "-" + resolvedConfig.version + ".jar"
     val jarFile =
       dependencyResult
         .localArtifacts

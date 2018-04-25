@@ -2,14 +2,18 @@ package a8.versions.apps
 
 import java.util.Date
 
+import a8.versions.BuildTimestamp
+
 object QubesVersionDance {
 
   import a8.versions.Build._
 
   def main(args: Array[String]) = {
 
-     implicit val buildType = BuildType.ArtifactoryBuild
-//      implicit val buildType = BuildType.LocalBuild
+    implicit val buildType = BuildType.ArtifactoryBuild
+    implicit val buildTimestamp = Some(BuildTimestamp.now())
+
+    println(s"using buildTimestamp = ${buildTimestamp}")
 
     val start = new Date()
 

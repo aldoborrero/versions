@@ -36,7 +36,6 @@ object Version {
   implicit val orderingByMajorMinorPathBuildTimestamp =
     Ordering.by[Version,(Int, Int, Int, Option[BuildInfo])](_.tupled)
 
-
 }
 
 case class Version(
