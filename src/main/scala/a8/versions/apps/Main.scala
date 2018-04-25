@@ -17,14 +17,14 @@ object Main {
       val organization = opt[String](required = true, descr = "organization of the artifact to resolve")
       val artifact = opt[String](required = true, descr = "artifact name")
       val branch = opt[String](descr = "branch name")
-      val version = opt[String](descr = "specific version or latest")
+      val version = opt[String](descr = "specific version")
     }
 
     val install = new Subcommand("install") {
       val organization = opt[String](required = true, descr = "organization of the artifact to resolve")
       val artifact = opt[String](required = true, descr = "artifact name")
       val branch = opt[String](required = true, descr = "branch name")
-      val version = opt[String](descr = "specific version or latest")
+      val version = opt[String](descr = "specific version")
       var installDir = opt[String](descr = "the install directory", required = true)
     }
 
@@ -37,9 +37,11 @@ object Main {
 
 
   def main(args: Array[String]): Unit = {
+    val main = new Main(args)
 //    new Main(Seq("resolve", "-o", "org", "-a", "art")).run()
-    new Main(Seq("resolve", "--organization", "a8", "--artifact", "a8-qubes-dist_2.12", "--branch", "master")).run()
+//    new Main(Seq("resolve", "--organization", "a8", "--artifact", "a8-qubes-dist_2.12", "--branch", "master")).run()
 //    new Main(Seq("--help")).run()
+    main.run()
   }
 
 
