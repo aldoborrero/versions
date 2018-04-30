@@ -77,8 +77,15 @@ object Main {
 
 
   def main(args: Array[String]): Unit = {
-    val main = new Main(args)
-    main.run()
+    try {
+      val main = new Main(args)
+      main.run()
+      System.exit(0)
+    } catch {
+      case th: Throwable =>
+        th.printStackTrace(System.err);
+        System.exit(1)
+    }
   }
 
 
