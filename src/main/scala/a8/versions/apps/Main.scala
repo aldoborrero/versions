@@ -17,12 +17,24 @@ object Main {
 
   case class Conf(args0: Seq[String]) extends ScallopConf(args0) {
 
+    banner(
+      s"""
+         |Accur8 Version Tools
+         |
+         |Example: a8-versions resolve --organization a8 --artifact a8-zoolander_2.12 --branch master
+         |
+         |Usage: a8-versions [Subcommand] [arg[...]]
+         |""".stripMargin
+    )
+
     val resolve = new Subcommand("resolve") with Runner {
 
       val organization = opt[String](required = true, descr = "organization of the artifact to resolve")
       val artifact = opt[String](required = true, descr = "artifact name")
       val branch = opt[String](descr = "branch name")
       val version = opt[String](descr = "specific version")
+
+      descr("setup app installer json files if they have not alreayd been setup")
 
       override def run(main: Main) = {
         val r = this
@@ -38,6 +50,8 @@ object Main {
       val branch = opt[String](required = true, descr = "branch name")
       val version = opt[String](descr = "specific version")
       var installDir = opt[String](descr = "the install directory", required = true)
+
+      descr("install app into the installDir")
 
       override def run(main: Main) = {
         main.runInstall(coursier.Module(organization.apply(), artifact.apply()), branch.toOption, version.toOption, installDir.toOption.getOrElse("."))
@@ -109,7 +123,10 @@ class Main(args: Seq[String]) {
       case Some(r: Runner) =>
         r.run(this)
       case _ =>
-        sys.error(s"don't know how to handle -- ${args}")
+        if (args.nonEmpty) {
+          sys.error(s"don't know how to handle -- ${args}")
+        }
+        conf.printHelp()
     }
   }
 
