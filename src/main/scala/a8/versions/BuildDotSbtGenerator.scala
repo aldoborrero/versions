@@ -34,8 +34,9 @@ addSbtPlugin("com.lihaoyi" % "workbench" % "0.4.0")
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.9.3")
 
-
 addSbtPlugin("a8" % "sbt-a8" % "1.1.0-20180412_1831")
+
+addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.0.0-M10")
 
       """)
 

@@ -207,7 +207,7 @@ class Main(args: Seq[String]) {
 
   def runGenerateBuildDotSbt(name: Option[String]): Unit = {
     val d = m3.fs.dir(".")
-    val g = new BuildDotSbtGenerator(name.getOrElse(d.name), d)
+    val g = new BuildDotSbtGenerator(name.getOrElse(d.canonical.name), d)
     g.run()
   }
 
