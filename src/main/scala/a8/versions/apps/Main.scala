@@ -34,7 +34,7 @@ object Main {
       val branch = opt[String](descr = "branch name")
       val version = opt[String](descr = "specific version")
 
-      descr("setup app installer json files if they have not alreayd been setup")
+      descr("setup app installer json files if they have not already been setup")
 
       override def run(main: Main) = {
         val r = this
