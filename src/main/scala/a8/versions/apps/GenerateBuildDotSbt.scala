@@ -19,11 +19,11 @@ object GenerateBuildDotSbt extends App {
 //  run("honeybadger", homeDir \\ "code/build-tools/honeybadger")
 //  run("s3_backup", homeDir \\ "code/s3-backup")
 
-  run("aggregates", homeDir \\ "code/aggregates")
+  run(homeDir \\ "code/aggregates")
 
 
-  def run(name: String, d: m3.fs.Directory) = {
-    val g = new BuildDotSbtGenerator(name, d)
+  def run(d: m3.fs.Directory) = {
+    val g = new BuildDotSbtGenerator(d)
     g.run()
     println(s"run complete for ${d}")
   }

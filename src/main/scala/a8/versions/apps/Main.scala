@@ -3,11 +3,12 @@ package a8.versions.apps
 import a8.appinstaller.AppInstallerConfig.LibDirKind
 import a8.appinstaller.{AppInstaller, AppInstallerConfig, InstallBuilder}
 import a8.versions.Build.BuildType
-import a8.versions.{BuildDotSbtGenerator, RepositoryOps, UpdateGitIgnore, Version}
+import a8.versions._
 import a8.versions.Upgrade.LatestArtifact
 import a8.versions.apps.Main.{Conf, Runner}
 import org.rogach.scallop.{ScallopConf, Subcommand}
 import a8.versions.predef._
+import m3.fs.Directory
 
 object Main {
 
@@ -62,10 +63,9 @@ object Main {
     val buildDotSbt = new Subcommand("build_dot_sbt") with Runner {
 
       descr("generates the build.sbt and other sbt plumbing from the modules.conf file")
-      val name = opt[String](descr = "optional name of project defaults to parent directory name")
 
       override def run(main: Main) = {
-        main.runGenerateBuildDotSbt(name.toOption)
+        main.runGenerateBuildDotSbt()
       }
 
     }
@@ -80,10 +80,20 @@ object Main {
 
     }
 
+    val version_bump = new Subcommand("version_bump") with Runner {
+
+      descr("upgrades the versions in version.properties aka runs a version bump")
+
+      override def run(main: Main) = {
+        main.runVersionBump()
+      }
+
+    }
     addSubcommand(resolve)
     addSubcommand(install)
     addSubcommand(buildDotSbt)
     addSubcommand(gitignore)
+    addSubcommand(version_bump)
 
     verify()
 
@@ -205,14 +215,18 @@ class Main(args: Seq[String]) {
 
   }
 
-  def runGenerateBuildDotSbt(name: Option[String]): Unit = {
+  def runGenerateBuildDotSbt(): Unit = {
     val d = m3.fs.dir(".")
-    val g = new BuildDotSbtGenerator(name.getOrElse(d.canonical.name), d)
+    val g = new BuildDotSbtGenerator(d)
     g.run()
   }
 
   def runGitignore(): Unit = {
     UpdateGitIgnore.update(new java.io.File(".gitignore"))
+  }
+
+  def runVersionBump(): Unit = {
+    Build.upgrade(m3.fs.dir("."))
   }
 
 }

@@ -3,7 +3,7 @@ package a8.versions
 import a8.versions.model.CompositeBuild
 
 
-class BuildDotSbtGenerator(name: String, codeRootDir: m3.fs.Directory) {
+class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
 
   object files {
     val buildDotSbtFile = codeRootDir \ "build.sbt"
@@ -155,16 +155,18 @@ lazy val root =
       compositeBuild.resolvedModules.flatMap(_.aggregateModules).toList.sorted.map(m => s".${aggregateMethod}(${m})").mkString("\n    ")
     }
 
-
-lazy val ${name} =
-  Common.jvmProject(${q(name)}, file("."), id = ${q(name)})
-    .settings( publish := {} )
-    ${
-      val aggregateMethod = "aggregate"
-//      val aggregateMethod = "dependsOn"
-      compositeBuild.resolvedModules.flatMap(_.aggregateModules).toList.sorted.map(m => s".${aggregateMethod}(${m})").mkString("\n    ")
-    }
 """}
+
    """
 
 }
+
+
+//lazy val ${module.sbtName} =
+//  Common.jvmProject(${q(module.sbtName)}, file("."), id = ${q(module.sbtName)})
+//    .settings( publish := {} )
+//    ${
+//      val aggregateMethod = "aggregate"
+////      val aggregateMethod = "dependsOn"
+//      compositeBuild.resolvedModules.flatMap(_.aggregateModules).toList.sorted.map(m => s".${aggregateMethod}(${m})").mkString("\n    ")
+//    }
