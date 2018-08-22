@@ -8,8 +8,8 @@ object RunMainDemo {
 
 //    Main.main(Array("resolve", "--organization", "a8", "--artifact", "a8-zoolander_2.12", "--branch", "master"))
 //    Main.main(Array("gitignore"))
-//    Main.main(Array("--help"))
-    Main.main(Array())
+    Main.main(Array("--help"))
+//    Main.main(Array())
 
   }
 
