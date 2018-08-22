@@ -22,9 +22,13 @@ object Main {
       s"""
          |Accur8 Version Tools
          |
-         |Example: a8-versions resolve --organization a8 --artifact a8-zoolander_2.12 --branch master
+         |Example:
+         |  a8-versions resolve --organization a8 --artifact a8-zoolander_2.12 --branch master
          |
          |Usage: a8-versions [Subcommand] [arg[...]]
+         |
+         |  * If you want to see the options for the app launcher (like how to update the app) then use --l-help arg:
+         |      a8-zoo --l-help
          |""".stripMargin
     )
 
