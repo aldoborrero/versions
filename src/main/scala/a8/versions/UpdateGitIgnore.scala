@@ -24,10 +24,11 @@ object UpdateGitIgnore {
     , ".DS_Store"
     , "/hs_err_*.log"
     , "/src-deps/"
-    , "/developer.properties"
+    , "developer.properties"
     , "/src/main/webapp/WEB-INF/source-jsp/"
     , "/config/"
     , "/.bloop/"
+    , "developer.hocon"
   )
 
   lazy val userSuppliedFileTypesToIgnore: List[String] = {
