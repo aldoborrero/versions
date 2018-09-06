@@ -10,6 +10,7 @@ import coursier.core.{Authentication, Module}
 import coursier.maven.MavenRepository
 import m3.fs.dir
 import predef._
+import scala.language.postfixOps
 
 object RepositoryOps {
 
