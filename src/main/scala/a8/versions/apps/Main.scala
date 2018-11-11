@@ -2,18 +2,36 @@ package a8.versions.apps
 
 import a8.appinstaller.AppInstallerConfig.LibDirKind
 import a8.appinstaller.{AppInstaller, AppInstallerConfig, InstallBuilder}
+import a8.common.JsonAssist
 import a8.versions.Build.BuildType
 import a8.versions._
 import a8.versions.Upgrade.LatestArtifact
 import a8.versions.apps.Main.{Conf, Runner}
 import org.rogach.scallop.{ScallopConf, Subcommand}
 import a8.versions.predef._
-import m3.fs.Directory
+import m3.fs._
+import play.api.libs.json.Json
 
 object Main {
 
+  object Config {
+    implicit lazy val jsonFormat = Json.format[Config]
+  }
+
+  case class Config(
+    sbtVersion: String = "1.2.6"
+  )
+
   sealed trait Runner {
     def run(main: Main): Unit
+  }
+
+  implicit lazy val config: Config = {
+    val f: File = userHome \\ ".config" \\ "accur8" \ "versions.json"
+    if ( f.exists )
+      JsonAssist.fromJson[Config](f.readText)
+    else
+      Config()
   }
 
   case class Conf(args0: Seq[String]) extends ScallopConf(args0) {
@@ -221,7 +239,7 @@ class Main(args: Seq[String]) {
 
   def runGenerateBuildDotSbt(): Unit = {
     val d = m3.fs.dir(".")
-    val g = new BuildDotSbtGenerator(d)
+    val g = new BuildDotSbtGenerator(d, Main.config)
     g.run()
   }
 

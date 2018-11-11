@@ -3,6 +3,7 @@ package a8.versions.apps
 import a8.common.HoconOps._
 import a8.common.CommonOps._
 import a8.versions.BuildDotSbtGenerator
+import a8.versions.apps.Main.Config
 import a8.versions.model.CompositeBuild
 
 object GenerateBuildDotSbt extends App {
@@ -23,7 +24,7 @@ object GenerateBuildDotSbt extends App {
 
 
   def run(d: m3.fs.Directory) = {
-    val g = new BuildDotSbtGenerator(d)
+    val g = new BuildDotSbtGenerator(d, Config())
     g.run()
     println(s"run complete for ${d}")
   }

@@ -1,9 +1,10 @@
 package a8.versions
 
+import a8.versions.apps.Main
 import a8.versions.model.CompositeBuild
 
 
-class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
+class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory, config: Main.Config) {
 
   object files {
     val buildDotSbtFile = codeRootDir \ "build.sbt"
@@ -17,7 +18,8 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
 
     files.plugins.parentDir.makeDirectories()
 
-    files.buildDotPropertiesFile.write("sbt.version=1.1.4\n")
+    if ( !files.buildDotPropertiesFile.exists )
+      files.buildDotPropertiesFile.write(s"sbt.version=${config.sbtVersion}\n")
 
     files.plugins.write(
       """
