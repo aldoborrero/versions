@@ -83,7 +83,7 @@ object model {
       parseHocon(repoRootDir.file("modules.conf").readText)
         .read[ast.Repo]
 
-    lazy val versionDotPropsMap =
+    lazy val versionDotPropsMap: Map[String, String] =
       repoRootDir
         .file("version.properties")
         .readText

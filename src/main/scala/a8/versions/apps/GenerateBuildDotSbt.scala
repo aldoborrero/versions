@@ -3,7 +3,6 @@ package a8.versions.apps
 import a8.common.HoconOps._
 import a8.common.CommonOps._
 import a8.versions.BuildDotSbtGenerator
-import a8.versions.apps.Main.Config
 import a8.versions.model.CompositeBuild
 import m3.predef._
 
@@ -13,9 +12,8 @@ object GenerateBuildDotSbt extends App {
 
 //  run("ahs_aggregate", homeDir \\ "code/ahs/aggregate")
 
-  run(homeDir \\ "code/manna")
+  run(homeDir \\ "code/odin")
 //  run("model3", homeDir \\ "code/model3")
-//  run("qubes", homeDir \\ "code/qubes")
 //  run("ahs_scala", homeDir \\ "code/ahs-scala")
 //  run("a8_recipe", homeDir \\ "code/build-tools/a8-recipe")
 //  run("honeybadger", homeDir \\ "code/build-tools/honeybadger")
@@ -25,7 +23,7 @@ object GenerateBuildDotSbt extends App {
 
 
   def run(d: m3.fs.Directory) = {
-    val g = new BuildDotSbtGenerator(d, Config())
+    val g = new BuildDotSbtGenerator(d)
     g.run()
     println(s"run complete for ${d}")
   }

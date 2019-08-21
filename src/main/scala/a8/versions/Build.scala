@@ -18,9 +18,9 @@ object Build {
     val ArtifactoryBuild = BuildType("publish", false)
   }
 
-  def upgrade(dir: Directory)(implicit buildType: BuildType, config: Main.Config) = {
+  def upgrade(dir: Directory)(implicit buildType: BuildType) = {
     UpgradeVersionsMain.runUpgrade(dir.file("version.properties"))
-    val g = new BuildDotSbtGenerator( dir, config)
+    val g = new BuildDotSbtGenerator(dir)
     g.run()
   }
 

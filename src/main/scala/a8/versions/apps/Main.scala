@@ -14,24 +14,8 @@ import play.api.libs.json.Json
 
 object Main {
 
-  object Config {
-    implicit lazy val jsonFormat = Json.format[Config]
-  }
-
-  case class Config(
-    sbtVersion: String = "1.2.6"
-  )
-
   sealed trait Runner {
     def run(main: Main): Unit
-  }
-
-  implicit lazy val config: Config = {
-    val f: File = userHome \\ ".config" \\ "accur8" \ "versions.json"
-    if ( f.exists )
-      JsonAssist.fromJson[Config](f.readText)
-    else
-      Config()
   }
 
   case class Conf(args0: Seq[String]) extends ScallopConf(args0) {
@@ -239,7 +223,7 @@ class Main(args: Seq[String]) {
 
   def runGenerateBuildDotSbt(): Unit = {
     val d = m3.fs.dir(".")
-    val g = new BuildDotSbtGenerator(d, Main.config)
+    val g = new BuildDotSbtGenerator(d)
     g.run()
   }
 
