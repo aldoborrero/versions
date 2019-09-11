@@ -27,7 +27,7 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
   }
 
   lazy val scalaJsVersion: String =
-    getVersionFromDotProperties("scalaJsVersion", "0.6.22")
+    getVersionFromDotProperties("scalaJsVersion", "0.6.28")
   lazy val coursierJsVersion: String =
     getVersionFromDotProperties("coursierVersion", "1.0.1")
   lazy val sbtDependencyGraphVersion: String =
