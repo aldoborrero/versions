@@ -26,6 +26,8 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
     val common: FileSystem#TFile = projectDirectory \ "Common.scala"
   }
 
+  lazy val scalaJsCrossProjectVersion: String =
+    getVersionFromDotProperties("scalaJsCrossProjectVersion", "0.6.1")
   lazy val scalaJsVersion: String =
     getVersionFromDotProperties("scalaJsVersion", "0.6.28")
   lazy val coursierJsVersion: String =
@@ -112,12 +114,16 @@ ${header(scalaComment, true)}
 import sbt._
 import Keys._
 import org.scalajs.sbtplugin.ScalaJSPlugin
-import org.scalajs.sbtplugin.cross.{CrossProject, CrossType}
+import sbtcrossproject.CrossPlugin.autoImport._
+import sbtcrossproject.JVMPlatform
+import scalajscrossproject.JSPlatform
+import scalajscrossproject.ScalaJSCrossPlugin.autoImport._
 
 object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with a8.sbt_a8.SassSettings {
 
   def crossProject(artifactName: String, dir: java.io.File, id: String) =
-    CrossProject(id, dir, CrossType.Full)
+    sbtcrossproject.CrossProject(id, dir)(JSPlatform, JVMPlatform)
+      .crossType(CrossType.Full)
       .settings(settings: _*)
       .settings(Keys.name := artifactName)
       .jsSettings(jsSettings: _*)
@@ -159,6 +165,7 @@ sbt.version=${sbtVersion}
       s"""
 ${header(scalaComment, true)}
 
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "${scalaJsCrossProjectVersion}")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "${scalaJsVersion}")
 addSbtPlugin("io.get-coursier" % "sbt-coursier" % "${coursierJsVersion}")
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "${sbtDependencyGraphVersion}")
