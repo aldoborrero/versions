@@ -41,7 +41,7 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
   lazy val sbtGitVersion: String =
     getVersionFromDotProperties("sbtGitVersion", "0.9.3")
   lazy val sbtA8Version: String =
-    getVersionFromDotProperties("sbtA8Version", "1.1.0-20190826_1300")
+    getVersionFromDotProperties("sbtA8Version", "1.1.0-20191014_0945")
   lazy val sbtBloopVersion: String =
     getVersionFromDotProperties("sbtBloopVersion", "1.0.0-M10")
   lazy val sbtVersion: String =
@@ -119,7 +119,7 @@ import sbtcrossproject.JVMPlatform
 import scalajscrossproject.JSPlatform
 import scalajscrossproject.ScalaJSCrossPlugin.autoImport._
 
-object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with a8.sbt_a8.SassSettings {
+object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with a8.sbt_a8.SassSettings with a8.sbt_a8.dobby.DobbySettings {
 
   def crossProject(artifactName: String, dir: java.io.File, id: String) =
     sbtcrossproject.CrossProject(id, dir)(JSPlatform, JVMPlatform)
