@@ -216,6 +216,8 @@ organization in Global := "${firstRepo.astRepo.organization}"
 
 version in Global := ${if ( singleRepo ) s"a8.sbt_a8.versionStamp(file(${q(".")}))" else q("1.0-SNAPSHOT") }
 
+serverConnectionType in Global := ConnectionType.Local
+
 
 ${
         compositeBuild.resolvedModules.map { module =>
