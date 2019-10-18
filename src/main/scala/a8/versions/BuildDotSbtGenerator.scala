@@ -133,7 +133,6 @@ object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with 
 
   def jsProject(artifactName: String, dir: java.io.File, id: String) =
     bareProject(artifactName, dir, id)
-      .settings(jsOnlySettings: _*)
       .settings(jsSettings: _*)
       .enablePlugins(ScalaJSPlugin)
 
@@ -142,10 +141,10 @@ object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with 
     Seq(
     )
 
-  def jsOnlySettings: Seq[Def.Setting[_]] =
+  override def jsSettings: Seq[Def.Setting[_]] =
+    super.jsSettings ++
     Seq(
-      (artifactPath in (Compile, fastOptJS)) := crossTarget.value / "classes" / "webapp" / "scripts" / ((moduleName in fastOptJS).value + "-fastopt.js"),
-      (Keys.`package` in Compile) := (Keys.`package` in Compile).dependsOn(fastOptJS in Compile).value
+      (artifactPath in (Compile, fastOptJS)) := crossTarget.value / "classes" / "webapp" / "scripts" / ((moduleName in fastOptJS).value + "-fastopt.js")
     )
 
 }
