@@ -114,6 +114,7 @@ ${header(scalaComment, true)}
 import sbt._
 import Keys._
 import org.scalajs.sbtplugin.ScalaJSPlugin
+import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport.fastOptJS
 import sbtcrossproject.CrossPlugin.autoImport._
 import sbtcrossproject.JVMPlatform
 import scalajscrossproject.JSPlatform
@@ -132,12 +133,19 @@ object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with 
 
   def jsProject(artifactName: String, dir: java.io.File, id: String) =
     bareProject(artifactName, dir, id)
+      .settings(jsOnlySettings: _*)
       .settings(jsSettings: _*)
       .enablePlugins(ScalaJSPlugin)
 
   override def jvmSettings: Seq[Def.Setting[_]] =
     super.jvmSettings ++
     Seq(
+    )
+
+  def jsOnlySettings: Seq[Def.Setting[_]] =
+    Seq(
+      (artifactPath in (Compile, fastOptJS)) := crossTarget.value / "classes" / "webapp" / "scripts" / ((moduleName in fastOptJS).value + "-fastopt.js"),
+      (Keys.`package` in Compile) := (Keys.`package` in Compile).dependsOn(fastOptJS in Compile).value
     )
 
 }
