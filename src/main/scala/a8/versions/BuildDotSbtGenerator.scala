@@ -41,7 +41,7 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
   lazy val sbtGitVersion: String =
     getVersionFromDotProperties("sbtGitVersion", "0.9.3")
   lazy val sbtA8Version: String =
-    getVersionFromDotProperties("sbtA8Version", "1.1.0-20191014_0945")
+    getVersionFromDotProperties("sbtA8Version", "1.1.0-20191204_1145")
   lazy val sbtBloopVersion: String =
     getVersionFromDotProperties("sbtBloopVersion", "1.0.0-M10")
   lazy val sbtVersion: String =
