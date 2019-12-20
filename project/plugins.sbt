@@ -4,7 +4,7 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2019-12-04 11:18:23.389 -0600 by raph on ENNS-PC
+// It was generated at 2019-12-04 13:25:02.852 -0600 by raph on ENNS-PC
 // 
 // a8-versions build/versioning info follows
 // 
@@ -12,8 +12,8 @@
 //        build_os : Linux
 //        build_machine_ip : 172.31.25.1
 //        build_user : raph
-//        build_date : Fri Oct 18 18:32:11 EDT 2019
-//        version_number : 1.0.0-20191018_1832_master
+//        build_date : Wed Dec 04 14:14:54 EST 2019
+//        version_number : 1.0.0-20191204_1414_master
 //        build_machine : basil
 //        project_name : a8-versions
 // 
@@ -32,6 +32,6 @@ addSbtPlugin("com.lihaoyi" % "workbench" % "0.4.0")
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.9.3")
 
-addSbtPlugin("a8" % "sbt-a8" % "1.1.0-20191014_0945")
+addSbtPlugin("a8" % "sbt-a8" % "1.1.0-20191204_1145")
 
 addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.0.0-M10")
