@@ -80,7 +80,7 @@ object RepositoryOps {
     val user = props.getProperty("user")
     val password = props.getProperty("password")
     MavenRepository(
-      "https://accur8.artifactoryonline.com/accur8/all/",
+      "https://accur8.jfrog.io/accur8/all/",
       authentication = Some(Authentication(user, password))
     )
   }
