@@ -20,14 +20,12 @@
 //      
 
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.1")
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.28")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.31")
 addSbtPlugin("io.get-coursier" % "sbt-coursier" % "2.0.0-RC6")
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
 
 resolvers += "a8-sbt-plugins" at "https://accur8.jfrog.io/accur8/sbt-plugins/"
 credentials += Credentials(Path.userHome / ".sbt" / "credentials")
-
-addSbtPlugin("com.lihaoyi" % "workbench" % "0.4.0")
 
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.9.3")

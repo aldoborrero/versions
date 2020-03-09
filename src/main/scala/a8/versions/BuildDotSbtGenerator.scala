@@ -34,8 +34,6 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
     getVersionFromDotProperties("coursierVersion", "2.0.0-RC6")
   lazy val sbtDependencyGraphVersion: String =
     getVersionFromDotProperties("sbtDependencyGraphVersion", "0.9.0")
-  lazy val comLihaoyiWorkbenchVersion: String =
-    getVersionFromDotProperties("comLihaoyiWorkbenchVersion", "0.4.0")
   lazy val slf4jNopVersion: String =
     getVersionFromDotProperties("slf4jNopVersion", "1.7.21")
   lazy val sbtGitVersion: String =
@@ -179,8 +177,6 @@ addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "${sbtDependencyGraph
 
 resolvers += "a8-sbt-plugins" at "https://accur8.jfrog.io/accur8/sbt-plugins/"
 credentials += Credentials(Path.userHome / ".sbt" / "credentials")
-
-addSbtPlugin("com.lihaoyi" % "workbench" % "${comLihaoyiWorkbenchVersion}")
 
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "${slf4jNopVersion}"
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "${sbtGitVersion}")
