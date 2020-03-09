@@ -2,6 +2,7 @@ package example
 
 import a8.versions.Build.BuildType
 import a8.versions.{RepositoryOps, Version}
+import coursier.core.{ModuleName, Organization}
 
 object DependencyTreeDemo {
 
@@ -12,7 +13,7 @@ object DependencyTreeDemo {
     val tree =
       RepositoryOps
         .resolveDependencyTree(
-          coursier.core.Module("a8", "a8-qubes-dist_2.12", Map()),
+          coursier.core.Module(Organization("a8"), ModuleName("a8-qubes-dist_2.12"), Map()),
           Version.parse("2.7.0-20180418_0536_master").get
         )
 
@@ -20,7 +21,7 @@ object DependencyTreeDemo {
 
     val artifacts = tree.resolution.artifacts.filter(_.url.contains(searchStr))
 
-    val errors = tree.resolution.metadataErrors
+    val errors = tree.resolution.errors
 
     val files = tree.localArtifacts.sortBy(_.getCanonicalPath)
 

@@ -2,6 +2,7 @@ package a8.versions
 
 import a8.common.CompanionGen
 import a8.common.HoconOps._
+import coursier.core.{ModuleName, Organization}
 import m3.Chord
 import m3.Chord._
 
@@ -47,7 +48,7 @@ object ast {
   ) {
 
     lazy val asCoursierModule =
-      coursier.Module(organization, artifactName + (if (scalaArtifactSeparator == "%%") "_2.12" else ""))
+      coursier.Module(Organization(organization), ModuleName(artifactName + (if (scalaArtifactSeparator == "%%") "_2.12" else "")))
 
 
     def exclusionsAsSbt =

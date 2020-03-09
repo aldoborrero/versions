@@ -4,16 +4,16 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2019-12-04 12:35:08.738 -0600 by raph on ENNS-PC
+// It was generated at 2020-03-09 12:47:20.462 -0500 by raph on ENNS-PC
 // 
 // a8-versions build/versioning info follows
 // 
-//        build_java_version : 1.8.0_222
+//        build_java_version : 1.8.0_242
 //        build_os : Linux
 //        build_machine_ip : 172.31.25.1
 //        build_user : raph
-//        build_date : Fri Oct 18 18:32:11 EDT 2019
-//        version_number : 1.0.0-20191018_1832_master
+//        build_date : Wed Mar 04 16:19:03 EST 2020
+//        version_number : 1.0.0-20200304_1618_master
 //        build_machine : basil
 //        project_name : a8-versions
 // 
@@ -45,8 +45,8 @@ lazy val versions =
     .jvmProject("a8-versions", file("."), "versions")
     .settings(
       libraryDependencies ++= Seq(
-        "io.get-coursier" %% "coursier" % "1.0.3" % "compile",
-        "io.get-coursier" %% "coursier-cache" % "1.0.3" % "compile",
+        "io.get-coursier" %% "coursier" % "2.0.0-RC6" % "compile",
+        "io.get-coursier" %% "coursier-cache" % "2.0.0-RC6" % "compile",
         "com.softwaremill.sttp" %% "core" % "1.1.11" % "compile",
         "org.scala-lang.modules" %% "scala-xml" % "1.1.0" % "compile",
         "com.lihaoyi" %% "fastparse" % "1.0.0" % "compile",

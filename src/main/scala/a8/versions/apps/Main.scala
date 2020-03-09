@@ -9,6 +9,7 @@ import a8.versions.Upgrade.LatestArtifact
 import a8.versions.apps.Main.{Conf, Runner}
 import org.rogach.scallop.{ScallopConf, Subcommand}
 import a8.versions.predef._
+import coursier.core.{ModuleName, Organization}
 import m3.fs._
 import play.api.libs.json.Json
 
@@ -45,7 +46,7 @@ object Main {
 
       override def run(main: Main) = {
         val r = this
-        main.runResolve(coursier.Module(r.organization.apply(), r.artifact.apply()), r.branch.toOption, r.version.toOption)
+        main.runResolve(coursier.Module(Organization(r.organization.apply()), ModuleName(r.artifact.apply())), r.branch.toOption, r.version.toOption)
       }
 
     }
@@ -61,7 +62,7 @@ object Main {
       descr("install app into the installDir")
 
       override def run(main: Main) = {
-        main.runInstall(coursier.Module(organization.apply(), artifact.apply()), branch.toOption, version.toOption, installDir.toOption.getOrElse("."))
+        main.runInstall(coursier.Module(Organization(organization.apply()), ModuleName(artifact.apply())), branch.toOption, version.toOption, installDir.toOption.getOrElse("."))
       }
 
     }
@@ -167,15 +168,15 @@ class Main(args: Seq[String]) {
 
     val aic =
       AppInstallerConfig(
-        organization = module.organization,
-        artifact = module.name,
+        organization = module.organization.value,
+        artifact = module.name.value,
         version = resolvedVersion.toString,
         branch = None,
       )
 
     val installBuilder = InstallBuilder(aic)
 
-    val inventoryDir = a8VersionsCache \\ module.organization \\ module.name
+    val inventoryDir = a8VersionsCache \\ module.organization.value \\ module.name.value
 
     inventoryDir.makeDirectories()
 
@@ -208,8 +209,8 @@ class Main(args: Seq[String]) {
 
     val config =
       AppInstallerConfig(
-        organization = module.organization,
-        artifact = module.name,
+        organization = module.organization.value,
+        artifact = module.name.value,
         branch = None,
         version = resolvedVersion.toString,
         installDir = Some(installDir),

@@ -1,15 +1,20 @@
 package a8.versions
 
-import java.io.{FileInputStream, StringReader}
+import java.io.StringReader
 import java.util.Properties
 
 import a8.versions.Build.BuildType
-import com.softwaremill.sttp.{HttpURLConnectionBackend, Uri, sttp}
-import coursier.{Cache, Dependency, Fetch, FileError, Module, Resolution}
-import coursier.core.{Authentication, Module}
+import a8.versions.predef._
+import com.softwaremill.sttp.{Uri, sttp}
+import coursier.cache.{ArtifactError, Cache}
+import coursier.core.{Authentication, Module, ResolutionProcess}
 import coursier.maven.MavenRepository
+import coursier.util.{Artifact, EitherT, Task}
+import coursier.{Dependency, LocalRepositories, Resolution}
 import m3.fs.dir
-import predef._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.language.postfixOps
 
 object RepositoryOps {
@@ -19,13 +24,9 @@ object RepositoryOps {
   ) {
 
     import java.io.File
-    import scalaz.\/
-    import scalaz.concurrent.Task
 
-    lazy val rawLocalArtifacts: Seq[FileError \/ File] =
-      Task.gatherUnordered(
-        resolution.artifacts.map(Cache.file(_).run)
-      ).unsafePerformSync
+    lazy val rawLocalArtifacts: Seq[Either[ArtifactError, File]] =
+        resolution.artifacts.map(Cache.default.file(_).run.unsafeRun())
 
     lazy val localArtifacts: Seq[File] =
       rawLocalArtifacts
@@ -45,9 +46,9 @@ object RepositoryOps {
     // a8-qubes-server_2.12/2.7.0-20180324_1028_master
 
     val start = Resolution(
-       Set(
+       Seq(
          Dependency(
-           module, resolvedVersion.toString
+           module, resolvedVersion.toString()
          )
        )
      )
@@ -56,13 +57,11 @@ object RepositoryOps {
       if ( buildType.useLocalRepo ) Seq(localRepository, remoteRepository)
       else Seq(remoteRepository)
 
-    val fetch = Fetch.from(repositories, Cache.fetch())
+    val fetch = ResolutionProcess.fetch(repositories, Cache.default.fetch)
 
-    import scala.concurrent.ExecutionContext.Implicits.global
+    val resolution: Resolution = start.process.run(fetch).unsafeRun()
 
-    val resolution: Resolution = start.process.run(fetch).unsafePerformSync
-
-    val errors: Seq[((Module, String), Seq[String])] = resolution.metadataErrors
+    val errors: Seq[((Module, String), Seq[String])] = resolution.errors
 
     if ( errors.nonEmpty ) {
       throw new RuntimeException(errors.map(_._2.mkString("\n")).mkString("\n"))
@@ -72,7 +71,7 @@ object RepositoryOps {
   }
 
 
-  lazy val localRepository = Cache.ivy2Local
+  lazy val localRepository = LocalRepositories.ivy2Local
 
   lazy val remoteRepository = {
     val props = new Properties
@@ -87,7 +86,7 @@ object RepositoryOps {
 
   def localVersions(module: Module): Iterable[Version] = {
 
-    val moduleDir = ivyLocal.subdir(module.organization).subdir(module.name)
+    val moduleDir = ivyLocal.subdir(module.organization.value).subdir(module.name.value)
 
     moduleDir
       .subdirs
@@ -102,25 +101,35 @@ object RepositoryOps {
     */
   def remoteVersions(module: Module): Iterable[Version] = {
 
-    val versionsArtifact = remoteRepository.versionsArtifact(module)
+    def getVersionXml(artifact: Artifact): Future[Either[String,String]] = {
+      try {
+        val uri = Uri(new java.net.URI(artifact.url))
 
-    val uri = Uri(new java.net.URI(versionsArtifact.get.url))
+        val response =
+          sttp
+            .get(uri)
+            .auth.basic(remoteRepository.authentication.get.user, remoteRepository.authentication.get.passwordOpt.get)
+            .send()
 
-    val response =
-      sttp
-        .get(uri)
-        .auth.basic(remoteRepository.authentication.get.user, remoteRepository.authentication.get.password)
-        .send()
+        val body = response.unsafeBody
 
+        Future.successful(Right(body))
+      } catch {
+        case e: Throwable => Future.failed(e)
+      }
+    }
 
-    import scala.xml._
+    def fetch(artifact: Artifact): EitherT[Task, String, String] = EitherT(Task(_ => getVersionXml(artifact)))
 
-    val doc = XML.loadString(response.unsafeBody)
-
-    val versions = doc \\ "version"
+    val versions =
+      remoteRepository.versions(module, fetch).run.unsafeRun() match {
+        case Right((value, _)) =>
+          value.available
+        case Left(msg) =>
+          sys.error(msg)
+      }
 
     versions
-      .map(_.text)
       .flatMap(v => Version.parse(v).toOption)
       .toIndexedSeq
       .sorted(Version.orderingByMajorMinorPathBuildTimestamp)

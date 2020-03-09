@@ -2,7 +2,7 @@ package a8.versions
 
 import a8.versions.Build.BuildType
 import coursier.Resolution
-import coursier.core.{Dependency, Module}
+import coursier.core.{Dependency, Module, ModuleName, Organization}
 
 
 sealed trait Upgrade {
@@ -87,13 +87,13 @@ object Upgrade {
             case List(org, artifact) =>
               ArtifactInDependencyTree(
                 dependencyTreeProp = sourceProp.trim,
-                module = Module(org.trim, artifact.trim, Map())
+                module = Module(Organization(org.trim), ModuleName(artifact.trim), Map())
               )
           }
         case List(artifact) =>
           artifact.split(":").toList match {
             case List(org, artifact, branch) =>
-              LatestArtifact(Module(org.trim, artifact.trim, Map()), branch.trim)
+              LatestArtifact(Module(Organization(org.trim), ModuleName(artifact.trim), Map()), branch.trim)
           }
       }
     } catch {

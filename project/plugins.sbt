@@ -4,16 +4,16 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2019-12-04 13:25:02.852 -0600 by raph on ENNS-PC
+// It was generated at 2020-03-09 11:36:55.761 -0500 by raph on ENNS-PC
 // 
 // a8-versions build/versioning info follows
 // 
-//        build_java_version : 1.8.0_222
+//        build_java_version : 1.8.0_242
 //        build_os : Linux
 //        build_machine_ip : 172.31.25.1
 //        build_user : raph
-//        build_date : Wed Dec 04 14:14:54 EST 2019
-//        version_number : 1.0.0-20191204_1414_master
+//        build_date : Wed Mar 04 16:19:03 EST 2020
+//        version_number : 1.0.0-20200304_1618_master
 //        build_machine : basil
 //        project_name : a8-versions
 // 
@@ -21,7 +21,7 @@
 
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.1")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.28")
-addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.1")
+addSbtPlugin("io.get-coursier" % "sbt-coursier" % "2.0.0-RC6")
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
 
 resolvers += "a8-sbt-plugins" at "https://accur8.jfrog.io/accur8/sbt-plugins/"
@@ -32,6 +32,6 @@ addSbtPlugin("com.lihaoyi" % "workbench" % "0.4.0")
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.9.3")
 
-addSbtPlugin("a8" % "sbt-a8" % "1.1.0-20191204_1145")
+addSbtPlugin("a8" % "sbt-a8" % "1.1.0-20191220_1208")
 
 addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.0.0-M10")
