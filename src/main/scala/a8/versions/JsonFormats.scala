@@ -6,7 +6,12 @@ object JsonFormats {
 
   implicit val formatIdentifier =
     JsonAssist.utils.stringValueFormat[ast.Identifier](
-      s => if ( s.charAt(0).isLetter ) ast.VariableIdentifier(s) else ast.StringIdentifier(s),
+      s =>
+        if ( s.charAt(0).isLetter )
+          ast.VariableIdentifier(s)
+        else
+          ast.StringIdentifier(s)
+      ,
       _.rawValue
     )
 

@@ -62,24 +62,24 @@ object ast {
       configuration.map(c => "%" * q(c))
 
     def asSbt(versionDotPropsMap: Map[String,String]) = {
-      q(organization) * scalaArtifactSeparator * q(artifactName) * "%" * version.resolve(versionDotPropsMap) * configurationAsSbt * exclusionsAsSbt
+      q(organization) * scalaArtifactSeparator * q(artifactName) * "%" * version.asScala * configurationAsSbt * exclusionsAsSbt
     }
   }
 
 
   sealed trait Identifier {
     def rawValue: String
-    def resolve(versions: Map[String,String]): Chord
+    def asScala: Chord
   }
 
   case class VariableIdentifier(name: String) extends Identifier {
     override def rawValue: String = name
-    override def resolve(versions: Map[String,String]) = q(versions(name))
+    override def asScala = Chord(name)
   }
 
   case class StringIdentifier(value: String) extends Identifier {
     override def rawValue: String = value
-    override def resolve(versions: Map[String,String]) = q(value)
+    override def asScala = q(value)
   }
 
 

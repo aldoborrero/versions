@@ -78,12 +78,17 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
     firstRepo.versionDotPropsMap.getOrElse(versionName, defaultValue)
 
   def writeIfChanged(newContents: String, outputFile: FileSystem#TFile, comment: String): Unit = {
-    val currentContentWithoutComments: List[String] = outputFile.lines.filterNot(_.startsWith(comment))
-    val newContentWithoutComments: List[String] = newContents.split("\n").toList.filterNot(_.startsWith(comment))
-    val hasContentChanged = !currentContentWithoutComments.equals(newContentWithoutComments)
-    if ( hasContentChanged ) {
+    val doWrite =
+      if ( outputFile.exists ) {
+        val currentContentWithoutComments: List[String] = outputFile.lines.filterNot(_.startsWith(comment))
+        val newContentWithoutComments: List[String] = newContents.split("\n").toList.filterNot(_.startsWith(comment))
+        val hasContentChanged = !currentContentWithoutComments.equals(newContentWithoutComments)
+        hasContentChanged
+      } else {
+        true
+      }
+    if ( doWrite )
       outputFile.write(newContents)
-    }
   }
 
   def header(comment: String, overwrite: Boolean): String = {
@@ -196,15 +201,26 @@ addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "${sbtBloopVersion}")
 
     lazy val buildSbtContent =
       s"""
-${header(scalaComment, true)}
+${
+        header(scalaComment, true)
+}
 
-${buildSbtContentWithoutHeader}
+${
+  firstRepo
+    .variables
+    .map { case (k,v) =>
+      s"""val ${k} = "${v}""""
+    }
+    .mkString("\n")
+}${
+  buildSbtContentWithoutHeader
+}
 """
 
     lazy val buildSbtContentWithoutHeader =
-      s"""
-${singleRepoOpt.flatMap(_.astRepo.header).getOrElse("")}
-
+      s"""${
+  singleRepoOpt.flatMap(_.astRepo.header).getOrElse("")
+}
 scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
 resolvers in Global += "a8-repo" at "https://accur8.jfrog.io/accur8/all/"

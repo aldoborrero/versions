@@ -97,6 +97,14 @@ object model {
           }
         }
         .toMap
+
+    lazy val variables: Iterable[(String, String)] =
+      versionDotPropsMap
+        .filterNot { case (k,v) =>
+          val kl = k.toLowerCase
+          kl.endsWith(".upgrade") || kl =:= "this"
+        }
+
   }
 
   case class RepoPrefix(
