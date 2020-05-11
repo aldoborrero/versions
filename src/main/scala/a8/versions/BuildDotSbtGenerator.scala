@@ -55,7 +55,7 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
 
   lazy val firstRepo: model.ResolvedRepo = compositeBuild.resolvedRepos.head
 
-  lazy val scalaVersion: String = firstRepo.versionDotPropsMap("scalaVersion")
+  lazy val scalaVersion: String = firstRepo.versionDotPropsMap("scalaLibVersion")
 
   /*
     generate the following files
