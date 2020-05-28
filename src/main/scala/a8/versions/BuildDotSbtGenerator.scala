@@ -44,6 +44,8 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
     getVersionFromDotProperties("sbtBloopVersion", "1.0.0-M10")
   lazy val sbtVersion: String =
     getVersionFromDotProperties("sbtVersion", "1.2.8")
+  lazy val partialUnificationVersion: String =
+    getVersionFromDotProperties("partialUnificationVersion", "1.1.2")
 
   lazy val compositeBuild = CompositeBuild(codeRootDir)
 
@@ -189,6 +191,9 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "${sbtGitVersion}")
 addSbtPlugin("a8" % "sbt-a8" % "${sbtA8Version}")
 
 addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "${sbtBloopVersion}")
+
+// This plugin can be removed when using Scala 2.13.0 or above
+addSbtPlugin("org.lyranthe.sbt" % "partial-unification" % "${partialUnificationVersion}")
 """
 
     writeIfChanged(newPluginsContent, files.plugins, scalaComment)
