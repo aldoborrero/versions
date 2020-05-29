@@ -43,7 +43,7 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
   lazy val sbtBloopVersion: String =
     getVersionFromDotProperties("sbtBloopVersion", "1.0.0-M10")
   lazy val sbtVersion: String =
-    getVersionFromDotProperties("sbtVersion", "1.2.8")
+    getVersionFromDotProperties("sbtVersion", "1.3.10")
   lazy val partialUnificationVersion: String =
     getVersionFromDotProperties("partialUnificationVersion", "1.1.2")
 
@@ -179,14 +179,14 @@ ${header(scalaComment, true)}
 
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "${scalaJsCrossProjectVersion}")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "${scalaJsVersion}")
-addSbtPlugin("io.get-coursier" % "sbt-coursier" % "${coursierJsVersion}")
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "${sbtDependencyGraphVersion}")
+//addSbtPlugin("io.get-coursier" % "sbt-coursier" % "${coursierJsVersion}")
+//addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "${sbtDependencyGraphVersion}")
 
 resolvers += "a8-sbt-plugins" at "https://accur8.jfrog.io/accur8/sbt-plugins/"
 credentials += Credentials(Path.userHome / ".sbt" / "credentials")
 
-libraryDependencies += "org.slf4j" % "slf4j-nop" % "${slf4jNopVersion}"
-addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "${sbtGitVersion}")
+//libraryDependencies += "org.slf4j" % "slf4j-nop" % "${slf4jNopVersion}"
+//addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "${sbtGitVersion}")
 
 addSbtPlugin("a8" % "sbt-a8" % "${sbtA8Version}")
 
