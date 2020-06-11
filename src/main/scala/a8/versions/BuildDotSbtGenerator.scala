@@ -182,7 +182,9 @@ addSbtPlugin("org.scala-js" % "sbt-scalajs" % "${scalaJsVersion}")
 //addSbtPlugin("io.get-coursier" % "sbt-coursier" % "${coursierJsVersion}")
 //addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "${sbtDependencyGraphVersion}")
 
-resolvers += "a8-sbt-plugins" at "https://accur8.jfrog.io/accur8/sbt-plugins/"
+addSbtPlugin("com.frugalmechanic" % "fm-sbt-s3-resolver" % "0.19.0")
+
+resolvers += "a8-sbt-plugins" at "https://locus.accur8.io/repos/sbt-plugins/"
 credentials += Credentials(Path.userHome / ".sbt" / "credentials")
 
 //libraryDependencies += "org.slf4j" % "slf4j-nop" % "${slf4jNopVersion}"
@@ -228,9 +230,9 @@ ${
 }
 scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
-resolvers in Global += "a8-repo" at "https://accur8.jfrog.io/accur8/all/"
+resolvers in Global += "a8-repo" at "https://locus.accur8.io/repos/all/"
 
-publishTo in Global := Some("a8-repo-publish" at "https://accur8.jfrog.io/accur8/libs-releases-local/")
+publishTo in Global := Some("a8-repo-releases" at "s3://s3-us-east-1.amazonaws.com/a8-artifacts/releases")
 
 credentials in Global += Credentials(Path.userHome / ".sbt" / "credentials")
 

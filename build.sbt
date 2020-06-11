@@ -4,29 +4,29 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2020-03-09 12:47:20.462 -0500 by raph on ENNS-PC
+// It was generated at 2020-06-10 14:15:26.263 -0500 by raph on ENNS-PC
 // 
 // a8-versions build/versioning info follows
 // 
-//        build_java_version : 1.8.0_242
-//        build_os : Linux
-//        build_machine_ip : 172.31.25.1
-//        build_user : raph
-//        build_date : Wed Mar 04 16:19:03 EST 2020
-//        version_number : 1.0.0-20200304_1618_master
-//        build_machine : basil
+//        build_java_version : 1.8.0_111
+//        build_os : Mac OS X
+//        build_machine_ip : 127.0.0.1
+//        build_user : flow
+//        build_date : Fri May 29 13:00:34 EDT 2020
+//        version_number : 1.0.0-20200529_1300_master
+//        build_machine : Flow-9.local
 //        project_name : a8-versions
 // 
 //      
 
-
-
-
+val scalaLibVersion = "2.12.10"
+val mannaVersion = "2.7.1-20200604_1410_master"
+val model3Version = "2.7.1-20200601_1522_master"
 scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
-resolvers in Global += "a8-repo" at "https://accur8.jfrog.io/accur8/all/"
+resolvers in Global += "a8-repo" at "https://locus.accur8.io/repos/all/"
 
-publishTo in Global := Some("a8-repo-publish" at "https://accur8.jfrog.io/accur8/libs-releases-local/")
+publishTo in Global := Some("a8-repo-releases" at "s3://s3-us-east-1.amazonaws.com/a8-artifacts/releases")
 
 credentials in Global += Credentials(Path.userHome / ".sbt" / "credentials")
 
@@ -50,8 +50,8 @@ lazy val versions =
         "com.softwaremill.sttp" %% "core" % "1.1.11" % "compile",
         "org.scala-lang.modules" %% "scala-xml" % "1.1.0" % "compile",
         "com.lihaoyi" %% "fastparse" % "1.0.0" % "compile",
-        "a8" %% "a8-common" % "2.7.1-20191204_1311_master" % "compile",
-        "a8" %% "m3-impl-api" % "2.7.1-20191204_1153_master" % "compile",
+        "a8" %% "a8-common" % mannaVersion % "compile",
+        "a8" %% "m3-impl-api" % model3Version % "compile",
         "com.beachape" %% "enumeratum-play-json" % "1.5.14" % "compile",
         "org.rogach" %% "scallop" % "3.1.2" % "compile",
         "org.typelevel" %% "cats-core" % "1.0.1" % "compile",
