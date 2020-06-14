@@ -28,6 +28,8 @@ object UpdateGitIgnore {
     , "/src/main/webapp/WEB-INF/source-jsp/"
     , "/config/"
     , "/.bloop/"
+    , "/.metals/"
+    , "/out/"
     , "developer.hocon"
   )
 

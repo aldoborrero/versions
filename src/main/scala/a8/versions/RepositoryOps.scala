@@ -1,6 +1,6 @@
 package a8.versions
 
-import java.io.StringReader
+import java.io.{FileInputStream, StringReader}
 import java.util.Properties
 
 import a8.versions.Build.BuildType
@@ -73,16 +73,16 @@ object RepositoryOps {
 
   lazy val localRepository = LocalRepositories.ivy2Local
 
-  lazy val remoteRepository = {
-    val props = new Properties
-    props.load(new StringReader(userHome \ ".sbt/credentials" readText))
-    val user = props.getProperty("user")
-    val password = props.getProperty("password")
+  lazy val remoteRepositoryUri = Uri(new java.net.URI(RepoAssist.readRepoProperty("default_repo_url")))
+  lazy val remoteRepositoryUserInfo = remoteRepositoryUri.userInfo.getOrError(s"no user:password found in default_repo_url ${remoteRepositoryUri}")
+  lazy val remoteRepositoryUser = remoteRepositoryUserInfo.username
+  lazy val remoteRepositoryPassword = remoteRepositoryUserInfo.password.getOrError(s"no password found in default_repo_url ${remoteRepositoryUri}")
+
+  lazy val remoteRepository =
     MavenRepository(
-      "https://locus.accur8.io/repos/all/",
-      authentication = Some(Authentication(user, password))
+      remoteRepositoryUri.toString,
+      authentication = Some(Authentication(remoteRepositoryUser, remoteRepositoryPassword))
     )
-  }
 
   def localVersions(module: Module): Iterable[Version] = {
 
@@ -103,19 +103,23 @@ object RepositoryOps {
 
     def getVersionXml(artifact: Artifact): Future[Either[String,String]] = {
       try {
-        val uri = Uri(new java.net.URI(artifact.url))
+        val uri = Uri(new java.net.URI(artifact.url)).copy(userInfo = None)
 
-        val response =
+        val response = //url.openStream().readString
           sttp
             .get(uri)
-            .auth.basic(remoteRepository.authentication.get.user, remoteRepository.authentication.get.passwordOpt.get)
+            .auth.basic(remoteRepositoryUser, remoteRepositoryPassword)
             .send()
 
         val body = response.unsafeBody
 
+        println("================ " + artifact.url)
+        println(body)
+
         Future.successful(Right(body))
       } catch {
-        case e: Throwable => Future.failed(e)
+        case e: Throwable =>
+          Future.failed(e)
       }
     }
 
@@ -136,6 +140,5 @@ object RepositoryOps {
       .reverse
 
   }
-
 
 }

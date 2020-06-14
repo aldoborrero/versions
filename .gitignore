@@ -21,3 +21,5 @@
 /.bloop-config/
 /.idea/
 target
+.metals
+/out/

@@ -1,6 +1,5 @@
 package a8.versions
 
-
 import java.net.InetAddress
 
 import a8.versions.model.CompositeBuild
@@ -152,7 +151,10 @@ object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with 
       (artifactPath in (Compile, fastOptJS)) := crossTarget.value / "classes" / "webapp" / "scripts" / ((moduleName in fastOptJS).value + "-fastopt.js")
     )
 
+${repoAssistSource(false)}
+
 }
+
     """.trim
 
     writeIfChanged(newCommonContent, files.common, scalaComment)
@@ -184,8 +186,8 @@ addSbtPlugin("org.scala-js" % "sbt-scalajs" % "${scalaJsVersion}")
 
 addSbtPlugin("com.frugalmechanic" % "fm-sbt-s3-resolver" % "0.19.0")
 
-resolvers += "a8-sbt-plugins" at "https://locus.accur8.io/repos/sbt-plugins/"
-credentials += Credentials(Path.userHome / ".sbt" / "credentials")
+resolvers += "a8-sbt-plugins" at readRepoProperty("default_repo_url")
+credentials += readCredentialsFromUrl("default_repo_url")
 
 //libraryDependencies += "org.slf4j" % "slf4j-nop" % "${slf4jNopVersion}"
 //addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "${sbtGitVersion}")
@@ -196,6 +198,9 @@ addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "${sbtBloopVersion}")
 
 // This plugin can be removed when using Scala 2.13.0 or above
 addSbtPlugin("org.lyranthe.sbt" % "partial-unification" % "${partialUnificationVersion}")
+
+${repoAssistSource(false)}
+
 """
 
     writeIfChanged(newPluginsContent, files.plugins, scalaComment)
@@ -228,13 +233,17 @@ ${
       s"""${
   singleRepoOpt.flatMap(_.astRepo.header).getOrElse("")
 }
+
 scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
-resolvers in Global += "a8-repo" at "https://locus.accur8.io/repos/all/"
+resolvers in Global += "a8-repo" at Common.readRepoProperty("default_repo_url")
 
 publishTo in Global := Some("a8-repo-releases" at "s3://s3-us-east-1.amazonaws.com/a8-artifacts/releases")
 
-credentials in Global += Credentials(Path.userHome / ".sbt" / "credentials")
+s3CredentialsProvider in Global := { (bucket: String) =>
+  import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
+  new AWSStaticCredentialsProvider(new BasicAWSCredentials(Common.readRepoProperty("publish_access_key"), Common.readRepoProperty("publish_secret_key")))
+}
 
 scalaVersion in Global := "${scalaVersion}"
 
@@ -289,5 +298,49 @@ lazy val root =
    """
     writeIfChanged(buildSbtContent, files.buildDotSbtFile, scalaComment)
   }
+
+  /** this is a copy of the RepoAssist.readRepoProperty method */
+  def repoAssistSource(includObject: Boolean) =
+  s"""
+
+${if ( includObject ) "object RepoAssist {" else ""}
+
+  def readRepoProperty(propertyName: String): String = {
+    import scala.collection.JavaConverters._
+    import java.io.FileInputStream
+    val props = new java.util.Properties()
+    val configFile = new java.io.File(System.getProperty("user.home") + "/.a8/repo.properties")
+    if ( configFile.exists() ) {
+      val input = new FileInputStream(configFile)
+      try {
+        props.load(input)
+      } finally {
+        input.close()
+      }
+      props.asScala.get(propertyName) match {
+        case Some(s) =>
+          s
+        case None =>
+          sys.error("could not find property " + propertyName + " in " + configFile )
+      }
+    } else {
+      sys.error("config file " + configFile + " does not exist")
+    }
+  }
+
+
+  def readCredentialsFromUrl(propertyName: String): Credentials = {
+    val url = new java.net.URL(readRepoProperty(propertyName))
+    val args = url.getUserInfo.split(":")
+    val user = args(0)
+    val password = args(1)
+    Credentials("Accur8 Repo", url.getHost, user, password)
+  }
+
+${if ( includObject ) "}" else ""}
+
+  """.trim
+
+
 
 }
