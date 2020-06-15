@@ -4,31 +4,28 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2020-06-10 14:15:26.263 -0500 by raph on ENNS-PC
+// It was generated at 2020-06-15 13:26:28.109 -0400 by glen on ROAR
 // 
 // a8-versions build/versioning info follows
 // 
-//        build_java_version : 1.8.0_111
-//        build_os : Mac OS X
-//        build_machine_ip : 127.0.0.1
-//        build_user : flow
-//        build_date : Fri May 29 13:00:34 EDT 2020
-//        version_number : 1.0.0-20200529_1300_master
-//        build_machine : Flow-9.local
-//        project_name : a8-versions
+// 
 // 
 //      
 
 val scalaLibVersion = "2.12.10"
 val mannaVersion = "2.7.1-20200604_1410_master"
 val model3Version = "2.7.1-20200601_1522_master"
+
 scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
-resolvers in Global += "a8-repo" at "https://locus.accur8.io/repos/all/"
+resolvers in Global += "a8-repo" at Common.readRepoUrl()
 
 publishTo in Global := Some("a8-repo-releases" at "s3://s3-us-east-1.amazonaws.com/a8-artifacts/releases")
 
-credentials in Global += Credentials(Path.userHome / ".sbt" / "credentials")
+s3CredentialsProvider in Global := { (bucket: String) =>
+  import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
+  new AWSStaticCredentialsProvider(new BasicAWSCredentials(Common.readRepoProperty("publish_aws_access_key"), Common.readRepoProperty("publish_aws_secret_key")))
+}
 
 scalaVersion in Global := "2.12.10"
 
