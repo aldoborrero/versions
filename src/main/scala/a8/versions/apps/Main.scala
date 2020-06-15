@@ -57,12 +57,22 @@ object Main {
       val artifact = opt[String](required = true, descr = "artifact name")
       val branch = opt[String](required = true, descr = "branch name")
       val version = opt[String](descr = "specific version")
-      var installDir = opt[String](descr = "the install directory", required = true)
+      val installDir = opt[String](descr = "the install directory", required = true)
+      val libDirKind = opt[String](descr = "lib directory kind", required = false)
+      val webappExplode = opt[String](descr = "do webapp explode", required = false)
 
       descr("install app into the installDir")
 
       override def run(main: Main) = {
-        main.runInstall(coursier.Module(Organization(organization.apply()), ModuleName(artifact.apply())), branch.toOption, version.toOption, installDir.toOption.getOrElse("."))
+        main
+          .runInstall(
+            coursier.Module(Organization(organization.apply()), ModuleName(artifact.apply())),
+            branch.toOption,
+            version.toOption,
+            installDir.toOption.getOrElse("."),
+            libDirKind.toOption,
+            webappExplode.map(_.toBoolean).toOption
+          )
       }
 
     }
@@ -193,7 +203,14 @@ class Main(args: Seq[String]) {
 
 
 
-  def runInstall(module: coursier.Module, branch: Option[String], version: Option[String], installDir: String): Unit = {
+  def runInstall(
+    module: coursier.Module,
+    branch: Option[String],
+    version: Option[String],
+    installDir: String,
+    libDirKind: Option[String],
+    webappExplode: Option[Boolean] = Some(true)
+  ): Unit = {
 
     val (resolvedVersion, latest) =
       (branch, version) match {
@@ -207,6 +224,19 @@ class Main(args: Seq[String]) {
           Version.parse(v).get -> None
       }
 
+    val kind: Option[LibDirKind] =
+      libDirKind
+        .flatMap{ k =>
+          val result: Option[LibDirKind] = LibDirKind
+            .values
+            .find(_.entryName.equalsIgnoreCase(k))
+          if (result.isEmpty) {
+            sys.error(s"libDirKind entered does not match case insensitive value in ${LibDirKind.values.map(_.entryName).mkString("['", "', '", "']")}")
+          }
+          result
+        }
+        .orElse(Some(LibDirKind.Symlink))
+
     val config =
       AppInstallerConfig(
         organization = module.organization.value,
@@ -214,8 +244,8 @@ class Main(args: Seq[String]) {
         branch = None,
         version = resolvedVersion.toString,
         installDir = Some(installDir),
-        libDirKind = Some(LibDirKind.Repo),
-        webappExplode = Some(true),
+        libDirKind = kind,
+        webappExplode = webappExplode,
       )
 
     AppInstaller(config).execute()

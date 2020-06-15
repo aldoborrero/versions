@@ -6,7 +6,7 @@ import a8.versions.ast.{Dependency, Identifier, StringIdentifier, VariableIdenti
 
 object SbtDependencyParser {
 
-  import fastparse.all._
+  import scala.meta.internal.fastparse.all._
 
   def parse(dependenciesStr: String): Iterable[Dependency] = {
     dependencies.parse(dependenciesStr).get.value

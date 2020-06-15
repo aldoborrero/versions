@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import a8.versions.Version.BuildInfo
-import fastparse.core.Parsed
+import scala.meta.internal.fastparse.all._
 
 import scala.util.Try
 import shapeless._
@@ -18,7 +18,7 @@ object Version {
     VersionParser.Parser.parse(v) match {
       case Parsed.Success(v, _) =>
         v
-      case f: Parsed.Failure[_,_] =>
+      case f@ Parsed.Failure(_,_,_) =>
         throw new RuntimeException(s"unable to parse version ${v} -- ${f.msg}")
     }
   }
@@ -49,7 +49,7 @@ case class Version(
     (major, minor, patch, buildInfo)
   }
 
-  override def toString() =
+  override def toString(): String =
     s"${major}.${minor}.${patch}${buildInfo.map("-" + _).getOrElse("")}"
 
 }

@@ -4,7 +4,7 @@ import java.time.{LocalDate, LocalDateTime, LocalTime, Month}
 
 object VersionParser {
 
-  import fastparse.all._
+  import scala.meta.internal.fastparse.all._
 
 
   val Parser = P(
