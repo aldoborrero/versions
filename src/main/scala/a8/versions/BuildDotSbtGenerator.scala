@@ -186,8 +186,8 @@ addSbtPlugin("org.scala-js" % "sbt-scalajs" % "${scalaJsVersion}")
 
 addSbtPlugin("com.frugalmechanic" % "fm-sbt-s3-resolver" % "0.19.0")
 
-resolvers += "a8-sbt-plugins" at readRepoProperty("default_repo_url")
-credentials += readCredentialsFromUrl("default_repo_url")
+resolvers += "a8-sbt-plugins" at readRepoUrl()
+credentials += readRepoCredentials()
 
 //libraryDependencies += "org.slf4j" % "slf4j-nop" % "${slf4jNopVersion}"
 //addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "${sbtGitVersion}")
@@ -236,13 +236,13 @@ ${
 
 scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
-resolvers in Global += "a8-repo" at Common.readRepoProperty("default_repo_url")
+resolvers in Global += "a8-repo" at Common.readRepoUrl()
 
 publishTo in Global := Some("a8-repo-releases" at "s3://s3-us-east-1.amazonaws.com/a8-artifacts/releases")
 
 s3CredentialsProvider in Global := { (bucket: String) =>
   import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
-  new AWSStaticCredentialsProvider(new BasicAWSCredentials(Common.readRepoProperty("publish_access_key"), Common.readRepoProperty("publish_secret_key")))
+  new AWSStaticCredentialsProvider(new BasicAWSCredentials(Common.readRepoProperty("publish_aws_access_key"), Common.readRepoProperty("publish_aws_secret_key")))
 }
 
 scalaVersion in Global := "${scalaVersion}"
@@ -299,47 +299,52 @@ lazy val root =
     writeIfChanged(buildSbtContent, files.buildDotSbtFile, scalaComment)
   }
 
-  /** this is a copy of the RepoAssist.readRepoProperty method */
+  /** this is a copy of the RepoAssist object */
   def repoAssistSource(includObject: Boolean) =
   s"""
-
 ${if ( includObject ) "object RepoAssist {" else ""}
 
-  def readRepoProperty(propertyName: String): String = {
+  def readRepoUrl() = readRepoProperty("repo_url")
+
+  lazy val repoConfigFile = new java.io.File(System.getProperty("user.home") + "/.a8/repo.properties")
+
+  lazy val repoProperties = {
     import scala.collection.JavaConverters._
-    import java.io.FileInputStream
     val props = new java.util.Properties()
-    val configFile = new java.io.File(System.getProperty("user.home") + "/.a8/repo.properties")
-    if ( configFile.exists() ) {
-      val input = new FileInputStream(configFile)
+    if ( repoConfigFile.exists() ) {
+      val input = new java.io.FileInputStream(repoConfigFile)
       try {
         props.load(input)
       } finally {
         input.close()
       }
-      props.asScala.get(propertyName) match {
-        case Some(s) =>
-          s
-        case None =>
-          sys.error("could not find property " + propertyName + " in " + configFile )
-      }
+      props.asScala
     } else {
-      sys.error("config file " + configFile + " does not exist")
+      sys.error("config file " + repoConfigFile + " does not exist")
     }
   }
 
+  def readRepoProperty(propertyName: String): String = {
+    repoProperties.get(propertyName) match {
+      case Some(s) =>
+        s
+      case None =>
+        sys.error("could not find property " + propertyName + " in " + repoConfigFile)
+    }
+  }
 
-  def readCredentialsFromUrl(propertyName: String): Credentials = {
-    val url = new java.net.URL(readRepoProperty(propertyName))
-    val args = url.getUserInfo.split(":")
-    val user = args(0)
-    val password = args(1)
-    Credentials("Accur8 Repo", url.getHost, user, password)
+  def readRepoCredentials(): Credentials = {
+    val repoUrl = new java.net.URL(readRepoUrl())
+    Credentials(
+      readRepoProperty("repo_realm"),
+      repoUrl.getHost,
+      readRepoProperty("repo_user"),
+      readRepoProperty("repo_password"),
+    )
   }
 
 ${if ( includObject ) "}" else ""}
-
-  """.trim
+  """
 
 
 
