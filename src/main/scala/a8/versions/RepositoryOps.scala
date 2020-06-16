@@ -34,6 +34,7 @@ object RepositoryOps {
         .filter{ f =>
           f.getName.endsWith(".jar")
         }
+        .distinct
 
   }
 
