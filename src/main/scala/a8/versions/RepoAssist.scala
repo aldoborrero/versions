@@ -27,7 +27,7 @@ object RepoAssist {
 
   def readRepoProperty(propertyName: String): String = {
     repoProperties.get(propertyName) match {
-      case Some(s) =>s
+      case Some(s) =>
         s
       case None =>
         sys.error("could not find property " + propertyName + " in " + repoConfigFile)
