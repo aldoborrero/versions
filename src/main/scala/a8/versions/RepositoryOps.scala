@@ -73,10 +73,9 @@ object RepositoryOps {
 
   lazy val localRepository = LocalRepositories.ivy2Local
 
-  lazy val remoteRepositoryUri = Uri(new java.net.URI(RepoAssist.readRepoProperty("default_repo_url")))
-  lazy val remoteRepositoryUserInfo = remoteRepositoryUri.userInfo.getOrError(s"no user:password found in default_repo_url ${remoteRepositoryUri}")
-  lazy val remoteRepositoryUser = remoteRepositoryUserInfo.username
-  lazy val remoteRepositoryPassword = remoteRepositoryUserInfo.password.getOrError(s"no password found in default_repo_url ${remoteRepositoryUri}")
+  lazy val remoteRepositoryUri = Uri(new java.net.URI(RepoAssist.readRepoProperty("repo_url")))
+  lazy val remoteRepositoryUser = RepoAssist.readRepoProperty("repo_user")
+  lazy val remoteRepositoryPassword = RepoAssist.readRepoProperty("repo_password")
 
   lazy val remoteRepository =
     MavenRepository(
