@@ -11,25 +11,25 @@ object RunMainDemo {
 //    Main.main(Array("--help"))
 //    Main.main(Array())
 
-//    Main.main(Array(
-//      "install",
-//      "--organization", "a8",
-//      "--artifact", "a8-qubes-dist_2.12",
-//      "--branch", "master",
-//      "--install-dir", "/Users/flow/_a/test",
-//      "--lib-dir-kind", "Symlink",
-//      "--webapp-explode", "true",
-//    ))
-//
     Main.main(Array(
       "install",
       "--organization", "a8",
       "--artifact", "a8-qubes-dist_2.12",
-      "--version", "2.7.1-20200623_0850_master",
+      "--branch", "jeremy/ODIN-2026",
       "--install-dir", "/Users/flow/_a/test",
       "--lib-dir-kind", "Symlink",
       "--webapp-explode", "true",
     ))
+//
+//    Main.main(Array(
+//      "install",
+//      "--organization", "a8",
+//      "--artifact", "a8-qubes-dist_2.12",
+//      "--version", "2.7.1-20200623_0850_master",
+//      "--install-dir", "/Users/flow/_a/test",
+//      "--lib-dir-kind", "Symlink",
+//      "--webapp-explode", "true",
+//    ))
 //
 //    Main.main(Array(
 //      "install",

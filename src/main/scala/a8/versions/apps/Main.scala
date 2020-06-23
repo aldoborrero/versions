@@ -13,6 +13,8 @@ import coursier.core.{ModuleName, Organization}
 import m3.fs._
 import play.api.libs.json.Json
 
+import scala.annotation.tailrec
+
 object Main {
 
   sealed trait Runner {
@@ -201,7 +203,12 @@ class Main(args: Seq[String]) {
 
   }
 
-
+  // same method as a8.sbt_a8.scrubBranchName() in sbt-a8 project
+  def scrubBranchName(unscrubbedName: String): String = {
+    unscrubbedName
+      .filter(ch => ch.isLetterOrDigit)
+      .toLowerCase
+  }
 
   def runInstall(
     module: coursier.Module,
@@ -219,7 +226,8 @@ class Main(args: Seq[String]) {
         case (Some(_), Some(_)) =>
           sys.error("must supply a branch or version not both")
         case (Some(b), None) =>
-          LatestArtifact(module, b).resolveVersion(Map()) -> Some(s"latest_${b}.json")
+          val resolvedBranch = scrubBranchName(b)
+          LatestArtifact(module, resolvedBranch).resolveVersion(Map()) -> Some(s"latest_${resolvedBranch}.json")
         case (None, Some(v)) =>
           Version.parse(v).get -> None
       }
