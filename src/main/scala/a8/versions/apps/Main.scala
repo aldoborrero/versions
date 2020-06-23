@@ -53,10 +53,10 @@ object Main {
 
     val install = new Subcommand("install") with Runner {
 
-      val organization = opt[String](required = true, descr = "organization of the artifact to resolve")
-      val artifact = opt[String](required = true, descr = "artifact name")
-      val branch = opt[String](required = true, descr = "branch name")
-      val version = opt[String](descr = "specific version")
+      val organization = opt[String](descr = "organization of the artifact to resolve", required = true)
+      val artifact = opt[String](descr = "artifact name", required = true)
+      val branch = opt[String](descr = "branch name", required = false)
+      val version = opt[String](descr = "specific version", required = false)
       val installDir = opt[String](descr = "the install directory", required = true)
       val libDirKind = opt[String](descr = "lib directory kind", required = false)
       val webappExplode = opt[String](descr = "do webapp explode", required = false)
