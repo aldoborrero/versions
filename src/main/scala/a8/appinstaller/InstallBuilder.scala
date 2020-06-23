@@ -66,21 +66,18 @@ case class InstallBuilder(
     }
   }
 
-  lazy val inventory =
+  lazy val inventory: InstallInventory =
     InstallInventory(
       resolvedConfig,
       classpath = classpath
     )
 
-  lazy val classpath =
-    dependencyResult.localArtifacts.flatMap { file =>
-      resolvedConfig.resolvedLibDirKind match {
-        case LibDirKind.Symlink | LibDirKind.Copy =>
-          None
-        case LibDirKind.Repo =>
-          Some(file.getCanonicalPath)
+  lazy val classpath: Seq[String] =
+    dependencyResult
+      .localArtifacts
+      .map { file =>
+        file.getCanonicalPath
       }
-    }
 
   lazy val rootVersion: Version = {
     if ( unresolvedArtifact.version.rawValue == "latest") {

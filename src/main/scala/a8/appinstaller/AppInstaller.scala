@@ -2,7 +2,7 @@ package a8.appinstaller
 
 
 import a8.common.JsonAssist
-import m3.fs._
+import m3.fs.{LocalFileSystem, _}
 
 import language.postfixOps
 import a8.versions.predef._
