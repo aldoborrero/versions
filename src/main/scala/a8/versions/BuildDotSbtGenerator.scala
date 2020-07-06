@@ -275,23 +275,14 @@ ${
         if ( compositeBuild.resolvedModules.size == 1 ) ""
         else
           s"""
-lazy val root_bloop =
-  Common.jvmProject("root_bloop", file("target/root_bloop"), id = "root_bloop")
-    .settings( publish := {} )
-    ${
-            //      val aggregateMethod = "aggregate"
-            val aggregateMethod = "dependsOn"
-            compositeBuild.resolvedModules.flatMap(_.aggregateModules).toList.sorted.map(m => s".${aggregateMethod}(${m})").mkString("\n    ")
-          }
-
 lazy val root =
   Common.jvmProject("root", file("target/root"), id = "root")
     .settings( publish := {} )
     ${
-            val aggregateMethod = "aggregate"
-            //      val aggregateMethod = "dependsOn"
-            compositeBuild.resolvedModules.flatMap(_.aggregateModules).toList.sorted.map(m => s".${aggregateMethod}(${m})").mkString("\n    ")
-          }
+          val aggregateMethod = "aggregate"
+          //      val aggregateMethod = "dependsOn"
+          compositeBuild.resolvedModules.flatMap(_.aggregateModules).toList.sorted.map(m => s".${aggregateMethod}(${m})").mkString("\n    ")
+    }
 
 """}
 
