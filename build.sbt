@@ -4,11 +4,18 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2020-06-15 13:26:28.109 -0400 by glen on ROAR
+// It was generated at 2020-08-26 14:25:24.822 -0500 by raph on ENNS-PC
 // 
 // a8-versions build/versioning info follows
 // 
-// 
+//        build_java_version : 1.8.0_111
+//        build_os : Mac OS X
+//        build_machine_ip : 127.0.0.1
+//        build_user : flow
+//        build_date : Mon Aug 24 11:53:15 EDT 2020
+//        version_number : 1.0.0-20200824_1153_master
+//        build_machine : Flow-9.local
+//        project_name : a8-versions
 // 
 //      
 
@@ -51,7 +58,6 @@ lazy val versions =
         "a8" %% "m3-impl-api" % model3Version % "compile",
         "com.beachape" %% "enumeratum-play-json" % "1.5.14" % "compile",
         "org.rogach" %% "scallop" % "3.1.2" % "compile",
-        "org.typelevel" %% "cats-core" % "1.0.1" % "compile",
       )
     )
 
