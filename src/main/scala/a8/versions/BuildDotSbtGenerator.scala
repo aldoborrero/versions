@@ -26,7 +26,7 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
   }
 
   lazy val scalaJsCrossProjectVersion: String =
-    getVersionFromDotProperties("scalaJsCrossProjectVersion", "0.6.1")
+    getVersionFromDotProperties("scalaJsCrossProjectVersion", "1.0.0")
   lazy val scalaJsVersion: String =
     getVersionFromDotProperties("scalaJsVersion", "0.6.33")
   lazy val coursierJsVersion: String =
@@ -40,7 +40,7 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
   lazy val sbtA8Version: String =
     getVersionFromDotProperties("sbtA8Version", "1.1.0-20191220_1208")
   lazy val sbtBloopVersion: String =
-    getVersionFromDotProperties("sbtBloopVersion", "1.0.0-M10")
+    getVersionFromDotProperties("sbtBloopVersion", "1.4.4")
   lazy val sbtVersion: String =
     getVersionFromDotProperties("sbtVersion", "1.3.10")
   lazy val partialUnificationVersion: String =
@@ -118,11 +118,10 @@ ${header(scalaComment, true)}
 import sbt._
 import Keys._
 import org.scalajs.sbtplugin.ScalaJSPlugin
-import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport.fastOptJS
-import sbtcrossproject.CrossPlugin.autoImport._
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.fastOptJS
 import sbtcrossproject.JVMPlatform
 import scalajscrossproject.JSPlatform
-import scalajscrossproject.ScalaJSCrossPlugin.autoImport._
+import sbtcrossproject.CrossType
 
 object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with a8.sbt_a8.SassSettings with a8.sbt_a8.dobby.DobbySettings {
 
@@ -131,8 +130,8 @@ object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with 
       .crossType(CrossType.Full)
       .settings(settings: _*)
       .settings(Keys.name := artifactName)
-      .jsSettings(jsSettings: _*)
-      .jvmSettings(jvmSettings: _*)
+      .platformsSettings(JSPlatform)(jsSettings: _*)
+      .platformsSettings(JVMPlatform)(jvmSettings: _*)
 
 
   def jsProject(artifactName: String, dir: java.io.File, id: String) =
@@ -179,8 +178,8 @@ sbt.version=${sbtVersion}
       s"""
 ${header(scalaComment, true)}
 
-addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "${scalaJsCrossProjectVersion}")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "${scalaJsVersion}")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "${scalaJsCrossProjectVersion}")
 //addSbtPlugin("io.get-coursier" % "sbt-coursier" % "${coursierJsVersion}")
 //addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "${sbtDependencyGraphVersion}")
 
@@ -245,7 +244,7 @@ s3CredentialsProvider in Global := { (bucket: String) =>
   new AWSStaticCredentialsProvider(new BasicAWSCredentials(Common.readRepoProperty("publish_aws_access_key"), Common.readRepoProperty("publish_aws_secret_key")))
 }
 
-scalaVersion in Global := "${scalaVersion}"
+scalaVersion in Global := scalaLibVersion
 
 organization in Global := "${firstRepo.astRepo.organization}"
 
@@ -253,6 +252,9 @@ version in Global := ${if ( singleRepo ) s"a8.sbt_a8.versionStamp(file(${q(".")}
 
 serverConnectionType in Global := ConnectionType.Local
 
+bloopAggregateSourceDependencies in Global := true
+
+bloopExportJarClassifiers in Global := Some(Set("sources"))
 
 ${
         compositeBuild.resolvedModules.map { module =>
