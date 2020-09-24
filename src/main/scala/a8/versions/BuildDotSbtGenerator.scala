@@ -183,8 +183,6 @@ addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "${scalaJsCross
 //addSbtPlugin("io.get-coursier" % "sbt-coursier" % "${coursierJsVersion}")
 //addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "${sbtDependencyGraphVersion}")
 
-addSbtPlugin("com.frugalmechanic" % "fm-sbt-s3-resolver" % "0.19.0")
-
 resolvers += "a8-sbt-plugins" at readRepoUrl()
 credentials += readRepoCredentials()
 
@@ -237,12 +235,7 @@ scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
 resolvers in Global += "a8-repo" at Common.readRepoUrl()
 
-publishTo in Global := Some("a8-repo-releases" at "s3://s3-us-east-1.amazonaws.com/a8-artifacts/releases")
-
-s3CredentialsProvider in Global := { (bucket: String) =>
-  import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
-  new AWSStaticCredentialsProvider(new BasicAWSCredentials(Common.readRepoProperty("publish_aws_access_key"), Common.readRepoProperty("publish_aws_secret_key")))
-}
+publishTo in Global := Some("a8-repo-releases" at Common.readRepoUrl())
 
 scalaVersion in Global := scalaLibVersion
 
