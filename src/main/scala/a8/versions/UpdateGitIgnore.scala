@@ -35,7 +35,7 @@ object UpdateGitIgnore {
 
   lazy val userSuppliedFileTypesToIgnore: List[String] = {
     val f = RepositoryOps.userHome \\ ".a8" \ "gitignore.template"
-    f.exists.option(f.readText.lines.toList.filter(_.isNotBlank)).getOrElse(Nil)
+    f.exists.option(f.readText.linesIterator.toList.filter(_.isNotBlank)).getOrElse(Nil)
   }
 
   lazy val fileTypesToIgnore = explicitFileTypesToIgnore ++ userSuppliedFileTypesToIgnore

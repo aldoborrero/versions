@@ -13,8 +13,10 @@ object GenerateBuildDotSbt extends App {
 //  run("ahs_aggregate", homeDir \\ "code/ahs/aggregate")
 
 //  run(homeDir \\ "code/odin")
-  run(homeDir \\ "code/model3")
+//  run(homeDir \\ "code/model3")
 //  run(homeDir \\ "code/ahs-scala")
+//  run(homeDir \\ "code/accur8/hermes")
+  run(homeDir \\ "code/accur8/model3")
 //  run(homeDir \\ "code/build-tools/a8-recipe")
 //  run(homeDir \\ "code/build-tools/honeybadger")
 //  run(homeDir \\ "code/s3-backup")

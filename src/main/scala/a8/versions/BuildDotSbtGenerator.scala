@@ -104,7 +104,7 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
        |
        |${versioning.getProperties.asScala.map(t => t._1 + " : " + t._2).mkString("\n").indent("       ")}
        |
-     """.stripMargin.lines.map(comment + " " + _).mkString("\n")
+     """.stripMargin.linesIterator.map(comment + " " + _).mkString("\n")
   }
 
   def setupProjectDirectory(): Unit =

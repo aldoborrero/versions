@@ -87,7 +87,7 @@ object model {
       repoRootDir
         .file("version.properties")
         .readText
-        .lines
+        .linesIterator
         .map(_.trim)
         .filterNot(l => l.length == 0 || l.startsWith("#"))
         .flatMap {
@@ -202,7 +202,7 @@ object model {
         case None =>
           Nil
         case Some(es) =>
-          val lines = es.lines.filter(_.trim.length > 0).toList
+          val lines = es.linesIterator.filter(_.trim.length > 0).toList
           val indent = lines.head.indexOf(lines.head.trim)
           val unindentedLines =
             lines.map(_.zipWithIndex.dropWhile(t => t._1.isWhitespace && t._2 < indent).map(_._1).mkString)

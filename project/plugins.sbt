@@ -4,7 +4,7 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2020-06-15 13:26:28.541 -0400 by glen on ROAR
+// It was generated at 2020-09-28 12:47:12.042 -0400 by glen on mini
 // 
 // a8-versions build/versioning info follows
 // 
@@ -12,12 +12,10 @@
 // 
 //      
 
-addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.1")
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.31")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.33")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.0.0")
 //addSbtPlugin("io.get-coursier" % "sbt-coursier" % "2.0.0-RC6")
 //addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
-
-addSbtPlugin("com.frugalmechanic" % "fm-sbt-s3-resolver" % "0.19.0")
 
 resolvers += "a8-sbt-plugins" at readRepoUrl()
 credentials += readRepoCredentials()
@@ -27,7 +25,7 @@ credentials += readRepoCredentials()
 
 addSbtPlugin("a8" % "sbt-a8" % "1.1.0-20191220_1208")
 
-addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.0.0-M10")
+addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.4.4")
 
 // This plugin can be removed when using Scala 2.13.0 or above
 addSbtPlugin("org.lyranthe.sbt" % "partial-unification" % "1.1.2")

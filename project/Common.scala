@@ -3,7 +3,7 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2020-06-15 13:26:28.544 -0400 by glen on ROAR
+// It was generated at 2020-09-28 12:45:19.477 -0400 by glen on mini
 // 
 // a8-versions build/versioning info follows
 // 
@@ -14,11 +14,10 @@
 import sbt._
 import Keys._
 import org.scalajs.sbtplugin.ScalaJSPlugin
-import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport.fastOptJS
-import sbtcrossproject.CrossPlugin.autoImport._
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.fastOptJS
 import sbtcrossproject.JVMPlatform
 import scalajscrossproject.JSPlatform
-import scalajscrossproject.ScalaJSCrossPlugin.autoImport._
+import sbtcrossproject.CrossType
 
 object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with a8.sbt_a8.SassSettings with a8.sbt_a8.dobby.DobbySettings {
 
@@ -27,8 +26,8 @@ object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with 
       .crossType(CrossType.Full)
       .settings(settings: _*)
       .settings(Keys.name := artifactName)
-      .jsSettings(jsSettings: _*)
-      .jvmSettings(jvmSettings: _*)
+      .platformsSettings(JSPlatform)(jsSettings: _*)
+      .platformsSettings(JVMPlatform)(jvmSettings: _*)
 
 
   def jsProject(artifactName: String, dir: java.io.File, id: String) =
