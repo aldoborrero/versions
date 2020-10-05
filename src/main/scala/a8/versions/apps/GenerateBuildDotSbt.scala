@@ -33,7 +33,7 @@ object GenerateBuildDotSbt extends App {
 //  run(homeDir \\ "code/odin")
 //  run(homeDir \\ "code/model3")
 //  run(homeDir \\ "code/ahs-scala")
-//    run(homeDir \\ "code/accur8/monadic-html")
+//  run(homeDir \\ "code/accur8/monadic-html")
 //  run(homeDir \\ "code/accur8/odin")
 //  run(homeDir \\ "code/accur8/hermes")
 //  run(homeDir \\ "code/accur8/model3")
