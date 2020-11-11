@@ -4,17 +4,23 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2020-09-28 12:45:56.360 -0400 by glen on mini
+// It was generated at 2020-11-11 13:33:37.521 -0600 by raph on ENNS-PC
 // 
 // a8-versions build/versioning info follows
 // 
-// 
+//        build_java_version : 1.8.0_111
+//        build_os : Mac OS X
+//        build_machine_ip : 127.0.0.1
+//        build_user : flow
+//        build_date : Thu Oct 22 11:18:48 EDT 2020
+//        version_number : 1.0.0-20201022_1118_master
+//        build_machine : Flow-9.local
+//        project_name : a8-versions
 // 
 //      
 
 val scalaLibVersion = "2.12.12"
-val mannaVersion = "2.7.1-20200925_1442_master"
-val model3Version = "2.7.1-20200917_1011_master"
+val model3Version = "2.7.1-20201110_0934_master"
 
 scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
@@ -45,7 +51,7 @@ lazy val versions =
         "com.softwaremill.sttp" %% "core" % "1.1.11" % "compile",
         "org.scala-lang.modules" %% "scala-xml" % "1.1.0" % "compile",
         "com.geirsson" %% "fastparse" % "1.0.0" % "compile",
-        "a8" %% "a8-common" % mannaVersion % "compile",
+        "a8" %% "m3-common" % model3Version % "compile",
         "a8" %% "m3-impl-api" % model3Version % "compile",
         "com.beachape" %% "enumeratum-play-json" % "1.5.14" % "compile",
         "org.rogach" %% "scallop" % "3.1.2" % "compile",
