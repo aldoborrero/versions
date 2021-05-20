@@ -75,7 +75,7 @@ class GradleGenerator(codeRootDir: m3.fs.Directory) {
 
     files.settingsDotGradleFile.write(generateSettingsDotGradleStr)
 
-    compositeBuild.resolvedModules.foreach { module =>
+    compositeBuild.resolvedModules.filter(_.includeInGradle).foreach { module =>
       generateBuildDotGradle(module)
     }
 
@@ -85,14 +85,36 @@ class GradleGenerator(codeRootDir: m3.fs.Directory) {
 s"""
 
 rootProject.name = 'root'
-include ${
+${
     compositeBuild
       .resolvedModules
+      .filter(_.includeInGradle)
       .map { module =>
-        "'" + module.sbtName + "'"
+        s"include '${module.gradleName}'"
       }
-      .mkString(" ")
+      .mkString("\n")
 }
+
+
+def repoProperty(String name) {
+  def props = new Properties()
+  file(System.getProperty("user.home") + "/.a8/repo.properties").withInputStream { props.load(it) }
+  return props.getProperty(name)
+}
+
+dependencyResolutionManagement {
+  repositories {
+  //    mavenCentral()
+      maven {
+          url repoProperty("repo_url")
+          credentials {
+              username = repoProperty("repo_user")
+              password = repoProperty("repo_password")
+          }
+      }
+  }
+}
+
 """
   }
 
@@ -110,55 +132,91 @@ s"""
 
 plugins {
     id 'scala'
-}
-
-repositories {
-    mavenCentral()
+    id 'java-library'
 }
 
 configurations {
     provided
 }
 
+
 sourceSets {
-    main { compileClasspath += configurations.provided }
+  main {
+    compileClasspath += configurations.provided
+    java {
+      srcDirs = []
+    }
+    scala {
+      srcDirs = ['src/main/scala','src/main/java','shared/src//main/scala','jvm/src/main/scala']
+    }
+  }
+  test {
+    java {
+      srcDirs = []
+    }
+    scala {
+      srcDirs = ['src/test/scala','src/test/java','shared/src/test/scala','jvm/src/test/scala']
+    }
+  }
 }
+
 
 dependencies {
 ${
-  module.dependencies.map { dependency =>
+  val depsArtifacts =
+    (module.dependencies ++ module.resolveJvmDependencies).map { dependency =>
 
-    val artifactSuffix =
-      dependency.scalaArtifactSeparator match {
-        case "%" =>
-          ""
-        case "%%" | "%%%" =>
-          "_2.12"
-      }
+      val artifactSuffix =
+        dependency.scalaArtifactSeparator match {
+          case "%" =>
+            ""
+          case "%%" | "%%%" =>
+            "_2.12"
+        }
 
-    val depType =
-      dependency.configuration match {
-        case None | Some("compile") =>
-          "implementation"
-        case Some("test") =>
-          "testImplementation"
-        case Some("provided") =>
-          "provided"
-        case conf =>
-          sys.error(s"unsupported dependency classifier of ${conf}")
-      }
+      val depType =
+        dependency.configuration match {
+          case None | Some("compile") =>
+            "api"
+          case Some("test") =>
+            "testImplementation"
+          case Some("provided") =>
+            "provided"
+          case conf =>
+            sys.error(s"unsupported dependency classifier of ${conf}")
+        }
 
-    val version =
-      dependency.version match {
-        case StringIdentifier(v) =>
-          v
-        case VariableIdentifier(v) =>
-          "$" + v
-      }
+      val version =
+        dependency.version match {
+          case StringIdentifier(v) =>
+            v
+          case VariableIdentifier(v) =>
+            firstRepo.versionDotPropsMap(v)
+        }
 
-    s"  ${depType} '${dependency.organization}:${dependency.artifactName}${artifactSuffix}:${version}'"
+      s"${depType} '${dependency.organization}:${dependency.artifactName}${artifactSuffix}:${version}'"
 
-  }.mkString("\n")
+    }
+
+  val depsProjects =
+    module.dependsOn.map { dependsOn =>
+      val sbtName =
+        if ( dependsOn.endsWith("JVM") ) {
+          dependsOn.substring(0, dependsOn.length-3)
+        } else if ( dependsOn.endsWith("JS") ) {
+          sys.error(s"this should not happen as we should not depend on JS projects -- ${dependsOn}")
+        } else {
+          dependsOn
+        }
+
+      val projectName = firstRepo.findDependencyViaSbtName(sbtName).gradleName
+
+      s"api project(':${projectName}')"
+    }
+
+  (depsArtifacts ++ depsProjects)
+    .mkString("  ", "\n  ", "")
+
 }
 }
 

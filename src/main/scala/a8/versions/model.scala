@@ -79,6 +79,14 @@ object model {
     prefix: Option[RepoPrefix],
   ) {
 
+    def findDependencyViaSbtName(sbtName: String) = {
+      compositeBuild
+        .resolvedModules
+        .find(_.sbtName == sbtName)
+        .getOrError(s"unable to find dependsOn for ${sbtName}")
+    }
+
+
     lazy val astRepo =
       parseHocon(repoRootDir.file("modules.conf").readText)
         .read[ast.Repo]
@@ -117,6 +125,14 @@ object model {
     astModule: ast.Module
   ) {
 
+    def includeInGradle: Boolean =
+      astModule.projectType match {
+        case None | Some("cross") =>
+          true
+        case Some("js") | Some("haxe") | Some("sass") =>
+          false
+      }
+
     lazy val organization = repo.astRepo.organization
 
     lazy val dependentModulesInComposite: Set[ResolvedModule] =
@@ -138,6 +154,15 @@ object model {
 
     def prefixName(name: String): String =
       prefix + name
+
+    lazy val gradleName = {
+      val s = resolveDirectory.splitList("/")
+      if ( s.length > 1 ) {
+        s.dropRight(1).mkString("/") + ":" + s.last
+      } else {
+        resolveDirectory
+      }
+    }
 
     lazy val dependsOn =
       astModule
