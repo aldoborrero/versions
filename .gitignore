@@ -1,3 +1,4 @@
+
 /.idea/
 /log-usage.txt
 /webapp-temp/
@@ -23,3 +24,5 @@
 target
 .metals
 /out/
+/.gradle
+/.bsp

@@ -261,9 +261,17 @@ class Main(args: Seq[String]) {
   }
 
   def runGenerateBuildDotSbt(): Unit = {
+
     val d = m3.fs.dir(".")
-    val g = new BuildDotSbtGenerator(d)
-    g.run()
+
+    val buildDotSbtGenerator = new BuildDotSbtGenerator(d)
+    buildDotSbtGenerator.run()
+
+    if ( buildDotSbtGenerator.firstRepo.astRepo.gradle ) {
+      val g = new GradleGenerator(d)
+      g.run()
+    }
+
   }
 
   def runGitignore(): Unit = {

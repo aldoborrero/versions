@@ -162,7 +162,7 @@ object model {
     lazy val resolveProjectType = astModule.projectType.getOrElse("jvm")
     lazy val resolveArtifactName = astModule.artifactName.getOrElse(astModule.sbtName)
     lazy val resolveDirectory: String = repo.prefix.map(_.dir + "/").getOrElse("") + astModule.directory.getOrElse(astModule.sbtName)
-    lazy val dependencies =
+    lazy val dependencies: Iterable[ast.Dependency] =
       rawResolvedDependencies
         .filterNot { d =>
           dependentModulesInComposite.exists(m => m.organization == d.organization && m.resolveArtifactName == d.artifactName)

@@ -16,6 +16,7 @@ object ast {
   case class Repo(
     header: Option[String] = None,
     organization: String,
+    gradle: Boolean = false,
     modules: Iterable[Module],
   )
 
