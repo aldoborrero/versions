@@ -2,6 +2,7 @@ package a8.versions
 
 import a8.common.CompanionGen
 import a8.common.HoconOps._
+import a8.versions.Mxast.{MxDependency, MxModule, MxRepo}
 import coursier.core.{ModuleName, Organization}
 import m3.Chord
 import m3.Chord._

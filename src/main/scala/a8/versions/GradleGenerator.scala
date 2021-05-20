@@ -144,6 +144,8 @@ ${
           "testImplementation"
         case Some("provided") =>
           "provided"
+        case conf =>
+          sys.error(s"unsupported dependency classifier of ${conf}")
       }
 
     val version =

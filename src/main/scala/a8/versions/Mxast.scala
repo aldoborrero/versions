@@ -54,9 +54,9 @@ object Mxast {
     }
     
     object parameters {
-      lazy val header: CaseClassParm[Repo,Option[String]] = CaseClassParm[Repo,Option[String]]("header", lenses.header, Some(()=> None), 0)
+      lazy val header: CaseClassParm[Repo,Option[String]] = CaseClassParm[Repo,Option[String]]("header", lenses.header, None, 0)
       lazy val organization: CaseClassParm[Repo,String] = CaseClassParm[Repo,String]("organization", lenses.organization, None, 1)
-      lazy val gradle: CaseClassParm[Repo,Boolean] = CaseClassParm[Repo,Boolean]("gradle", lenses.gradle, Some(()=> false), 2)
+      lazy val gradle: CaseClassParm[Repo,Boolean] = CaseClassParm[Repo,Boolean]("gradle", lenses.gradle, Some(false), 2)
       lazy val modules: CaseClassParm[Repo,Iterable[Module]] = CaseClassParm[Repo,Iterable[Module]]("modules", lenses.modules, None, 3)
     }
     
@@ -136,7 +136,7 @@ object Mxast {
       lazy val projectType: CaseClassParm[Module,Option[String]] = CaseClassParm[Module,Option[String]]("projectType", lenses.projectType, None, 1)
       lazy val artifactName: CaseClassParm[Module,Option[String]] = CaseClassParm[Module,Option[String]]("artifactName", lenses.artifactName, None, 2)
       lazy val directory: CaseClassParm[Module,Option[String]] = CaseClassParm[Module,Option[String]]("directory", lenses.directory, None, 3)
-      lazy val dependsOn: CaseClassParm[Module,Iterable[String]] = CaseClassParm[Module,Iterable[String]]("dependsOn", lenses.dependsOn, Some(()=> Nil), 4)
+      lazy val dependsOn: CaseClassParm[Module,Iterable[String]] = CaseClassParm[Module,Iterable[String]]("dependsOn", lenses.dependsOn, Some(Nil), 4)
       lazy val dependencies: CaseClassParm[Module,Option[String]] = CaseClassParm[Module,Option[String]]("dependencies", lenses.dependencies, None, 5)
       lazy val jvmDependencies: CaseClassParm[Module,Option[String]] = CaseClassParm[Module,Option[String]]("jvmDependencies", lenses.jvmDependencies, None, 6)
       lazy val jsDependencies: CaseClassParm[Module,Option[String]] = CaseClassParm[Module,Option[String]]("jsDependencies", lenses.jsDependencies, None, 7)
@@ -215,8 +215,8 @@ object Mxast {
       lazy val scalaArtifactSeparator: CaseClassParm[Dependency,String] = CaseClassParm[Dependency,String]("scalaArtifactSeparator", lenses.scalaArtifactSeparator, None, 1)
       lazy val artifactName: CaseClassParm[Dependency,String] = CaseClassParm[Dependency,String]("artifactName", lenses.artifactName, None, 2)
       lazy val version: CaseClassParm[Dependency,Identifier] = CaseClassParm[Dependency,Identifier]("version", lenses.version, None, 3)
-      lazy val configuration: CaseClassParm[Dependency,Option[String]] = CaseClassParm[Dependency,Option[String]]("configuration", lenses.configuration, Some(()=> None), 4)
-      lazy val exclusions: CaseClassParm[Dependency,Iterable[(String, String)]] = CaseClassParm[Dependency,Iterable[(String, String)]]("exclusions", lenses.exclusions, Some(()=> Nil), 5)
+      lazy val configuration: CaseClassParm[Dependency,Option[String]] = CaseClassParm[Dependency,Option[String]]("configuration", lenses.configuration, Some(None), 4)
+      lazy val exclusions: CaseClassParm[Dependency,Iterable[(String, String)]] = CaseClassParm[Dependency,Iterable[(String, String)]]("exclusions", lenses.exclusions, Some(Nil), 5)
     }
     
     

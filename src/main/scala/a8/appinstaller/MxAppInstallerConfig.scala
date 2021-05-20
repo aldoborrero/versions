@@ -67,10 +67,9 @@ object MxAppInstallerConfig {
       lazy val artifact: CaseClassParm[AppInstallerConfig,String] = CaseClassParm[AppInstallerConfig,String]("artifact", lenses.artifact, None, 1)
       lazy val version: CaseClassParm[AppInstallerConfig,String] = CaseClassParm[AppInstallerConfig,String]("version", lenses.version, None, 2)
       lazy val branch: CaseClassParm[AppInstallerConfig,Option[String]] = CaseClassParm[AppInstallerConfig,Option[String]]("branch", lenses.branch, None, 3)
-      lazy val installDir: CaseClassParm[AppInstallerConfig,Option[String]] = CaseClassParm[AppInstallerConfig,Option[String]]("installDir", lenses.installDir, Some(()=> None), 4)
-      lazy val libDirKind: CaseClassParm[AppInstallerConfig,Option[LibDirKind]] = CaseClassParm[AppInstallerConfig,Option[LibDirKind]]("libDirKind", lenses.libDirKind, Some(()=> None), 5)
-      lazy val webappExplode: CaseClassParm[AppInstallerConfig,Option[Boolean]] = CaseClassParm[AppInstallerConfig,Option[Boolean]]("webappExplode", lenses.webappExplode, Some(()=> None
-      ), 6)
+      lazy val installDir: CaseClassParm[AppInstallerConfig,Option[String]] = CaseClassParm[AppInstallerConfig,Option[String]]("installDir", lenses.installDir, None, 4)
+      lazy val libDirKind: CaseClassParm[AppInstallerConfig,Option[LibDirKind]] = CaseClassParm[AppInstallerConfig,Option[LibDirKind]]("libDirKind", lenses.libDirKind, None, 5)
+      lazy val webappExplode: CaseClassParm[AppInstallerConfig,Option[Boolean]] = CaseClassParm[AppInstallerConfig,Option[Boolean]]("webappExplode", lenses.webappExplode, None, 6)
     }
     
     

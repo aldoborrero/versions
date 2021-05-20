@@ -2,6 +2,7 @@ package a8.appinstaller
 
 
 import a8.appinstaller.AppInstallerConfig.LibDirKind
+import a8.appinstaller.MxAppInstallerConfig.MxAppInstallerConfig
 import a8.common.CompanionGen
 import a8.versions.ast
 import a8.versions.ast.Dependency
