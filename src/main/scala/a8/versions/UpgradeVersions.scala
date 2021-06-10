@@ -1,28 +1,15 @@
 package a8.versions
 
-
-import java.util.Properties
-
 import a8.versions.Build.BuildType
-import coursier.core.Module
-import predef._
-import m3.fs._
+import m3.fs.File
+import java.util.Properties
+import scala.collection.JavaConverters._
 
-object UpgradeVersionsMain {
-
-
-  def main(args: Array[String]) = {
-    implicit val buildType = BuildType.ArtifactoryBuild
-    runUpgrade(file("/Users/glen/code/model3/version.properties"))
-    runUpgrade(file("/Users/glen/code/manna/version.properties"))
-    runUpgrade(file("/Users/glen/code/qubes/version.properties"))
-    runUpgrade(file("/Users/glen/code/ahs/scala/version.properties"))
-  }
-
+object UpgradeVersions {
 
   def runUpgrade(versionDotPropsFile: File)(implicit buildType: BuildType): Unit = {
 
-    lazy val versionInfo: Map[String,String] = {
+    lazy val versionInfo: Map[String, String] = {
       val props = new Properties()
       versionDotPropsFile.read(props.load)
       props.asScala.toMap
@@ -67,7 +54,6 @@ object UpgradeVersionsMain {
 
     versionDotPropsFile.write(propsFileContents)
   }
-
 
 
 }

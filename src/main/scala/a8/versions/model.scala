@@ -71,6 +71,7 @@ object model {
         repo <- resolvedRepos ;
         module <- repo.astRepo.modules
       ) yield ResolvedModule(repo, module)
+
   }
 
   case class ResolvedRepo(
@@ -164,10 +165,23 @@ object model {
       }
     }
 
+    lazy val dependsOnInComposite =
+      dependentModulesInComposite
+        .map { rm =>
+          (rm.resolveProjectType, resolveProjectType) match {
+            case ("cross", "jvm") =>
+              rm.sbtName + "JVM"
+            case ("cross", "js") =>
+              rm.sbtName + "JS"
+            case _ =>
+              rm.sbtName + "JVM"
+          }
+        }
+
     lazy val dependsOn =
       astModule
         .dependsOn
-        .map(prefixName) ++ dependentModulesInComposite.map(_.sbtName)
+        .map(prefixName) ++ dependsOnInComposite
 
     lazy val sbtName = prefixName(astModule.sbtName)
 

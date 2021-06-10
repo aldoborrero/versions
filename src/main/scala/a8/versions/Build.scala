@@ -1,7 +1,6 @@
 package a8.versions
 
 import java.util.Date
-
 import a8.versions.apps.{GenerateBuildDotSbt, Main}
 import m3.Exec
 import m3.fs._
@@ -19,7 +18,7 @@ object Build {
   }
 
   def upgrade(dir: Directory)(implicit buildType: BuildType) = {
-    UpgradeVersionsMain.runUpgrade(dir.file("version.properties"))
+    UpgradeVersions.runUpgrade(dir.file("version.properties"))
     val g = new BuildDotSbtGenerator(dir)
     g.run()
   }
