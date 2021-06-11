@@ -176,7 +176,7 @@ object model {
             case ("cross", "js") =>
               rm.sbtName + "JS"
             case _ =>
-              rm.sbtName + "JVM"
+              rm.sbtName
           }
         }
 
