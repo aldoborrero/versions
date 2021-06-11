@@ -4,7 +4,7 @@ import m3.fs._
 
 import scala.collection.immutable.List
 import scala.collection.mutable.HashSet
-import m3.predef._
+import a8.common.CommonOps._
 
 object UpdateGitIgnore {
 

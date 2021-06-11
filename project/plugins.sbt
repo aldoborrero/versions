@@ -4,22 +4,22 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2020-11-11 13:33:37.837 -0600 by raph on ENNS-PC
+// It was generated at 2021-06-11 10:35:34.269 -0500 by raph on ENNS-PC
 // 
 // a8-versions build/versioning info follows
 // 
-//        build_java_version : 1.8.0_111
-//        build_os : Mac OS X
+//        build_date : Fri Jun 11 06:56:33 EDT 2021
+//        build_machine : mini
 //        build_machine_ip : 127.0.0.1
-//        build_user : flow
-//        build_date : Thu Oct 22 11:18:48 EDT 2020
-//        version_number : 1.0.0-20201022_1118_master
-//        build_machine : Flow-9.local
+//        build_java_version : 1.8.0_261
+//        build_user : glen
+//        version_number : 1.0.0-20210611_0656_master
 //        project_name : a8-versions
+//        build_os : Mac OS X
 // 
 //      
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.2.0")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.6.0")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.0.0")
 //addSbtPlugin("io.get-coursier" % "sbt-coursier" % "2.0.0-RC6")
 //addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")

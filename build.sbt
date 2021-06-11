@@ -4,23 +4,23 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2020-11-11 13:33:37.521 -0600 by raph on ENNS-PC
+// It was generated at 2021-06-11 10:35:34.051 -0500 by raph on ENNS-PC
 // 
 // a8-versions build/versioning info follows
 // 
-//        build_java_version : 1.8.0_111
-//        build_os : Mac OS X
+//        build_date : Fri Jun 11 06:56:33 EDT 2021
+//        build_machine : mini
 //        build_machine_ip : 127.0.0.1
-//        build_user : flow
-//        build_date : Thu Oct 22 11:18:48 EDT 2020
-//        version_number : 1.0.0-20201022_1118_master
-//        build_machine : Flow-9.local
+//        build_java_version : 1.8.0_261
+//        build_user : glen
+//        version_number : 1.0.0-20210611_0656_master
 //        project_name : a8-versions
+//        build_os : Mac OS X
 // 
 //      
 
 val scalaLibVersion = "2.12.12"
-val model3Version = "2.7.1-20201110_0934_master"
+val model3Version = "2.7.1-20210602_1321_master"
 
 scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
