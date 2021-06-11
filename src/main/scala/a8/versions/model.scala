@@ -132,6 +132,8 @@ object model {
           true
         case Some("js") | Some("haxe") | Some("sass") =>
           false
+        case _ =>
+          false
       }
 
     lazy val organization = repo.astRepo.organization
