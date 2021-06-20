@@ -286,9 +286,9 @@ lazy val root =
   }
 
   /** this is a copy of the RepoAssist object */
-  def repoAssistSource(includObject: Boolean) =
+  def repoAssistSource(includeObject: Boolean) =
   s"""
-${if ( includObject ) "object RepoAssist {" else ""}
+${if ( includeObject ) "object RepoAssist {" else ""}
 
   def readRepoUrl() = readRepoProperty("repo_url")
 
@@ -329,7 +329,7 @@ ${if ( includObject ) "object RepoAssist {" else ""}
     )
   }
 
-${if ( includObject ) "}" else ""}
+${if ( includeObject ) "}" else ""}
   """
 
 
