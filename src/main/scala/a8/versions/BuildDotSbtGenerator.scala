@@ -38,7 +38,7 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
   lazy val sbtGitVersion: String =
     getVersionFromDotProperties("sbtGitVersion", "0.9.3")
   lazy val sbtA8Version: String =
-    getVersionFromDotProperties("sbtA8Version", "1.1.0-20191220_1208")
+    getVersionFromDotProperties("sbtA8Version", "1.1.0-20210702_1452")
   lazy val sbtBloopVersion: String =
     getVersionFromDotProperties("sbtBloopVersion", "1.4.4")
   lazy val sbtVersion: String =
@@ -241,7 +241,7 @@ scalaVersion in Global := scalaLibVersion
 
 organization in Global := "${firstRepo.astRepo.organization}"
 
-version in Global := ${if ( singleRepo ) s"a8.sbt_a8.versionStamp(file(${q(".")}))" else q("1.0-SNAPSHOT") }
+version in Global := a8.sbt_a8.versionStamp(file("."))
 
 serverConnectionType in Global := ConnectionType.Local
 
