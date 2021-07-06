@@ -39,10 +39,8 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
     getVersionFromDotProperties("sbtGitVersion", "0.9.3")
   lazy val sbtA8Version: String =
     getVersionFromDotProperties("sbtA8Version", "1.1.0-20210702_1452")
-  lazy val sbtBloopVersion: String =
-    getVersionFromDotProperties("sbtBloopVersion", "1.4.4")
   lazy val sbtVersion: String =
-    getVersionFromDotProperties("sbtVersion", "1.3.10")
+    getVersionFromDotProperties("sbtVersion", "1.5.3")
   lazy val partialUnificationVersion: String =
     getVersionFromDotProperties("partialUnificationVersion", "1.1.2")
 
@@ -147,7 +145,7 @@ object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with 
   override def jsSettings: Seq[Def.Setting[_]] =
     super.jsSettings ++
     Seq(
-      (artifactPath in (Compile, fastOptJS)) := crossTarget.value / "classes" / "webapp" / "scripts" / ((moduleName in fastOptJS).value + "-fastopt.js")
+      Compile / fastOptJS / artifactPath := crossTarget.value / "classes" / "webapp" / "scripts" / ((fastOptJS / moduleName).value + "-fastopt.js")
     )
 
 ${repoAssistSource(false)}
@@ -190,8 +188,6 @@ credentials += readRepoCredentials()
 //addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "${sbtGitVersion}")
 
 addSbtPlugin("a8" % "sbt-a8" % "${sbtA8Version}")
-
-addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "${sbtBloopVersion}")
 
 // This plugin can be removed when using Scala 2.13.0 or above
 addSbtPlugin("org.lyranthe.sbt" % "partial-unification" % "${partialUnificationVersion}")
@@ -245,10 +241,6 @@ version in Global := a8.sbt_a8.versionStamp(file("."))
 
 serverConnectionType in Global := ConnectionType.Local
 
-bloopAggregateSourceDependencies in Global := true
-
-bloopExportJarClassifiers in Global := Some(Set("sources"))
-
 ${
         compositeBuild.resolvedModules.map { module =>
           s"""
@@ -295,7 +287,7 @@ ${if ( includeObject ) "object RepoAssist {" else ""}
   lazy val repoConfigFile = new java.io.File(System.getProperty("user.home") + "/.a8/repo.properties")
 
   lazy val repoProperties = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     val props = new java.util.Properties()
     if ( repoConfigFile.exists() ) {
       val input = new java.io.FileInputStream(repoConfigFile)
