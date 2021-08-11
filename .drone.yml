@@ -1,0 +1,15 @@
+---
+kind: pipeline
+type: exec
+name: default
+
+steps:
+
+- name: build
+  commands:
+   - sbt11 -Djline.terminal=jline.UnsupportedTerminal clean compile test:compile
+
+- name: test
+  commands:
+   - sbt11 -Djline.terminal=jline.UnsupportedTerminal clean test
+
