@@ -1,0 +1,15 @@
+---
+kind: pipeline
+type: exec
+name: default
+
+steps:
+
+- name: build
+  commands:
+   - nix-shell --run "sbt -Djline.terminal=jline.UnsupportedTerminal clean compile test:compile"
+
+- name: test
+  commands:
+   - nix-shell --run "sbt11 -Djline.terminal=jline.UnsupportedTerminal clean test"
+
