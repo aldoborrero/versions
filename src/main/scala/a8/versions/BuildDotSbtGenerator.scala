@@ -176,6 +176,9 @@ sbt.version=${sbtVersion}
       s"""
 ${header(scalaComment, true)}
 
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.9")
+addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.1.2")
+
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "${scalaJsVersion}")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "${scalaJsCrossProjectVersion}")
 //addSbtPlugin("io.get-coursier" % "sbt-coursier" % "${coursierJsVersion}")
@@ -232,12 +235,16 @@ scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 resolvers in Global += "a8-repo" at Common.readRepoUrl()
 
 publishTo in Global := Some("a8-repo-releases" at Common.readRepoUrl())
+//publishTo in Global := sonatypePublishToBundle.value
+//credentials in Global += Credentials(Path.userHome / ".sbt" / "sonatype.credentials")
 
 scalaVersion in Global := scalaLibVersion
 
 organization in Global := "${firstRepo.astRepo.organization}"
 
 version in Global := a8.sbt_a8.versionStamp(file("."))
+
+versionScheme in Global := Some("strict")
 
 serverConnectionType in Global := ConnectionType.Local
 
