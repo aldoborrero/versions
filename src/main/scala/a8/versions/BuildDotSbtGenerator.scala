@@ -38,7 +38,7 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
   lazy val sbtGitVersion: String =
     getVersionFromDotProperties("sbtGitVersion", "0.9.3")
   lazy val sbtA8Version: String =
-    getVersionFromDotProperties("sbtA8Version", "1.1.0-20210702_1452")
+    getVersionFromDotProperties("sbtA8Version", "1.1.0-20210925_1516")
   lazy val sbtVersion: String =
     getVersionFromDotProperties("sbtVersion", "1.5.3")
   lazy val partialUnificationVersion: String =
@@ -190,6 +190,8 @@ credentials += readRepoCredentials()
 //libraryDependencies += "org.slf4j" % "slf4j-nop" % "${slf4jNopVersion}"
 //addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "${sbtGitVersion}")
 
+// use this one if you need dobby
+//addSbtPlugin("a8" % "sbt-a8" % "1.1.0-20210702_1452")
 addSbtPlugin("a8" % "sbt-a8" % "${sbtA8Version}")
 
 // This plugin can be removed when using Scala 2.13.0 or above

@@ -11,4 +11,4 @@ steps:
 
 - name: test
   commands:
-   - nix-shell --run "sbt11 -Djline.terminal=jline.UnsupportedTerminal clean test"
+   - nix-shell --run "sbt -Djline.terminal=jline.UnsupportedTerminal clean test"
