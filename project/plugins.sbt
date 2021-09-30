@@ -30,7 +30,7 @@ credentials += readRepoCredentials()
 //libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"
 //addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.9.3")
 
-addSbtPlugin("a8" % "sbt-a8" % "1.1.0-20191220_1208")
+addSbtPlugin("a8" % "sbt-a8" % "1.1.0-20210930_1248")
 
 addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.4.4")
 
