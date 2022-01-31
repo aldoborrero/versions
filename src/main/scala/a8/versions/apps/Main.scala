@@ -2,7 +2,7 @@ package a8.versions.apps
 
 import a8.appinstaller.AppInstallerConfig.LibDirKind
 import a8.appinstaller.{AppInstaller, AppInstallerConfig, InstallBuilder}
-import a8.common.JsonAssist
+import a8.shared.FileSystem
 import a8.versions.Build.BuildType
 import a8.versions._
 import a8.versions.Upgrade.LatestArtifact
@@ -10,8 +10,7 @@ import a8.versions.apps.Main.{Conf, Runner}
 import org.rogach.scallop.{ScallopConf, Subcommand}
 import a8.versions.predef._
 import coursier.core.{ModuleName, Organization}
-import m3.fs._
-import play.api.libs.json.Json
+import a8.shared.SharedImports._
 
 import scala.annotation.tailrec
 
@@ -141,7 +140,7 @@ class Main(args: Seq[String]) {
 
   implicit def buildType = BuildType.ArtifactoryBuild
 
-  lazy val userHome = m3.fs.dir(System.getProperty("user.home"))
+  lazy val userHome = FileSystem.userHome
   lazy val a8Home = userHome \\ ".a8"
   lazy val a8VersionsCache = userHome \\ ".a8" \\ "versions" \\ "cache"
 
@@ -195,7 +194,7 @@ class Main(args: Seq[String]) {
     val inventoryFiles =
       Some(inventoryDir \ s"${resolvedVersion.toString}.json") ++ latest.map(inventoryDir \ _)
 
-    val inventoryJson = toJsonPrettyStr(installBuilder.inventory)
+    val inventoryJson = installBuilder.inventory.prettyJson
 
     inventoryFiles.foreach(_.write(inventoryJson))
 
@@ -262,7 +261,7 @@ class Main(args: Seq[String]) {
 
   def runGenerateBuildDotSbt(): Unit = {
 
-    val d = m3.fs.dir(".")
+    val d = FileSystem.dir(".")
 
     val buildDotSbtGenerator = new BuildDotSbtGenerator(d)
     buildDotSbtGenerator.run()
@@ -279,7 +278,7 @@ class Main(args: Seq[String]) {
   }
 
   def runVersionBump(): Unit = {
-    Build.upgrade(m3.fs.dir("."))
+    Build.upgrade(FileSystem.dir("."))
   }
 
 }

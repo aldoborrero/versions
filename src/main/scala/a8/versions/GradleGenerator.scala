@@ -1,21 +1,20 @@
 package a8.versions
 
+
+import a8.shared.FileSystem
+import a8.shared.FileSystem.Directory
 import a8.versions.ast.{StringIdentifier, VariableIdentifier}
 import a8.versions.model.{CompositeBuild, ResolvedModule}
-import m3.fs.FileSystem
-import m3.predef._
-import net.model3.chrono.DateTime
-import net.model3.util.Versioning
 
 import java.net.InetAddress
-import scala.collection.JavaConverters._
+import a8.shared.SharedImports._
 
-class GradleGenerator(codeRootDir: m3.fs.Directory) {
+class GradleGenerator(codeRootDir: Directory) {
 
-  val versioning: Versioning = Versioning.getVersioning(getClass)
+  val versioning: Versioning = Versioning(getClass)
 
   object files {
-    val settingsDotGradleFile: FileSystem#TFile = codeRootDir \ "settings.gradle"
+    val settingsDotGradleFile: FileSystem.File = codeRootDir \ "settings.gradle"
   }
 
   lazy val compositeBuild = CompositeBuild(codeRootDir)

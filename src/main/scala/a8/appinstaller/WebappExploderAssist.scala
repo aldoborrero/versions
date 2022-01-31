@@ -1,16 +1,13 @@
 package a8.appinstaller
 
+import a8.shared.FileSystem.{Directory, File}
+import a8.shared.app.Logging
+
 import java.io.InputStream
 import java.io.PrintStream
 import java.net.URL
 import java.util.jar.JarFile
-
 import a8.versions.WebappExploder
-import m3.predef._
-import m3.fs._
-import net.model3.newfile.Directory
-
-import scala.collection.JavaConverters._
 
 object WebappExploderAssist extends Logging {
 
@@ -21,11 +18,11 @@ object WebappExploderAssist extends Logging {
 
   private val WebappPrefix = "webapp/"
 
-  def apply(installDir: m3.fs.Directory, jarFiles: Iterable[m3.fs.File]): Unit = {
+  def apply(installDir: Directory, jarFiles: Iterable[File]): Unit = {
 
     WebappExploder.explodeEntries(
       classpathEntries = jarFiles,
-      target = new net.model3.newfile.Directory(installDir.subdir(WebappCompositeFolderName).canonicalPath),
+      target = installDir.subdir(WebappCompositeFolderName),
     )
 
   }

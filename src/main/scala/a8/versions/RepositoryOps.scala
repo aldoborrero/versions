@@ -1,8 +1,9 @@
 package a8.versions
 
+import a8.shared.FileSystem
+
 import java.io.{FileInputStream, StringReader}
 import java.util.Properties
-
 import a8.versions.Build.BuildType
 import a8.versions.predef._
 import com.softwaremill.sttp.{Uri, sttp}
@@ -11,7 +12,6 @@ import coursier.core.{Authentication, Module, ResolutionProcess}
 import coursier.maven.MavenRepository
 import coursier.util.{Artifact, EitherT, Task}
 import coursier.{Dependency, LocalRepositories, Resolution}
-import m3.fs.dir
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -26,7 +26,7 @@ object RepositoryOps {
     import java.io.File
 
     lazy val rawLocalArtifacts: Seq[Either[ArtifactError, File]] =
-        resolution.artifacts.map(Cache.default.file(_).run.unsafeRun())
+        resolution.artifacts().map(Cache.default.file(_).run.unsafeRun())
 
     lazy val localArtifacts: Seq[File] =
       rawLocalArtifacts
@@ -38,7 +38,7 @@ object RepositoryOps {
 
   }
 
-  lazy val userHome = dir(System.getProperty("user.home"))
+  lazy val userHome = FileSystem.dir(System.getProperty("user.home"))
 
   lazy val ivyLocal = userHome \\ ".ivy2" \\ "local"
 
@@ -89,7 +89,7 @@ object RepositoryOps {
     val moduleDir = ivyLocal.subdir(module.organization.value).subdir(module.name.value)
 
     moduleDir
-      .subdirs
+      .subdirs()
       .flatMap { d =>
         Version.parse(d.name).toOption
       }

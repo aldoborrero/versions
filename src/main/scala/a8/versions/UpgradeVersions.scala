@@ -1,9 +1,10 @@
 package a8.versions
 
+import a8.shared.FileSystem.File
 import a8.versions.Build.BuildType
-import m3.fs.File
+
 import java.util.Properties
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object UpgradeVersions {
 
@@ -11,7 +12,7 @@ object UpgradeVersions {
 
     lazy val versionInfo: Map[String, String] = {
       val props = new Properties()
-      versionDotPropsFile.read(props.load)
+      versionDotPropsFile.withInputStream(props.load)
       props.asScala.toMap
     }
 

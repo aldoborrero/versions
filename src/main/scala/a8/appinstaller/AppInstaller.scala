@@ -1,12 +1,13 @@
 package a8.appinstaller
 
 
-import a8.common.JsonAssist
-import m3.fs.{LocalFileSystem, _}
+
+import a8.shared.FileSystem
 
 import language.postfixOps
 import a8.versions.predef._
-import play.api.libs.json.{Json, Writes}
+import a8.shared.SharedImports._
+import predef.tryLog
 
 object AppInstaller {
 
@@ -33,7 +34,7 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
 
   lazy val installBuilder = InstallBuilder(config)
 
-  lazy val backupDir: LocalFileSystem.TDirectory = config.resolvedInstallDir \\ "_bak" \\ net.model3.newfile.Path.getFileSystemCompatibleTimestamp
+  lazy val backupDir: FileSystem.Directory = config.resolvedInstallDir \\ "_bak" \\ FileSystem.fileSystemCompatibleTimestamp()
 
   def execute(): Unit = {
 
@@ -44,9 +45,9 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
     installBuilder.build()
 
     if ( config.resolveWebappExplode )
-      WebappExploderAssist(config.resolvedInstallDir, installBuilder.inventory.classpath.map(m3.fs.file))
+      WebappExploderAssist(config.resolvedInstallDir, installBuilder.inventory.classpath.map(FileSystem.file))
 
-    installBuilder.appDir \ "install-inventory.json" write(toJsonPrettyStr(installBuilder.inventory))
+    installBuilder.appDir \ "install-inventory.json" write(installBuilder.inventory.prettyJson)
 
   }
 
@@ -55,7 +56,7 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
       backupDir.makeDirectories()
       config
         .resolvedInstallDir
-        .entries
+        .entries()
         .filter(e => !AppInstaller.standardAppDirectores.contains(e.name))
         .foreach { p =>
           p.moveTo(backupDir)
@@ -66,7 +67,7 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
 
     List("config", ".config")
       .map(cd => (config.resolvedInstallDir \\ cd))
-      .filter(_.exists)
+      .filter(_.exists())
       .foreach { cd =>
 
         logger.debug(s"backing up ${cd.canonicalPath} except for: ${AppInstaller.excludeFromConfigDirBackup.map(d => s"${cd.name}/${d}/").mkString(", ")}")
@@ -75,13 +76,13 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
         backupConfigDir.makeDirectory()
 
         cd
-          .files
+          .files()
           .foreach { file =>
             file.copyTo(backupConfigDir)
           }
 
         cd
-          .subdirs
+          .subdirs()
           .filter(f => !AppInstaller.excludeFromConfigDirBackup.contains(f.name))
           .foreach { dir =>
             val bd = (backupConfigDir \\ dir.name)

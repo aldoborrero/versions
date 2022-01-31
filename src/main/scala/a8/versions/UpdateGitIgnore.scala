@@ -1,10 +1,11 @@
 package a8.versions
 
-import m3.fs._
+
+import a8.shared.FileSystem
 
 import scala.collection.immutable.List
 import scala.collection.mutable.HashSet
-import a8.common.CommonOps._
+import a8.shared.SharedImports._
 
 object UpdateGitIgnore {
 
@@ -35,22 +36,25 @@ object UpdateGitIgnore {
 
   lazy val userSuppliedFileTypesToIgnore: List[String] = {
     val f = RepositoryOps.userHome \\ ".a8" \ "gitignore.template"
-    f.exists.option(f.readText.linesIterator.toList.filter(_.isNotBlank)).getOrElse(Nil)
+    if ( f.exists() )
+      f.readAsString().linesIterator.toList.filter(_.isNotBlank)
+    else
+      Nil
   }
 
   lazy val fileTypesToIgnore = explicitFileTypesToIgnore ++ userSuppliedFileTypesToIgnore
 
   def update(gitIgnoreFile0: java.io.File): Unit = {
-    val gitIgnoreFile = file(gitIgnoreFile0.getCanonicalPath)
-    if (!gitIgnoreFile.exists) {
+    val gitIgnoreFile = FileSystem.file(gitIgnoreFile0.getCanonicalPath)
+    if (!gitIgnoreFile.exists()) {
       gitIgnoreFile.write("")
     }
     println("updating:  " + gitIgnoreFile.canonicalPath)
-    val text = Option(gitIgnoreFile.lines)
+    val text = gitIgnoreFile.readAsStringOpt().map(_.linesIterator.toList)
 
     text match {
       case None => {
-        gitIgnoreFile.withWriter(out => {
+        gitIgnoreFile.withPrintStream(out => {
           fileTypesToIgnore.foreach(s => out.println(s))
         })
       }
@@ -65,7 +69,7 @@ object UpdateGitIgnore {
           newGenericIgnoreTypes.+=(ft)
         })
 
-        gitIgnoreFile.withWriter{ out => 
+        gitIgnoreFile.withPrintStream { out =>
           newGenericIgnoreTypes.foreach(s => out.println(s))
           out.println("")
           specificFiles.foreach(s => if (!s.equals("")) out.println(s))

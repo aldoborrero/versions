@@ -1,27 +1,26 @@
 package a8.versions.apps
 
-import a8.common.CascadingHocon
-import a8.common.HoconOps._
-import a8.common.CommonOps._
+import a8.shared.FileSystem.Directory
+import a8.shared.{CascadingHocon, ConfigMojo, FileSystem}
 import a8.versions.BuildDotSbtGenerator
 import a8.versions.model.CompositeBuild
-import m3.predef._
 
 import scala.util.Try
 
 object GenerateBuildDotSbt extends App {
 
-  lazy val homeDir = m3.fs.dir(System.getProperty("user.home"))
+
+  lazy val homeDir = FileSystem.userHome
 
 
   lazy val path =
     Try {
-      CascadingHocon.config.readPath[String]("GenerateBuildDotSbt.path")
+      ConfigMojo().GenerateBuildDotSbt.path.as[String]
     }
 
   lazy val pathi =
     Try {
-      CascadingHocon.config.readPath[Iterable[String]]("GenerateBuildDotSbt.paths")
+      ConfigMojo().GenerateBuildDotSbt.paths.as[Iterable[String]]
     }
 
   lazy val paths =
@@ -47,7 +46,7 @@ object GenerateBuildDotSbt extends App {
     run(p)
   }
 
-  def run(d: m3.fs.Directory) = {
+  def run(d: Directory) = {
     val g = new BuildDotSbtGenerator(d)
     println(s"running ${d.canonicalPath}")
     try {

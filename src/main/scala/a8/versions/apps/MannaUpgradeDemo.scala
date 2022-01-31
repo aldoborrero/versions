@@ -1,8 +1,6 @@
 package a8.versions.apps
 
 import java.util.Date
-import m3.Exec
-import m3.fs._
 
 object MannaUpgradeDemo {
 

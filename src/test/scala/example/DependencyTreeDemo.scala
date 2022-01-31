@@ -19,7 +19,7 @@ object DependencyTreeDemo {
 
     val searchStr = "scala-compiler"
 
-    val artifacts = tree.resolution.artifacts.filter(_.url.contains(searchStr))
+    val artifacts = tree.resolution.artifacts().filter(_.url.contains(searchStr))
 
     val errors = tree.resolution.errors
 

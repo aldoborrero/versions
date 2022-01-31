@@ -3,17 +3,14 @@ package a8.appinstaller
 
 import java.nio.file.{Files, Path, Paths}
 import java.util
-
 import a8.appinstaller.AppInstallerConfig.LibDirKind
+import a8.shared.FileSystem.{Directory, File}
+import a8.shared.app.Logging
 import a8.versions.Build.BuildType
 import a8.versions.RepositoryOps.DependencyTree
 import a8.versions.{RepositoryOps, Version, ast}
 import a8.versions.ast.Dependency
-import m3.fs._
-
-import collection.JavaConverters._
 import predef._
-import a8.common.logging.Logging
 
 case class InstallBuilder(
   unresolvedConfig: AppInstallerConfig
@@ -42,11 +39,14 @@ case class InstallBuilder(
   lazy val dependencyResult: DependencyTree =
     RepositoryOps.resolveDependencyTree(unresolvedArtifact.asCoursierModule, rootVersion)(BuildType.ArtifactoryBuild)
 
-  private def buildLibDir() {
-    libDir.makeDirectories
-    libDir.entries.foreach {
-      case f: File => f.delete()
-      case d: Directory => d.deleteTree()
+  private def buildLibDir() = {
+    libDir.makeDirectories()
+    libDir.entries().foreach {
+      case f: File =>
+        f.delete()
+      case d: Directory =>
+        d.deleteChildren()
+        d.delete()
     }
 
     for (fromFile <- dependencyResult.localArtifacts) {

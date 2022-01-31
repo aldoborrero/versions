@@ -10,7 +10,7 @@ object RepoAssist {
   lazy val repoConfigFile = new java.io.File(System.getProperty("user.home") + "/.a8/repo.properties")
 
   lazy val repoProperties = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     val props = new java.util.Properties()
     if ( repoConfigFile.exists() ) {
       val input = new java.io.FileInputStream(repoConfigFile)

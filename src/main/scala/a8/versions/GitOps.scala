@@ -1,13 +1,12 @@
 package a8.versions
 
-import m3.predef._
-import m3.Exec
+
+import a8.shared.FileSystem.Directory
+import a8.shared.SharedImports._
 
 object GitOps {
 
-
-
-  def branchName(projectDir: m3.fs.Directory) = {
+  def branchName(projectDir: Directory) = {
     val gitLogStdout =
       Exec(Utilities.resolvedGitExec, "log", "-n", "1", "--pretty=%d", "HEAD")
         .inDirectory(projectDir)
