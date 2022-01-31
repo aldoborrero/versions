@@ -1,28 +1,31 @@
 package a8.versions
 
+import a8.shared.FileSystem
+import a8.shared.FileSystem.Directory
+
 import java.net.InetAddress
-
 import a8.versions.model.CompositeBuild
-import m3.fs.FileSystem
-import net.model3.chrono.DateTime
-import net.model3.util.Versioning
 
-import scala.collection.JavaConverters._
-import m3.predef._
+import java.time.LocalDateTime
+import a8.shared.SharedImports._
 
-class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
+object BuildDotSbtGenerator {
 
-  val versioning: Versioning = Versioning.getVersioning(getClass)
+}
+
+class BuildDotSbtGenerator(codeRootDir: Directory) {
+
+  val versioning: Versioning = Versioning(getClass)
 
   val scalaComment: String = "//"
   val sbtComment: String = "#"
 
   object files {
-    val buildDotSbtFile: FileSystem#TFile = codeRootDir \ "build.sbt"
-    val projectDirectory: FileSystem#TDirectory = codeRootDir \\ "project"
-    val buildDotPropertiesFile: FileSystem#TFile = projectDirectory \ "build.properties"
-    val plugins: FileSystem#TFile = projectDirectory \ "plugins.sbt"
-    val common: FileSystem#TFile = projectDirectory \ "Common.scala"
+    val buildDotSbtFile: FileSystem.File = codeRootDir \ "build.sbt"
+    val projectDirectory: FileSystem.Directory = codeRootDir \\ "project"
+    val buildDotPropertiesFile: FileSystem.File = projectDirectory \ "build.properties"
+    val plugins: FileSystem.File = projectDirectory \ "plugins.sbt"
+    val common: FileSystem.File = projectDirectory \ "Common.scala"
   }
 
   lazy val scalaJsCrossProjectVersion: String =
@@ -76,10 +79,10 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
   def getVersionFromDotProperties(versionName: String, defaultValue: String): String =
     firstRepo.versionDotPropsMap.getOrElse(versionName, defaultValue)
 
-  def writeIfChanged(newContents: String, outputFile: FileSystem#TFile, comment: String): Unit = {
+  def writeIfChanged(newContents: String, outputFile: FileSystem.File, comment: String): Unit = {
     val doWrite =
-      if ( outputFile.exists ) {
-        val currentContentWithoutComments: List[String] = outputFile.lines.filterNot(_.startsWith(comment))
+      if ( outputFile.exists() ) {
+        val currentContentWithoutComments: List[String] = outputFile.readAsString().linesIterator.toList.filterNot(_.startsWith(comment))
         val newContentWithoutComments: List[String] = newContents.split("\n").toList.filterNot(_.startsWith(comment))
         val hasContentChanged = !currentContentWithoutComments.equals(newContentWithoutComments)
         hasContentChanged
@@ -96,11 +99,11 @@ class BuildDotSbtGenerator(codeRootDir: m3.fs.Directory) {
        |
        |This file is generated from modules.conf using `a8-versions build_dot_sbt`
        |
-       |It was generated at ${new DateTime} by ${System.getProperty("user.name")} on ${InetAddress.getLocalHost.getHostName}
+       |It was generated at ${LocalDateTime.now()} by ${System.getProperty("user.name")} on ${InetAddress.getLocalHost.getHostName}
        |
        |a8-versions build/versioning info follows
        |
-       |${versioning.getProperties.asScala.map(t => t._1 + " : " + t._2).mkString("\n").indent("       ")}
+       |${versioning.properties.map(t => t._1 + " : " + t._2).mkString("\n").indent("       ")}
        |
      """.stripMargin.linesIterator.map(comment + " " + _).mkString("\n")
   }
@@ -158,7 +161,7 @@ ${repoAssistSource(false)}
   }
 
   def generateBuildProperties(): Unit = {
-    if ( !files.buildDotPropertiesFile.exists ) {
+    if ( !files.buildDotPropertiesFile.exists() ) {
       header(sbtComment, false)
       val content =
         s"""

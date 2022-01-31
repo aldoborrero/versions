@@ -1,40 +1,46 @@
 package a8.appinstaller
 
 
+import a8.shared.{CompanionGen, RuntimePlatform}
+import a8.shared.FileSystem.{Directory, File}
+import a8.shared.app.Logging
+
 import java.io.ByteArrayInputStream
 import java.nio.file.attribute.PosixFilePermission
-import java.nio.file.{Paths, Files}
-
-import m3.json.JsonToString
-import m3.predef._
-import m3.fs._
-import net.model3.lang.SystemX
+import java.nio.file.{Files, Paths}
 import org.apache.tools.ant.DirectoryScanner
 import predef._
+import a8.shared.SharedImports._
+import a8.shared.HoconOps._
+import MxJarMetadata._
 
-object JarMetadata {
+object JarMetadata extends MxJarMetadata {
 
   def process(appDir: Directory, jarFile: File): Unit = {
     ZipAssist.readEntryFromZipFile(jarFile, "META-INF/a8-deployer.json").foreach { json =>
       val jv = parseHocon(json)
-      jv.deserialize[JarMetadata].apply(appDir)
+      jv.read[JarMetadata].apply(appDir)
     }
   }
 
+  object Explode extends MxExplode
+  @CompanionGen
   case class Explode(
     jar: String,
     includes: Option[String]
-  ) extends JsonToString
-  
+  )
+
+  object SymLink extends MxSymLink
+  @CompanionGen
   case class SymLink(
     link: String,
     target: String
-  ) extends JsonToString
+  )
 
 }
 
 
-
+@CompanionGen
 case class JarMetadata(
   explode: List[JarMetadata.Explode],
   chmod_exec: List[String],
@@ -75,7 +81,7 @@ case class JarMetadata(
       }
     }
 
-    def chmoder() = if (!SystemX.isWindows) {
+    def chmoder() = if (!RuntimePlatform.isWindows) {
       chmod_exec.foreachx { x =>
         val scanner = new DirectoryScanner
         scanner.setIncludes(Array(x))
@@ -106,7 +112,8 @@ case class JarMetadata(
     chmoder()
     symlinker()
 
-    metaInfDir.deleteTree()
+    metaInfDir.deleteChildren()
+    metaInfDir.delete()
 
   }
 

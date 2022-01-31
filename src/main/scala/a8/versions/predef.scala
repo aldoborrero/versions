@@ -1,26 +1,46 @@
 package a8.versions
 
-import a8.common.JsonAssist
 import com.softwaremill.sttp.HttpURLConnectionBackend
-import play.api.libs.json.Writes
+import wvlet.log.Logger
 
-import scala.collection.convert.{DecorateAsJava, DecorateAsScala}
-
+import scala.collection.convert.{AsJavaExtensions, AsScalaExtensions}
 
 object predef extends predef
 
 trait predef
-  extends DecorateAsJava
-  with DecorateAsScala
-  with m3.predef
+  extends AsJavaExtensions
+  with AsScalaExtensions
 {
 
   implicit val backend = HttpURLConnectionBackend()
 
-  def toJsonPrettyStr[A : Writes](a: A): String = {
-    // because the json play pretty print is not that good
-    val jsonStr = JsonAssist.toJsonStr(a)
-    val jv = m3.json.JsonAssist.parseJson(jsonStr)
-    m3.json.JsonAssist.prettyPrint(jv)
+  type Logging = a8.shared.app.Logging
+
+
+  type Closable = { def close(): Unit }
+  def using[A <: Closable, B](r: => A)(f: A => B)(implicit logger: Logger): B = {
+    val resource = r
+    try {
+      f(resource)
+    } finally {
+      forceClose(resource)
+    }
   }
+
+  def using[A <: Closable, B](l:List[A])(f: => B)(implicit logger: Logger): B = {
+    try {
+      f
+    } finally {
+      l.foreach(r=>forceClose(r))
+    }
+  }
+
+  def forceClose[A <: Closable](closeMe: A)(implicit logger: Logger) =
+    try {
+      import scala.language.reflectiveCalls
+      closeMe.close()
+    } catch {
+      case th: Throwable => logger.debug(s"swallowing failed close on ${closeMe}", th)
+    }
+
 }

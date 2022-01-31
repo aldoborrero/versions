@@ -1,16 +1,20 @@
 package a8.appinstaller
 
 
-import java.io.{ IOException, FileOutputStream, FileInputStream, File => JFile }
-import java.util.zip.{ ZipEntry, ZipInputStream }
-import m3.fs._
-import m3.predef._
-import org.apache.tools.ant.{ Project, Target }
+import a8.shared.FileSystem.{Directory, File}
+import a8.shared.app.Logging
+
+import java.io.{FileInputStream, FileOutputStream, IOException, File => JFile}
+import java.util.zip.{ZipEntry, ZipInputStream}
+import org.apache.tools.ant.{Project, Target}
 import org.apache.tools.ant.taskdefs.Expand
 import org.apache.tools.ant.types.PatternSet
 import org.apache.tools.zip.ZipFile
+
 import language.implicitConversions
 import predef._
+import a8.versions.predef.using
+import a8.shared.SharedImports._
 
 object ZipAssist extends Logging {
 

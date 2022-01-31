@@ -1,37 +1,27 @@
 package a8.versions
 
 
-import a8.common.CommonOps._
-import play.api.libs.functional.syntax.unlift
-import play.api.libs.json.{JsPath, Json, Reads, Writes}
-import a8.common.Lenser.{Lens, LensImpl}
-import play.api.libs.json.{JsPath, Reads, Writes}
-import play.api.libs.json._
-import play.api.libs.json.Reads._
-import play.api.libs.functional.syntax._
-import a8.common.CommonOps._
-import a8.common.CompanionGen
-import m3.Chord
-import Chord._
-import a8.common.HoconOps._
+import a8.shared.Chord
+import a8.shared.FileSystem.Directory
+import a8.shared.HoconOps.parseHocon
+import a8.shared.SharedImports._
+import a8.shared.HoconOps._
 
 object model {
 
   object impl {
     /** quote string */
     def q(s: String): Chord = {
-      '"' + s + '"'
+      Chord.str('"'.toString + s + '"')
     }
   }
 
-  import Json._
-
   object CompositeBuild {
-    def apply(codeRoot: m3.fs.Directory): CompositeBuild = {
+    def apply(codeRoot: Directory): CompositeBuild = {
 
       val f = codeRoot \ "modules.conf"
-      if ( f.exists ) {
-        CompositeBuild(List(f.parentDir -> None))
+      if ( f.exists() ) {
+        CompositeBuild(List(f.parent -> None))
 
       } else {
 
@@ -40,10 +30,10 @@ object model {
 
         val moduleConfs =
           codeRoot
-            .subdirs
+            .subdirs()
             .map(_ \ "modules.conf")
 //            .map{ p => println(p) ; p }
-            .filter(_.exists)
+            .filter(_.exists())
 
         if ( moduleConfs.isEmpty ) {
           sys.error("no modules.conf found")
@@ -52,7 +42,7 @@ object model {
         val repos =
           moduleConfs
             .map { f =>
-              f.parentDir -> Some(RepoPrefix(f.parentDir.name, f.parentDir.name))
+              f.parent -> Some(RepoPrefix(f.parent.name, f.parent.name))
             }
         CompositeBuild(repos)
       }
@@ -60,13 +50,13 @@ object model {
   }
 
   case class CompositeBuild(
-    repos: Iterable[(m3.fs.Directory, Option[RepoPrefix])]
+    repos: Iterable[(Directory, Option[RepoPrefix])]
   ) {
 
     lazy val resolvedRepos =
       repos.map(t => ResolvedRepo(this, t._1, t._2))
 
-    lazy val resolvedModules =
+    lazy val resolvedModules: Iterable[ResolvedModule] =
       for (
         repo <- resolvedRepos ;
         module <- repo.astRepo.modules
@@ -76,7 +66,7 @@ object model {
 
   case class ResolvedRepo(
     compositeBuild: CompositeBuild,
-    repoRootDir: m3.fs.Directory,
+    repoRootDir: Directory,
     prefix: Option[RepoPrefix],
   ) {
 
@@ -88,14 +78,22 @@ object model {
     }
 
 
-    lazy val astRepo =
-      parseHocon(repoRootDir.file("modules.conf").readText)
-        .read[ast.Repo]
+    lazy val astRepo = {
+      val file = repoRootDir.file("modules.conf")
+      try {
+        parseHocon(file.readAsString())
+          .read[ast.Repo]
+      } catch {
+        case e: Exception =>
+          println(s"error processing ${file}")
+          throw e
+      }
+    }
 
     lazy val versionDotPropsMap: Map[String, String] =
       repoRootDir
         .file("version.properties")
-        .readText
+        .readAsString()
         .linesIterator
         .map(_.trim)
         .filterNot(l => l.length == 0 || l.startsWith("#"))
@@ -264,7 +262,11 @@ object model {
           s".${settingName}(",
           "  libraryDependencies ++= Seq("
         )
-        val dependenciesLines = deps.map(_.asSbt(versionDotPropsMap)).map("    " + _.trim + ",")
+
+        val dependenciesLines =
+          deps
+            .map(_.asSbt(versionDotPropsMap))
+            .map(d => "    " + d.toString.trim + ",")
 
         val trailer = List("  )", ")")
 
@@ -276,6 +278,5 @@ object model {
     }
 
   }
-
 
 }

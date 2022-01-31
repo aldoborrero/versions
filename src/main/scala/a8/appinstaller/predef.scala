@@ -1,18 +1,30 @@
 package a8.appinstaller
 
 
-import m3.json.JsonAssist
-import m3.predef._
-import m3.fs._
-import java.io.{ File => JFile }
+import a8.shared.app.Logging
+import a8.shared.FileSystem
+import wvlet.log.Logger
+
+import java.io.{File => JFile}
 import language.implicitConversions
+import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
+import a8.shared.SharedImports._
 
-object predef extends JsonAssist with Logging {
+object predef extends Logging {
 
-  implicit def serializer = inject[m3.json.Serialization.Serializer]
+  implicit def toJavaIoFile(p: FileSystem.Path): JFile = new JFile(p.canonicalPath)
+  implicit def toM3FsFile(f: JFile): FileSystem.File = FileSystem.file(f.getAbsolutePath)
+  implicit def toM3FsDir(f: JFile): FileSystem.Directory = FileSystem.dir(f.getAbsolutePath)
 
-  implicit def toJavaIoFile(p: FileSystem#Path): JFile = new JFile(p.canonicalPath)
-  implicit def toM3FsFile(f: JFile): m3.fs.File = file(f.getAbsolutePath)
-  implicit def toM3FsDir(f: JFile): m3.fs.Directory = dir(f.getAbsolutePath)
+  def tryLog[A](context: String)(fn: A)(implicit logger: Logger): Try[A] = {
+    try {
+      Success(fn)
+    } catch {
+      case IsNonFatal(th) =>
+        logger.warn(context, th)
+        Failure(th)
+    }
+  }
 
 }

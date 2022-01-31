@@ -19,26 +19,25 @@
 // 
 //      
 
-val scalaLibVersion = "2.12.12"
+val scalaLibVersion = "2.13.6"
 val model3Version = "2.7.1-20210602_1321_master"
+val appVersion = a8.sbt_a8.versionStamp(file("."))
+
 
 scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
-resolvers in Global += "a8-repo" at Common.readRepoUrl()
+//resolvers in Global += "a8-repo" at Common.readRepoUrl()
 
-publishTo in Global := Some("a8-repo-releases" at Common.readRepoUrl())
+//publishTo in Global := sonatypePublishToBundle.value
+credentials in Global += Credentials(Path.userHome / ".sbt" / "sonatype.credentials")
 
 scalaVersion in Global := scalaLibVersion
 
 organization in Global := "a8"
 
-version in Global := a8.sbt_a8.versionStamp(file("."))
+version in Global := appVersion
 
 serverConnectionType in Global := ConnectionType.Local
-
-bloopAggregateSourceDependencies in Global := true
-
-bloopExportJarClassifiers in Global := Some(Set("sources"))
 
 
 lazy val versions =
@@ -46,15 +45,15 @@ lazy val versions =
     .jvmProject("a8-versions", file("."), "versions")
     .settings(
       libraryDependencies ++= Seq(
-        "io.get-coursier" %% "coursier" % "2.0.0-RC6" % "compile",
-        "io.get-coursier" %% "coursier-cache" % "2.0.0-RC6" % "compile",
-        "com.softwaremill.sttp" %% "core" % "1.1.11" % "compile",
-        "org.scala-lang.modules" %% "scala-xml" % "1.1.0" % "compile",
-        "com.geirsson" %% "fastparse" % "1.0.0" % "compile",
-        "a8" %% "m3-common" % model3Version % "compile",
-        "a8" %% "m3-impl-api" % model3Version % "compile",
-        "com.beachape" %% "enumeratum-play-json" % "1.5.14" % "compile",
-        "org.rogach" %% "scallop" % "3.1.2" % "compile",
+        "ant" % "ant" % "1.6.2" % "compile",
+        "io.get-coursier" %% "coursier" % "2.0.16" % "compile",
+        "io.get-coursier" %% "coursier-cache" % "2.0.16" % "compile",
+        "com.softwaremill.sttp" %% "core" % "1.7.2" % "compile",
+//        "org.scala-lang.modules" %% "scala-xml" % "1.1.0" % "compile",
+        "org.scalameta" %% "fastparse" % "1.0.1",
+//        "com.beachape" %% "enumeratum-play-json" % "1.5.14" % "compile",
+        "org.rogach" %% "scallop" % "4.1.0" % "compile",
+        "io.accur8" %% "a8-sync-api" % "1.0.0-20220120_1124_master",
       )
     )
 

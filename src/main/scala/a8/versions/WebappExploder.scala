@@ -1,22 +1,22 @@
 package a8.versions
 
+
+import a8.shared.FileSystem
+import FileSystem.Directory
+import FileSystem.Path
+import FileSystem.File
+
 import java.io.InputStream
 import java.io.PrintStream
 import java.net.URL
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.jar.JarFile
-
-import net.model3.io.Pipe
-import net.model3.lang.ClassX
-import net.model3.newfile.{Directory, File, Path}
-//import net.model3.newfile.Directory
-//import net.model3.newfile.File
-//import net.model3.newfile.Path
-
 import predef._
 
-object WebappExploder extends ImplicitLogging {
+import java.io
+
+object WebappExploder extends Logging {
 
   private val WebappPrefix = "webapp/"
 
@@ -32,23 +32,25 @@ object WebappExploder extends ImplicitLogging {
 //    )
 //  }
 
-  def explodeEntries(classpathEntries: Iterable[m3.fs.FileSystem#Path], target: Directory, checkForPublicDescriptor: Boolean = true): Unit = {
+  def explodeEntries(classpathEntries: Iterable[FileSystem.Path], target: Directory, checkForPublicDescriptor: Boolean = true): Unit = {
 
     logger.debug("started explosion")
 
-    target.deleteTree()
+    target.delete()
     target.makeDirectories()
 
-    val tracking = target.getParent.file("tracking.txt").createPrintStream()
-
-    classpathEntries
-      .foreach(f => explodeFromSingleUrl(new java.io.File(f.canonicalPath).toURI.toURL, target, tracking, checkForPublicDescriptor))
-
-    tracking.close()
+    target
+      .parentOpt
+      .get
+      .file("tracking.txt")
+      .withPrintStream { tracking =>
+        classpathEntries
+          .foreach(f => explodeFromSingleUrl(new java.io.File(f.canonicalPath).toURI.toURL, target, tracking, checkForPublicDescriptor))
+      }
 
   }
 
-  def explodeFromSingleUrl(url: URL, target: Directory, tracking: PrintStream, checkForPublicDescriptor: Boolean = true): Unit = {
+  def explodeFromSingleUrl(url: URL, target: FileSystem.Directory, tracking: PrintStream, checkForPublicDescriptor: Boolean = true): Unit = {
 
     val urlstr = URLDecoder.decode(url.toString, StandardCharsets.UTF_8.toString)
 
@@ -85,7 +87,8 @@ object WebappExploder extends ImplicitLogging {
     } else if ( urlAsFile.exists(file => file.isFile && file.getName.endsWith(".jar")) ) {
       processJarFile(urlAsFile.get.getCanonicalPath)
     } else if ( urlAsFile.exists(_.isDirectory) ) {
-      val dir = new Directory(url)
+      val jioFile = new java.io.File(url.toURI)
+      val dir = FileSystem.dir(jioFile.getCanonicalPath)
       WebappExploder.explodeSingleDirectory(dir, target, tracking)
 
     } else {
@@ -94,8 +97,8 @@ object WebappExploder extends ImplicitLogging {
   }
 
   def explodeSingleDirectory(root: Directory, target: Directory, tracking: PrintStream): Unit = {
-    logger.debug("exploding directory " + root.getCanonicalPath)
-    copy(root.getCanonicalPath, root, target, target, tracking)
+    logger.debug("exploding directory " + root.canonicalPath)
+    copy(root.canonicalPath, root, target, target, tracking)
   }
 
   def explodeSingleJar(jarFile: JarFile, target: Directory, tracking: PrintStream): Unit = {
@@ -124,30 +127,38 @@ object WebappExploder extends ImplicitLogging {
 
   private def copy(source: String, from: Directory, to: Directory, target: Directory, tracking: PrintStream): Unit = {
     makeDirectory(source, to, target, tracking)
-    from.files.asScala.foreach(f => copy(source, f.createInputStream(), to.file(f.getName), target, tracking))
-    from.subdirs.asScala.foreach(d => copy(source, d, to.subdir(d.getName), target, tracking))
+    from.files().foreach { f =>
+      f.withInputStream { in =>
+        copy(source, in, to.file(f.name), target, tracking)
+      }
+    }
+    from.subdirs().foreach(d => copy(source, d, to.subdir(d.name), target, tracking))
   }
 
-  private def copy(source: String, in: InputStream, toFile: File, target: Directory, tracking: PrintStream) {
-    val path = toFile.getPathRelativeTo(target)
+  private def copy(source: String, in: InputStream, toFile: File, target: Directory, tracking: PrintStream) = {
+    val path = toFile.relativeTo(target)
 
-    if (toFile.exists) {
+    if (toFile.exists()) {
       logger.warn(s"resource ${path} already exists will ignore that resource from ${source}")
     } else {
       addTracking(source, toFile, target, tracking)
-      new Pipe(in, toFile.createOutputStream).process()
+      toFile.withOutputStream { out =>
+        val buffer = new Array[Byte](8192)
+        val count = in.read(buffer)
+        out.write(buffer, 0, count)
+      }
     }
   }
 
   private def makeDirectory(source: String, to: Directory, target: Directory, tracking: PrintStream): Unit = {
-    if (!to.exists) {
-      to.makeDirectory
+    if (!to.exists()) {
+      to.makeDirectory()
       addTracking(source, to, target, tracking)
     }
   }
 
-  private def addTracking(source: String, path: Path[_], target: Directory, tracking: PrintStream) {
-    val relativePath = "/" + path.getPathRelativeTo(target)
+  private def addTracking(source: String, path: Path, target: Directory, tracking: PrintStream) = {
+    val relativePath = "/" + path.relativeTo(target)
     tracking.println(relativePath + "  --  " + source)
   }
 

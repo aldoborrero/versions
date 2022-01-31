@@ -1,9 +1,10 @@
 package a8.versions
 
+import a8.shared.FileSystem
+import a8.shared.FileSystem.Directory
+
 import java.util.Date
 import a8.versions.apps.{GenerateBuildDotSbt, Main}
-import m3.Exec
-import m3.fs._
 
 object Build {
 
@@ -40,6 +41,6 @@ object Build {
   }
 
 
-  lazy val codeHome = dir(System.getProperty("user.home") + "/code")
+  lazy val codeHome = FileSystem.dir(System.getProperty("user.home") + "/code")
 
 }

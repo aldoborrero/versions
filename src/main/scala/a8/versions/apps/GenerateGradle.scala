@@ -1,14 +1,14 @@
 package a8.versions.apps
 
-import a8.common.CascadingHocon
-import a8.common.HoconOps._
+import a8.shared.FileSystem
+import a8.shared.FileSystem.Directory
 import a8.versions.{BuildDotSbtGenerator, GradleGenerator}
 
 import scala.util.Try
 
 object GenerateGradle {
 
-  lazy val homeDir = m3.fs.dir(System.getProperty("user.home"))
+  lazy val homeDir = FileSystem.userHome
 
 
   import GenerateBuildDotSbt.paths
@@ -34,7 +34,7 @@ object GenerateGradle {
     }
   }
 
-  def run(d: m3.fs.Directory) = {
+  def run(d: Directory) = {
     val g = new GradleGenerator(d)
     println(s"running ${d.canonicalPath}")
     try {

@@ -3,18 +3,18 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2020-11-11 13:33:37.840 -0600 by raph on ENNS-PC
+// It was generated at 2022-01-12 11:25:34.839 -0600 by raph on ENNS-PC
 // 
 // a8-versions build/versioning info follows
 // 
-//        build_java_version : 1.8.0_111
-//        build_os : Mac OS X
-//        build_machine_ip : 127.0.0.1
-//        build_user : flow
-//        build_date : Thu Oct 22 11:18:48 EDT 2020
-//        version_number : 1.0.0-20201022_1118_master
-//        build_machine : Flow-9.local
+//        build_date : Thu Sep 30 12:56:07 CDT 2021
+//        build_machine : ENNS-PC
+//        build_machine_ip : 127.0.1.1
+//        build_java_version : 11.0.11
+//        build_user : raph
+//        version_number : 1.0.0-20210930_1255_master
 //        project_name : a8-versions
+//        build_os : Linux
 // 
 //      
 
@@ -27,6 +27,8 @@ import scalajscrossproject.JSPlatform
 import sbtcrossproject.CrossType
 
 object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with a8.sbt_a8.SassSettings with a8.sbt_a8.dobby.DobbySettings {
+
+  override def settings: Seq[Def.Setting[_]] = Seq()
 
   def crossProject(artifactName: String, dir: java.io.File, id: String) =
     sbtcrossproject.CrossProject(id, dir)(JSPlatform, JVMPlatform)
@@ -50,52 +52,7 @@ object Common extends a8.sbt_a8.SharedSettings with a8.sbt_a8.HaxeSettings with 
   override def jsSettings: Seq[Def.Setting[_]] =
     super.jsSettings ++
     Seq(
-      (artifactPath in (Compile, fastOptJS)) := crossTarget.value / "classes" / "webapp" / "scripts" / ((moduleName in fastOptJS).value + "-fastopt.js")
+      Compile / fastOptJS / artifactPath := crossTarget.value / "classes" / "webapp" / "scripts" / ((fastOptJS / moduleName).value + "-fastopt.js")
     )
-
-
-
-
-  def readRepoUrl() = readRepoProperty("repo_url")
-
-  lazy val repoConfigFile = new java.io.File(System.getProperty("user.home") + "/.a8/repo.properties")
-
-  lazy val repoProperties = {
-    import scala.collection.JavaConverters._
-    val props = new java.util.Properties()
-    if ( repoConfigFile.exists() ) {
-      val input = new java.io.FileInputStream(repoConfigFile)
-      try {
-        props.load(input)
-      } finally {
-        input.close()
-      }
-      props.asScala
-    } else {
-      sys.error("config file " + repoConfigFile + " does not exist")
-    }
-  }
-
-  def readRepoProperty(propertyName: String): String = {
-    repoProperties.get(propertyName) match {
-      case Some(s) =>
-        s
-      case None =>
-        sys.error("could not find property " + propertyName + " in " + repoConfigFile)
-    }
-  }
-
-  def readRepoCredentials(): Credentials = {
-    val repoUrl = new java.net.URL(readRepoUrl())
-    Credentials(
-      readRepoProperty("repo_realm"),
-      repoUrl.getHost,
-      readRepoProperty("repo_user"),
-      readRepoProperty("repo_password"),
-    )
-  }
-
-
-  
 
 }
