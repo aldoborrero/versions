@@ -299,7 +299,7 @@ ${
           s"""
 lazy val root =
   Common.jvmProject("root", file("target/root"), id = "root")
-    .settings( publish := {} )${if (firstRepo.astRepo.public) "\n        .settings( com.jsuereth.sbtpgp.PgpKeys.publishSigned := {} )" else "" }
+    .settings( publish := {} )${if (firstRepo.astRepo.public) "\n    .settings( com.jsuereth.sbtpgp.PgpKeys.publishSigned := {} )" else "" }
     ${
           val aggregateMethod = "aggregate"
           //      val aggregateMethod = "dependsOn"
