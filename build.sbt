@@ -4,7 +4,7 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2022-01-31T17:30:59.184901500 by glen on fullfillment
+// It was generated at 2022-01-31T19:51:33.381822200 by glen on fullfillment
 // 
 // a8-versions build/versioning info follows
 // 
@@ -14,8 +14,7 @@
 
 val appVersion = a8.sbt_a8.versionStamp(file("."))
 
-val scalaLibVersion = "2.12.12"
-val model3Version = "2.7.1-20210602_1321_master"
+val scalaLibVersion = "2.13.6"
 
 scalacOptions in Global ++= Seq("-deprecation", "-unchecked", "-feature")
 
@@ -25,7 +24,7 @@ credentials in Global += Credentials(Path.userHome / ".sbt" / "sonatype.credenti
 
 scalaVersion in Global := scalaLibVersion
 
-organization in Global := "a8"
+organization in Global := "io.accur8"
 
 version in Global := appVersion
 
@@ -42,12 +41,10 @@ lazy val versions =
         "ant" % "ant" % "1.6.2" % "compile",
         "io.get-coursier" %% "coursier" % "2.0.0-RC6" % "compile",
         "io.get-coursier" %% "coursier-cache" % "2.0.0-RC6" % "compile",
-        "com.softwaremill.sttp" %% "core" % "1.1.11" % "compile",
-        "org.scala-lang.modules" %% "scala-xml" % "1.1.0" % "compile",
-        "com.geirsson" %% "fastparse" % "1.0.0" % "compile",
+        "com.softwaremill.sttp" %% "core" % "1.7.2",
+        "org.scalameta" %% "fastparse" % "1.0.1",
         "io.accur8" %% "a8-sync-api" % "1.0.0-20220120_1124_master",
-        "com.beachape" %% "enumeratum-play-json" % "1.5.14" % "compile",
-        "org.rogach" %% "scallop" % "3.1.2" % "compile",
+        "org.rogach" %% "scallop" % "4.1.0" % "compile",
       )
     )
 

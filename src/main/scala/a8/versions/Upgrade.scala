@@ -79,7 +79,8 @@ object Upgrade {
 
   }
 
-  def parse(v: String): Upgrade =
+  def parse(v: String): Upgrade = {
+    def error() = sys.error(s"error parsing ${v}")
     try {
       v.split("->").toList match {
         case List(sourceProp, target) =>
@@ -89,17 +90,24 @@ object Upgrade {
                 dependencyTreeProp = sourceProp.trim,
                 module = Module(Organization(org.trim), ModuleName(artifact.trim), Map())
               )
+            case _ =>
+              error()
           }
         case List(artifact) =>
           artifact.split(":").toList match {
             case List(org, artifact, branch) =>
               LatestArtifact(Module(Organization(org.trim), ModuleName(artifact.trim), Map()), branch.trim)
+            case _ =>
+              error()
           }
+        case _ =>
+          error()
       }
     } catch {
       case e: Exception =>
         throw new RuntimeException(s"unable to parse upgrade --> ${v}")
     }
+  }
 
 
 }

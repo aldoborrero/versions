@@ -4,7 +4,7 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2022-01-31T17:30:59.411952600 by glen on fullfillment
+// It was generated at 2022-01-31T19:51:33.383822600 by glen on fullfillment
 // 
 // a8-versions build/versioning info follows
 // 
