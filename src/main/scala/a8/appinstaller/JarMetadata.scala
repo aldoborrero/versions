@@ -14,12 +14,19 @@ import a8.shared.SharedImports._
 import a8.shared.HoconOps._
 import MxJarMetadata._
 
-object JarMetadata extends MxJarMetadata {
+object JarMetadata extends MxJarMetadata with Logging {
 
   def process(appDir: Directory, jarFile: File): Unit = {
     ZipAssist.readEntryFromZipFile(jarFile, "META-INF/a8-deployer.json").foreach { json =>
-      val jv = parseHocon(json)
-      jv.read[JarMetadata].apply(appDir)
+      try {
+        val jv = parseHocon(json)
+        jv.read[JarMetadata].apply(appDir)
+      } catch {
+        case _: java.nio.file.NoSuchFileException =>
+          ()
+        case e: Exception =>
+          logger.error(s"unable to parse JarMetadata from jar file ${jarFile} -- \n${json}", e)
+      }
     }
   }
 
@@ -44,7 +51,7 @@ object JarMetadata extends MxJarMetadata {
 case class JarMetadata(
   explode: List[JarMetadata.Explode],
   chmod_exec: List[String],
-  symlinks: List[JarMetadata.SymLink]
+  symlinks: List[JarMetadata.SymLink] = Nil,
 ) extends Logging {
 
   implicit class ListProcessor[A](l: List[A]) {

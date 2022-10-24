@@ -12,6 +12,8 @@ import predef.tryLog
 object AppInstaller {
 
   val standardAppDirectores = Set(
+    ".bak",
+    "_bak",
     "cache",
     ".cache",
     "config",

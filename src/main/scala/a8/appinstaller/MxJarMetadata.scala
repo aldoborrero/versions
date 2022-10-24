@@ -140,7 +140,7 @@ object MxJarMetadata {
     object parameters {
       lazy val explode: CaseClassParm[JarMetadata,List[JarMetadata.Explode]] = CaseClassParm[JarMetadata,List[JarMetadata.Explode]]("explode", _.explode, (d,v) => d.copy(explode = v), None, 0)
       lazy val chmod_exec: CaseClassParm[JarMetadata,List[String]] = CaseClassParm[JarMetadata,List[String]]("chmod_exec", _.chmod_exec, (d,v) => d.copy(chmod_exec = v), None, 1)
-      lazy val symlinks: CaseClassParm[JarMetadata,List[JarMetadata.SymLink]] = CaseClassParm[JarMetadata,List[JarMetadata.SymLink]]("symlinks", _.symlinks, (d,v) => d.copy(symlinks = v), None, 2)
+      lazy val symlinks: CaseClassParm[JarMetadata,List[JarMetadata.SymLink]] = CaseClassParm[JarMetadata,List[JarMetadata.SymLink]]("symlinks", _.symlinks, (d,v) => d.copy(symlinks = v), Some(()=> Nil), 2)
     }
     
     

@@ -36,7 +36,9 @@ object WebappExploder extends Logging {
 
     logger.debug("started explosion")
 
-    target.delete()
+    if ( target.exists())
+      target.delete()
+
     target.makeDirectories()
 
     target
@@ -143,9 +145,8 @@ object WebappExploder extends Logging {
     } else {
       addTracking(source, toFile, target, tracking)
       toFile.withOutputStream { out =>
-        val buffer = new Array[Byte](8192)
-        val count = in.read(buffer)
-        out.write(buffer, 0, count)
+        val buffer = in.readAllBytes()
+        out.write(buffer)
       }
     }
   }
