@@ -11,10 +11,11 @@ import org.rogach.scallop.{ScallopConf, Subcommand}
 import a8.versions.predef._
 import coursier.core.{ModuleName, Organization}
 import a8.shared.SharedImports._
+import wvlet.log.{LogLevel, Logger}
 
 import scala.annotation.tailrec
 
-object Main {
+object Main extends Logging {
 
   sealed trait Runner {
     def run(main: Main): Unit
@@ -120,6 +121,8 @@ object Main {
 
   def main(args: Array[String]): Unit = {
     try {
+      wvlet.airframe.log.init
+      Logger.setDefaultLogLevel(LogLevel.DEBUG)
       val main = new Main(args.toIndexedSeq)
       main.run()
       System.exit(0)
