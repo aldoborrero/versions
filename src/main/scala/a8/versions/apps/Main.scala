@@ -65,8 +65,8 @@ object Main extends Logging {
 
       descr("install app into the installDir")
 
-      override def run(main: Main) = {
-        main
+      override def run(main: Main) =
+        Main
           .runInstall(
             coursier.Module(Organization(organization.apply()), ModuleName(artifact.apply())),
             branch.toOption,
@@ -75,7 +75,6 @@ object Main extends Logging {
             libDirKind.toOption,
             webappExplode.map(_.toBoolean).toOption
           )
-      }
 
     }
 
@@ -89,6 +88,15 @@ object Main extends Logging {
 
     }
 
+    val serverAppSync = new Subcommand("server_app_sync") with Runner {
+
+      descr("synchronizes the installed apps with there setup in git, syncing any changes necessary yo get the server to match the setup in git")
+
+      override def run(main: Main) = {
+        io.accur8.neodeploy.Main.main(Array())
+      }
+
+    }
     val gitignore = new Subcommand("gitignore") with Runner {
 
       descr("makes sure that .gitignore has the standard elements")
@@ -134,7 +142,66 @@ object Main extends Logging {
   }
 
 
+  def runInstall(
+    module: coursier.Module,
+    branch: Option[String],
+    version: Option[String],
+    installDir: String,
+    libDirKind: Option[String],
+    webappExplode: Option[Boolean] = Some(true),
+    backup: Boolean = true,
+  ): Unit = {
 
+    implicit val buildType = BuildType.ArtifactoryBuild
+
+    val (resolvedVersion, latest) =
+      (branch, version) match {
+        case (None, None) =>
+          sys.error("must supply a branch or version")
+        case (Some(_), Some(_)) =>
+          sys.error("must supply a branch or version not both")
+        case (Some(b), None) =>
+          val resolvedBranch = scrubBranchName(b)
+          LatestArtifact(module, resolvedBranch).resolveVersion(Map()) -> Some(s"latest_${resolvedBranch}.json")
+        case (None, Some(v)) =>
+          Version.parse(v).get -> None
+      }
+
+    val kind: Option[LibDirKind] =
+      libDirKind
+        .flatMap { k =>
+          val result: Option[LibDirKind] = LibDirKind
+            .values
+            .find(_.entryName.equalsIgnoreCase(k))
+          if (result.isEmpty) {
+            sys.error(s"libDirKind entered does not match case insensitive value in ${LibDirKind.values.map(_.entryName).mkString("['", "', '", "']")}")
+          }
+          result
+        }
+        .orElse(Some(LibDirKind.Symlink))
+
+    val config =
+      AppInstallerConfig(
+        organization = module.organization.value,
+        artifact = module.name.value,
+        branch = None,
+        version = resolvedVersion.toString,
+        installDir = Some(installDir),
+        libDirKind = kind,
+        webappExplode = webappExplode,
+        backup = backup,
+      )
+
+    AppInstaller(config).execute()
+
+  }
+
+  // same method as a8.sbt_a8.scrubBranchName() in sbt-a8 project
+  def scrubBranchName(unscrubbedName: String): String = {
+    unscrubbedName
+      .filter(ch => ch.isLetterOrDigit)
+      .toLowerCase
+  }
 }
 
 
@@ -202,63 +269,6 @@ class Main(args: Seq[String]) {
     inventoryFiles.foreach(_.write(inventoryJson))
 
     println(s"resolved ${inventoryFiles}")
-
-  }
-
-  // same method as a8.sbt_a8.scrubBranchName() in sbt-a8 project
-  def scrubBranchName(unscrubbedName: String): String = {
-    unscrubbedName
-      .filter(ch => ch.isLetterOrDigit)
-      .toLowerCase
-  }
-
-  def runInstall(
-    module: coursier.Module,
-    branch: Option[String],
-    version: Option[String],
-    installDir: String,
-    libDirKind: Option[String],
-    webappExplode: Option[Boolean] = Some(true)
-  ): Unit = {
-
-    val (resolvedVersion, latest) =
-      (branch, version) match {
-        case (None, None) =>
-          sys.error("must supply a branch or version")
-        case (Some(_), Some(_)) =>
-          sys.error("must supply a branch or version not both")
-        case (Some(b), None) =>
-          val resolvedBranch = scrubBranchName(b)
-          LatestArtifact(module, resolvedBranch).resolveVersion(Map()) -> Some(s"latest_${resolvedBranch}.json")
-        case (None, Some(v)) =>
-          Version.parse(v).get -> None
-      }
-
-    val kind: Option[LibDirKind] =
-      libDirKind
-        .flatMap{ k =>
-          val result: Option[LibDirKind] = LibDirKind
-            .values
-            .find(_.entryName.equalsIgnoreCase(k))
-          if (result.isEmpty) {
-            sys.error(s"libDirKind entered does not match case insensitive value in ${LibDirKind.values.map(_.entryName).mkString("['", "', '", "']")}")
-          }
-          result
-        }
-        .orElse(Some(LibDirKind.Symlink))
-
-    val config =
-      AppInstallerConfig(
-        organization = module.organization.value,
-        artifact = module.name.value,
-        branch = None,
-        version = resolvedVersion.toString,
-        installDir = Some(installDir),
-        libDirKind = kind,
-        webappExplode = webappExplode,
-      )
-
-    AppInstaller(config).execute()
 
   }
 

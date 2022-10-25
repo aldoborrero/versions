@@ -28,12 +28,13 @@ object MxAppInstallerConfig {
         .addField(_.installDir)
         .addField(_.libDirKind)
         .addField(_.webappExplode)
+        .addField(_.backup)
         .build
     
     implicit val catsEq: cats.Eq[AppInstallerConfig] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[AppInstallerConfig,parameters.type] =  {
-      val constructors = Constructors[AppInstallerConfig](7, unsafe.iterRawConstruct)
+      val constructors = Constructors[AppInstallerConfig](8, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
@@ -45,6 +46,7 @@ object MxAppInstallerConfig {
       lazy val installDir: CaseClassParm[AppInstallerConfig,Option[String]] = CaseClassParm[AppInstallerConfig,Option[String]]("installDir", _.installDir, (d,v) => d.copy(installDir = v), Some(()=> None), 4)
       lazy val libDirKind: CaseClassParm[AppInstallerConfig,Option[AppInstallerConfig.LibDirKind]] = CaseClassParm[AppInstallerConfig,Option[AppInstallerConfig.LibDirKind]]("libDirKind", _.libDirKind, (d,v) => d.copy(libDirKind = v), Some(()=> None), 5)
       lazy val webappExplode: CaseClassParm[AppInstallerConfig,Option[Boolean]] = CaseClassParm[AppInstallerConfig,Option[Boolean]]("webappExplode", _.webappExplode, (d,v) => d.copy(webappExplode = v), Some(()=> None), 6)
+      lazy val backup: CaseClassParm[AppInstallerConfig,Boolean] = CaseClassParm[AppInstallerConfig,Boolean]("backup", _.backup, (d,v) => d.copy(backup = v), Some(()=> true), 7)
     }
     
     
@@ -59,6 +61,7 @@ object MxAppInstallerConfig {
           installDir = values(4).asInstanceOf[Option[String]],
           libDirKind = values(5).asInstanceOf[Option[AppInstallerConfig.LibDirKind]],
           webappExplode = values(6).asInstanceOf[Option[Boolean]],
+          backup = values(7).asInstanceOf[Boolean],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): AppInstallerConfig = {
@@ -71,13 +74,14 @@ object MxAppInstallerConfig {
             installDir = values.next().asInstanceOf[Option[String]],
             libDirKind = values.next().asInstanceOf[Option[AppInstallerConfig.LibDirKind]],
             webappExplode = values.next().asInstanceOf[Option[Boolean]],
+            backup = values.next().asInstanceOf[Boolean],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(organization: String, artifact: String, version: String, branch: Option[String], installDir: Option[String], libDirKind: Option[AppInstallerConfig.LibDirKind], webappExplode: Option[Boolean]): AppInstallerConfig =
-        AppInstallerConfig(organization, artifact, version, branch, installDir, libDirKind, webappExplode)
+      def typedConstruct(organization: String, artifact: String, version: String, branch: Option[String], installDir: Option[String], libDirKind: Option[AppInstallerConfig.LibDirKind], webappExplode: Option[Boolean], backup: Boolean): AppInstallerConfig =
+        AppInstallerConfig(organization, artifact, version, branch, installDir, libDirKind, webappExplode, backup)
     
     }
     

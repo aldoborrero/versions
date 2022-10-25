@@ -1,0 +1,21 @@
+
+
+{
+  "name": "appa",
+  "organization":"a8",
+  "artifact":"a8-qubes-dist_2.12",
+  "version":"2.7.1-20221007_1013_master",
+  "javaVersion": 11,
+  "listenPort": 7012,
+  "supervisorConfig": {
+    "jvmArgs": [
+      "-Xmx2g"
+    ],
+    "autoStart": true,
+    "mainClass": "com.ahsrcm.mobidash.RunBaseQubes"
+  },
+  "caddyConfig": {
+    "domainName": "orbit.accur8.io"
+  }
+}
+

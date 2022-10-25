@@ -40,9 +40,10 @@ case class AppInstaller(config: AppInstallerConfig) extends Logging {
 
   def execute(): Unit = {
 
-    backup()
-
-    backupConfigFiles()
+    if (config.backup) {
+      backup()
+      backupConfigFiles()
+    }
 
     installBuilder.build()
 

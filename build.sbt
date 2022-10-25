@@ -45,6 +45,9 @@ lazy val versions =
         "org.scalameta" %% "fastparse" % "1.0.1",
         "io.accur8" %% "a8-sync-api" % "1.0.0-20221024_1241_master",
         "org.rogach" %% "scallop" % "4.1.0" % "compile",
+        "dev.zio" %% "zio-process" % "0.7.1",
+        "org.scalatest" %% "scalatest" % "3.2.12" % "test",
+        "org.typelevel" %% "cats-parse" % "0.3.8",
       )
     )
 

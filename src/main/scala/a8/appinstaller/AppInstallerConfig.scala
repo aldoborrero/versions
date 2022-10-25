@@ -36,7 +36,8 @@ case class AppInstallerConfig(
   branch: Option[String],
   installDir: Option[String] = None,
   libDirKind: Option[AppInstallerConfig.LibDirKind] = None,
-  webappExplode: Option[Boolean] = None
+  webappExplode: Option[Boolean] = None,
+  backup: Boolean = true,
 ) {
 
   lazy val resolveWebappExplode = webappExplode.getOrElse(true)
