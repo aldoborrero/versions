@@ -97,6 +97,7 @@ object Main extends Logging {
       }
 
     }
+
     val gitignore = new Subcommand("gitignore") with Runner {
 
       descr("makes sure that .gitignore has the standard elements")
@@ -116,11 +117,13 @@ object Main extends Logging {
       }
 
     }
+
     addSubcommand(resolve)
     addSubcommand(install)
     addSubcommand(buildDotSbt)
     addSubcommand(gitignore)
     addSubcommand(version_bump)
+    addSubcommand(serverAppSync)
 
     verify()
 
