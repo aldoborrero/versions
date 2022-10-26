@@ -40,7 +40,7 @@ case class Exec(
     val stderr = new ByteArrayOutputStream
     val stdoutWriter = new PrintWriter(stdout)
     val stderrWriter = new PrintWriter(stderr)
-    logger.info(toString)
+    logger.debug(toString)
     val exitCode = _process.!(ProcessLogger(stdoutWriter.println, stderrWriter.println))
     stdoutWriter.close()
     stderrWriter.close()

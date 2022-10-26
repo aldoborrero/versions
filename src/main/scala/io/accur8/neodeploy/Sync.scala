@@ -13,9 +13,12 @@ object Sync {
 
   abstract class Action[A : JsonCodec] {
     val deployState: DeployState
+    def actionRequired: Boolean = true
   }
 
-  case class Noop[A : JsonCodec](deployState: DeployState) extends Action[A]
+  case class Noop[A : JsonCodec](deployState: DeployState) extends Action[A] {
+    override def actionRequired: Boolean = false
+  }
   case class Delete[A : JsonCodec](deployState: DeployState, currentState: A) extends Action[A]
   case class Update[A : JsonCodec](deployState: DeployState, currentState: A, newState: A) extends Action[A]
   case class Insert[A : JsonCodec](deployState: DeployState, newState: A) extends Action[A]

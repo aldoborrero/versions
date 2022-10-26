@@ -5,7 +5,7 @@ import a8.shared.CompanionGen
 import a8.shared.FileSystem.Directory
 import io.accur8.neodeploy.SyncServer.Config
 import io.accur8.neodeploy.MxMain._
-import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, CaddyDirectory, DomainName, GitServerDirectory, SupervisorDirectory}
+import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, CaddyDirectory, Command, DomainName, GitServerDirectory, Install, SupervisorDirectory}
 import zio.{Task, ZIO}
 import a8.shared.SharedImports._
 import a8.shared.app.LoggingF
@@ -56,14 +56,16 @@ case class SyncServer(config: Config) extends LoggingF {
       .gitServerDirectory
       .unresolvedDirectory
       .subdirs()
+      .filter(_.name != ".git")
       .toVector
       .flatMap { d =>
+        val f = d.file("application.json")
         try {
-          val jsonStr = d.file("application.json").readAsString()
+          val jsonStr = f.readAsString()
           json.unsafeRead[ApplicationDescriptor](jsonStr).some
         } catch {
           case e: Throwable =>
-            logger.error(s"error reading directory ${d.canonicalPath}", e)
+            logger.error(s"error reading ${f}", e)
             None
         }
       }
@@ -94,7 +96,7 @@ case class SyncServer(config: Config) extends LoggingF {
         )
       }
 
-  lazy val syncs =
+  lazy val syncs: Seq[Sync[_]] =
     Vector(
       CaddySync(config.caddyDirectory),
       SupervisorSync(config.supervisorDirectory),
@@ -104,7 +106,11 @@ case class SyncServer(config: Config) extends LoggingF {
   def run: Task[Unit] =
     deploys
       .map(deploy =>
-        runDeploy(deploy).correlateWith(deploy.applicationName.value)
+        if ( deploy.needsSync ) {
+          runSyncApplication(deploy)
+        } else {
+          loggerF.info(z"no changes for ${deploy.applicationName}")
+        }
       )
       .sequencePar
       .logVoid
@@ -121,24 +127,43 @@ case class SyncServer(config: Config) extends LoggingF {
       }
     }
 
-  def execCommand(command: Seq[String]): Task[Unit] = {
+  def execCommand(command: Command): Task[Unit] = {
     ZIO
       .attemptBlocking(
-        Exec(command).execCaptureOutput(false)
+        Exec(command.args).execCaptureOutput(false)
       )
       .logVoid
   }
 
-  def runDeploy(deployState: DeployState): Task[Unit] = {
-    for {
-      _ <- execCommand(deployState.stopCommand)
-      _ <-
-        syncs
-          .map(_.run(deployState))
-          .sequence
-      _ <- updateDeployState(deployState)
-      _ <- execCommand(deployState.startCommand)
-    } yield ()
+  def runSyncApplication(deployState: DeployState): Task[Unit] = {
+
+    val runSyncEffect =
+      for {
+        _ <- deployState.stopCommand.map(execCommand).getOrElse(zunit)
+        _ <-
+          syncs
+            .map(_.run(deployState))
+            .sequence
+        _ <- deployState.startCommand.map(execCommand).getOrElse(zunit)
+      } yield ()
+
+    val effect =
+      for {
+        dryRunActions <-
+          syncs
+            .map(_.actions(deployState))
+            .sequencePar
+            .map(_.filter(_.actionRequired))
+        _ <-
+          if ( dryRunActions.nonEmpty ) {
+            runSyncEffect
+          } else {
+            loggerF.info("no sync actions required")
+          }
+        _ <- updateDeployState(deployState)
+      } yield ()
+
+    effect.correlateWith0(z"${deployState.applicationName}")
   }
 
 }

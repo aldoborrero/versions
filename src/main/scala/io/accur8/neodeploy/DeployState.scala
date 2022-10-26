@@ -2,7 +2,7 @@ package io.accur8.neodeploy
 
 
 import a8.shared.FileSystem.Directory
-import io.accur8.neodeploy.model.{ApplicationDescriptor, JavaVersion}
+import io.accur8.neodeploy.model.{ApplicationDescriptor, Command, JavaVersion}
 import zio.{Task, ZIO}
 import a8.shared.SharedImports._
 
@@ -13,16 +13,16 @@ case class DeployState(
   newApplicationDescriptor: Option[ApplicationDescriptor],
 ) {
 
+  def needsSync: Boolean = currentApplicationDescriptor != newApplicationDescriptor
+
   def javaVersion: JavaVersion = newApplicationDescriptor.flatMap(_.javaVersion).get
 
-  def stopCommand =
+  lazy val stopCommand: Option[Command] =
     currentApplicationDescriptor
-      .toSeq
-      .flatMap(_.resolvedStopCommand)
+      .map(_.resolvedStopCommand)
 
-  def startCommand =
+  lazy val startCommand: Option[Command] =
     newApplicationDescriptor
-      .toSeq
-      .flatMap(_.resolvedStartCommand)
+      .map(_.resolvedStartCommand)
 
 }

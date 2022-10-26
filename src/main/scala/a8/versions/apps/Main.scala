@@ -62,6 +62,7 @@ object Main extends Logging {
       val installDir = opt[String](descr = "the install directory", required = true)
       val libDirKind = opt[String](descr = "lib directory kind", required = false)
       val webappExplode = opt[String](descr = "do webapp explode", required = false)
+      val backup = opt[String](descr = "run backup of existing install before install", required = false)
 
       descr("install app into the installDir")
 
@@ -73,7 +74,8 @@ object Main extends Logging {
             version.toOption,
             installDir.toOption.getOrElse("."),
             libDirKind.toOption,
-            webappExplode.map(_.toBoolean).toOption
+            webappExplode.map(_.toBoolean).toOption,
+            backup = backup.toOption.map(_.toBoolean).getOrElse(true),
           )
 
     }

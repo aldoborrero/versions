@@ -2,3 +2,13 @@
 
 
 * add a dns sync
+
+* auto creation of database, user(s) and schema
+
+* auto restart of caddy
+
+* properly tickle supervisor to pickup changes
+
+
+
+* ApplicationInstallSync - load currently installed application version from disk

@@ -23,10 +23,10 @@ case class CaddySync(caddyDir: CaddyDirectory) extends ConfigFileSync(caddyDir) 
     val result =
       for {
         listenPort <- applicationDescriptor.listenPort.toIterable
-        caddyConfig <- applicationDescriptor.caddyConfig
+        domainName <- applicationDescriptor.domainName
       } yield
         z"""
-${caddyConfig.domainName} {
+${domainName} {
   reverse_proxy localhost:${listenPort}
 }
 """.trim

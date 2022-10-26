@@ -43,7 +43,7 @@ lazy val versions =
         "io.get-coursier" %% "coursier-cache" % "2.0.0-RC6" % "compile",
         "com.softwaremill.sttp" %% "core" % "1.7.2",
         "org.scalameta" %% "fastparse" % "1.0.1",
-        "io.accur8" %% "a8-sync-api" % "1.0.0-20221024_1241_master",
+        "io.accur8" %% "a8-sync-api" % "1.0.0-20221025_1616_master",
         "org.rogach" %% "scallop" % "4.1.0" % "compile",
         "dev.zio" %% "zio-process" % "0.7.1",
         "org.scalatest" %% "scalatest" % "3.2.12" % "test",

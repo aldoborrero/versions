@@ -5,6 +5,8 @@ import a8.shared.FileSystem.{Directory, dir}
 import a8.shared.{CompanionGen, LongValue, StringValue}
 import io.accur8.neodeploy.Mxmodel._
 import a8.shared.SharedImports._
+import a8.shared.json.ast.{JsArr, JsDoc, JsNothing, JsStr, JsVal}
+import a8.shared.json.{JsonCodec, JsonTypedCodec, UnionCodecBuilder}
 
 import scala.collection.Iterable
 
@@ -31,6 +33,15 @@ object model {
   object Artifact extends StringValue.Companion[Artifact]
   case class Artifact(value: String) extends StringValue
 
+  object Command {
+    implicit val jsonCodec =
+      JsonTypedCodec.JsArr.dimap[Command](
+        arr => Command(arr.values.collect{ case JsStr(s) => s }),
+        cmd => JsArr(cmd.args.map(JsStr.apply).toList)
+      )
+  }
+  case class Command(args: Iterable[String])
+
   abstract class DirectoryValue extends StringValue {
     lazy val resolvedDirectory: Directory = {
       val d = unresolvedDirectory
@@ -54,63 +65,64 @@ object model {
   object GitServerDirectory extends StringValue.Companion[GitServerDirectory]
   case class GitServerDirectory(value: String) extends DirectoryValue
 
-  object SupervisorConfig extends MxSupervisorConfig
+  sealed trait Install
+  object Install {
+
+    implicit val jsonCodec =
+      UnionCodecBuilder[Install]
+        .typeFieldName("kind")
+        .addSingleton("manual", Manual)
+        .defaultType[FromRepo]
+        .addType[FromRepo]("repoe")
+        .build
+
+
+    object FromRepo extends MxFromRepo
+    @CompanionGen
+    case class FromRepo(
+      organization: Organization,
+      artifact: Artifact,
+      version: Version,
+      webappExplode: Boolean = true,
+    ) extends Install
+
+    case object Manual extends Install
+
+  }
+
+  object ApplicationDescriptor extends MxApplicationDescriptor {
+    def supervisorCommand(action: String, applicationName: ApplicationName): Command =
+      Command(Seq(
+        "supervisorctl",
+        action,
+        applicationName.value
+      ))
+  }
   @CompanionGen
-  case class SupervisorConfig(
+  case class ApplicationDescriptor(
+    name: ApplicationName,
+    install: Install,
     jvmArgs: Iterable[String] = None,
     autoStart: Option[Boolean] = None,
     appArgs: Iterable[String] = Iterable.empty,
     mainClass: String,
-  ) {
-
-  }
-
-  object CaddyConfig extends MxCaddyConfig
-  @CompanionGen
-  case class CaddyConfig(
-    domainName: DomainName,
-  )
-
-  object ApplicationDescriptor extends MxApplicationDescriptor
-  @CompanionGen
-  case class ApplicationDescriptor(
-    name: ApplicationName,
-    organization: Organization,
-    artifact: Artifact,
-    version: Version,
-    description: Option[String] = None,
+    user: String = "dev",
     listenPort: Option[ListenPort] = None,
     javaVersion: Option[JavaVersion] = None,
-    supervisorConfig: Option[SupervisorConfig] = None,
-    caddyConfig: Option[CaddyConfig] = None,
-    stopServerCommand: Iterable[String] = Seq.empty,
-    startServerCommand: Iterable[String] = Seq.empty,
-    webappExplode: Boolean = true,
+    stopServerCommand: Option[Command] = None,
+    startServerCommand: Option[Command] = None,
+    domainName: Option[DomainName],
+    trigger: JsDoc = JsDoc.empty,
   ) {
 
-    def resolvedStopCommand: Iterable[String] =
-      stopServerCommand match {
-        case Seq() =>
-          Seq(
-            "supervisorctl",
-            "stop",
-            name.value,
-          )
-        case s =>
-          s
-      }
+    lazy val resolvedStopCommand: Command =
+      stopServerCommand
+        .getOrElse(ApplicationDescriptor.supervisorCommand("stop", name))
 
-    def resolvedStartCommand: Iterable[String] =
-      startServerCommand match {
-        case Seq() =>
-          Seq(
-            "supervisorctl",
-            "start",
-            name.value,
-          )
-        case s =>
-          s
-      }
+    lazy val resolvedStartCommand: Command =
+      startServerCommand
+        .getOrElse(ApplicationDescriptor.supervisorCommand("start", name))
+
 
   }
 
