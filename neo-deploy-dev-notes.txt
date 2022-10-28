@@ -9,6 +9,13 @@
 
 * properly tickle supervisor to pickup changes
 
+* parse application descriptor from git using hocon
+* log writing the state to disk
 
+* switch to zio process
+
+* provide an action summary
+
+* provide a dry run
 
 * ApplicationInstallSync - load currently installed application version from disk
