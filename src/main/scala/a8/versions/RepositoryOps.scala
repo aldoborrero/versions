@@ -46,7 +46,18 @@ object RepositoryOps extends Logging {
       }
     }
 
-    lazy val url = impl.readRepoPropertyOpt("url").getOrElse(sys.error(s"minimally must supply a ${value}_url property"))
+    lazy val url =
+      (value, impl.readRepoPropertyOpt("url")) match {
+        case (_, Some(v)) =>
+          v
+        case ("maven", _) =>
+          val v = "https://repo1.maven.org/maven2"
+          logger.debug("using default maven repo url: " + v)
+          v
+        case _ =>
+          sys.error(s"minimally must supply a ${value}_url property or specify the repo as maven")
+      }
+
     lazy val userOpt = impl.readRepoPropertyOpt("user")
     lazy val passwordOpt =  impl.readRepoPropertyOpt("password")
 

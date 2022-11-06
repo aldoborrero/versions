@@ -1,5 +1,15 @@
 
 
+* set some log level defaults
+* show log categories
+
+
+
+
+
+
+
+
 * when doing a cross project build to share the same build number
 
 

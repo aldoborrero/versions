@@ -11,6 +11,7 @@ import org.rogach.scallop.{ScallopConf, ScallopOption, Subcommand}
 import a8.versions.predef._
 import coursier.core.{ModuleName, Organization}
 import a8.shared.SharedImports._
+import a8.shared.app.A8LogFormatter
 import a8.versions.RepositoryOps.RepoConfigPrefix
 import wvlet.log.{LogLevel, Logger}
 
@@ -144,11 +145,18 @@ object Main extends Logging {
 
   }
 
+  lazy val logLevels =
+    Seq(
+      "jdk.event",
+      "sun.net",
+    )
 
   def main(args: Array[String]): Unit = {
     try {
       wvlet.airframe.log.init
+      Logger.setDefaultFormatter(A8LogFormatter.ColorConsole)
       Logger.setDefaultLogLevel(LogLevel.DEBUG)
+      logLevels.foreach(l => Logger(l).setLogLevel(LogLevel.INFO))
       val main = new Main(args.toIndexedSeq)
       main.run()
       System.exit(0)

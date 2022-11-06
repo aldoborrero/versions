@@ -37,9 +37,17 @@ object Upgrade {
         if (buildType.useLocalRepo) localVersions(repositoryOps) ++ remoteVersions(repositoryOps)
         else remoteVersions(repositoryOps)
 
-      versions
-        .sorted(Version.orderingByMajorMinorPathBuildTimestamp)
-        .last
+      val versionOpt =
+        versions
+          .sorted(Version.orderingByMajorMinorPathBuildTimestamp)
+          .lastOption
+
+      versionOpt match {
+        case Some(version) =>
+          version
+        case None =>
+          sys.error(s"unable to find version for ${this}")
+      }
 
     }
 
