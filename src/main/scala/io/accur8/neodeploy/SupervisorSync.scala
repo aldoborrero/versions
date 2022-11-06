@@ -5,7 +5,8 @@ import a8.shared.FileSystem.{Directory, File}
 import zio.{Task, ZIO}
 import a8.shared.SharedImports._
 import a8.shared.ZString
-import io.accur8.neodeploy.model.{ResolvedApp, SupervisorDirectory}
+import io.accur8.neodeploy.model.{SupervisorDirectory}
+import io.accur8.neodeploy.resolvedmodel.ResolvedApp
 
 case class SupervisorSync(supervisorDir: SupervisorDirectory) extends ConfigFileSync[ResolvedApp] {
 

@@ -3,7 +3,8 @@ package io.accur8.neodeploy
 import a8.shared.SharedImports._
 import a8.shared.FileSystem.{Directory, File}
 import a8.shared.ZString
-import io.accur8.neodeploy.model.{CaddyDirectory, ResolvedApp}
+import io.accur8.neodeploy.model.CaddyDirectory
+import io.accur8.neodeploy.resolvedmodel.ResolvedApp
 import zio.{Task, ZIO}
 
 

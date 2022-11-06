@@ -38,13 +38,10 @@ object Main extends Logging {
          |""".stripMargin
     )
 
-    def repositoryOps(repo: ScallopOption[String]): RepositoryOps = {
+    def repositoryOps(repo: ScallopOption[String]): RepositoryOps =
       repo
-        .map(r => RepositoryOps.apply(RepoConfigPrefix(v)))
-      RepositoryOps(
-        repo.getOrElse(RepositoryOps.RepoConfigPrefix.default)
-      )
-    }
+        .map(v => RepositoryOps.apply(RepoConfigPrefix(v)))
+        .getOrElse(RepositoryOps.default)
 
     val resolve = new Subcommand("resolve") with Runner {
 
@@ -76,8 +73,7 @@ object Main extends Logging {
       val webappExplode = opt[String](descr = "do webapp explode", required = false)
       val backup = opt[String](descr = "run backup of existing install before install", required = false)
 
-      val repoUrl = opt[String](descr = "repository url", required = false)
-      val repoCredentials: ScallopOption[String] = opt[String](descr = "repository credentials prefix", required = false)
+      val repo = opt[String](descr = "repository name", required = false)
 
       descr("install app into the installDir")
 
@@ -91,7 +87,7 @@ object Main extends Logging {
             libDirKind.toOption,
             webappExplode.map(_.toBoolean).toOption,
             backup = backup.toOption.map(_.toBoolean).getOrElse(true),
-            repositoryOps = repositoryOps(repoUrl, repoCredentials),
+            repositoryOps = repositoryOps(repo),
           )
       }
 

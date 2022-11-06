@@ -11,7 +11,8 @@ import coursier.core.{ModuleName, Organization}
 import io.accur8.neodeploy.ApplicationInstallSync.{Installer, State}
 import io.accur8.neodeploy.MxApplicationInstallSync._
 import io.accur8.neodeploy.model.Install.FromRepo
-import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, Install, ResolvedApp, Version}
+import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, Install, Version}
+import io.accur8.neodeploy.resolvedmodel.ResolvedApp
 import zio.{Task, ZIO}
 
 import java.nio.file.Paths

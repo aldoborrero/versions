@@ -3,7 +3,7 @@ package io.accur8.neodeploy
 
 import a8.shared.CompanionGen
 import a8.shared.FileSystem.Directory
-import io.accur8.neodeploy.model.{ApplicationDescriptor, ApplicationName, AppsRootDirectory, CaddyDirectory, Command, DomainName, GitServerDirectory, Install, ResolvedApp, ResolvedServer, ResolvedUser, StoredSyncState, SupervisorDirectory, UserDescriptor}
+import io.accur8.neodeploy.model.{ApplicationDescriptor, ApplicationName, AppsRootDirectory, CaddyDirectory, Command, DomainName, GitServerDirectory, Install, SupervisorDirectory, UserDescriptor}
 import zio.{Task, ZIO}
 import a8.shared.SharedImports._
 import a8.shared.app.{Logging, LoggingF}
@@ -11,6 +11,7 @@ import a8.shared.json.ast
 import a8.shared.json.ast.JsObj
 import a8.versions.Exec
 import io.accur8.neodeploy.SyncServer.loadState
+import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedServer, ResolvedUser, StoredSyncState}
 
 object SyncServer extends Logging {
 

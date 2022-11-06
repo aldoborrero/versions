@@ -6,7 +6,8 @@ import a8.shared.{CompanionGen, FileSystem}
 import a8.shared.app.BootstrappedIOApp
 import a8.shared.app.BootstrappedIOApp.BootstrapEnv
 import io.accur8.neodeploy.MxMain._
-import io.accur8.neodeploy.model.{AppsRootDirectory, CaddyDirectory, DomainName, GitRootDirectory, GitServerDirectory, ResolvedRepository, ServerName, SupervisorDirectory}
+import io.accur8.neodeploy.model.{AppsRootDirectory, CaddyDirectory, DomainName, GitRootDirectory, GitServerDirectory, ServerName, SupervisorDirectory}
+import io.accur8.neodeploy.resolvedmodel.ResolvedRepository
 import zio.ZIO
 
 object Main extends BootstrappedIOApp {

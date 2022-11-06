@@ -7,7 +7,8 @@ import a8.shared.SharedImports._
 import a8.shared.app.Logging
 import a8.shared.{FileSystem, ZString}
 import com.softwaremill.sttp.Uri
-import io.accur8.neodeploy.model.{AuthorizedKey, PersonnelId, ResolvedRepository, ResolvedUser, UserDescriptor}
+import io.accur8.neodeploy.model.{AuthorizedKey, PersonnelId, UserDescriptor}
+import io.accur8.neodeploy.resolvedmodel.ResolvedUser
 
 object AuthorizedKeys2Sync extends ConfigFileSync[ResolvedUser] with Logging {
 
