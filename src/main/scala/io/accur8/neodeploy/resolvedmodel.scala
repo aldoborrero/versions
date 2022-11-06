@@ -1,16 +1,18 @@
 package io.accur8.neodeploy
 
 
-import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, ConfigMojoOps}
+import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, ConfigMojoOps, Exec}
 import a8.shared.FileSystem.{Directory, dir}
 import model._
 import a8.shared.SharedImports._
+import a8.shared.app.LoggingF
 import a8.shared.json.ast.{JsDoc, JsObj, JsVal}
 import io.accur8.neodeploy.Mxresolvedmodel.MxStoredSyncState
 import io.accur8.neodeploy.Sync.SyncName
+import zio.{Task, ZIO}
 
 
-object resolvedmodel {
+object resolvedmodel extends LoggingF {
 
   case class ResolvedUser(
     descriptor: UserDescriptor,
@@ -39,6 +41,35 @@ object resolvedmodel {
     gitServerDirectory: GitServerDirectory,
     repository: ResolvedRepository,
   ) {
+
+    def supervisorCommand(action: String, applicationName: ApplicationName): Command =
+      Command(Seq(
+        descriptor.supervisorctlExec.getOrElse("supervisorctl"),
+        action,
+        applicationName.value
+      ))
+
+    def runAppCommand(supervisorAction: String, currentApplicationOpt: Option[ApplicationDescriptor]): Task[Unit] = {
+      currentApplicationOpt match {
+        case None =>
+          zunit
+        case Some(currentApplication) =>
+          execCommand(
+            currentApplication
+              .stopServerCommand
+              .getOrElse(supervisorCommand(supervisorAction, currentApplication.name))
+          )
+      }
+    }
+
+
+    def execCommand(command: Command): Task[Unit] = {
+      ZIO
+        .attemptBlocking(
+          Exec(command.args).execCaptureOutput(false)
+        )
+        .logVoid
+    }
 
     def name = descriptor.name
 
@@ -69,14 +100,6 @@ object resolvedmodel {
   }
 
   object ResolvedApp {
-
-    def supervisorCommand(action: String, applicationName: ApplicationName): Command =
-      Command(Seq(
-        "supervisorctl",
-        action,
-        applicationName.value
-      ))
-
   }
 
   case class ResolvedApp(

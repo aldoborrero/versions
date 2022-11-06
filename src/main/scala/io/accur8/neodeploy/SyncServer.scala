@@ -136,14 +136,6 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
       }
     }
 
-  def execCommand(command: Command): Task[Unit] = {
-    ZIO
-      .attemptBlocking(
-        Exec(command.args).execCaptureOutput(false)
-      )
-      .logVoid
-  }
-
   def runSyncUser(newUserOpt: Option[ResolvedUser], currentStateOpt: Option[StoredSyncState]): Task[Unit] = {
 
     val userLogin = newUserOpt.map(_.descriptor.login).getOrElse(UserLogin(currentStateOpt.get.name))
@@ -178,7 +170,7 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
 
     val runSyncEffect: ZIO[Any, Throwable, Unit] =
       for {
-        _ <- currentApplication.map(_.resolvedStopCommand).map(execCommand).getOrElse(zunit)
+        _ <- resolvedServer.runAppCommand("stop", currentApplication)
         newStates <-
           appSyncs
             .map { sync =>
@@ -190,7 +182,7 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
                 .map(sync.name -> _)
             }
             .sequence
-        _ <- newApplication.map(_.resolvedStartCommand).map(execCommand).getOrElse(zunit)
+        _ <- resolvedServer.runAppCommand("start", newApplication)
         _ <- updateAppState(appName, application, newStates, newApp.isEmpty)
       } yield ()
 

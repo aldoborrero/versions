@@ -117,17 +117,7 @@ object model extends Logging {
     domainName: Option[DomainName],
     trigger: JsDoc = JsDoc.empty,
     repository: Option[RepoConfigPrefix] = None,
-  ) {
-
-    lazy val resolvedStopCommand: Command =
-      stopServerCommand
-        .getOrElse(ResolvedApp.supervisorCommand("stop", name))
-
-    lazy val resolvedStartCommand: Command =
-      startServerCommand
-        .getOrElse(ResolvedApp.supervisorCommand("start", name))
-
-  }
+  )
 
   object UserLogin extends StringValue.Companion[UserLogin]
   case class UserLogin(value: String) extends StringValue
@@ -163,6 +153,8 @@ object model extends Logging {
     serverName: DomainName,
     users: Iterable[UserDescriptor],
     rsnapshot: Option[RSnapshotDescriptor] = None,
+    a8VersionsExec: Option[String] = None,
+    supervisorctlExec: Option[String] = None,
   )
 
   object AuthorizedKey extends StringValue.Companion[AuthorizedKey]

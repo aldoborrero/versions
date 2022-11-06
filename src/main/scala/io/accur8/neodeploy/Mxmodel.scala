@@ -326,13 +326,15 @@ object Mxmodel {
           .addField(_.serverName)
           .addField(_.users)
           .addField(_.rsnapshot)
+          .addField(_.a8VersionsExec)
+          .addField(_.supervisorctlExec)
       )
       .build
     
     implicit val catsEq: cats.Eq[ServerDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[ServerDescriptor,parameters.type] =  {
-      val constructors = Constructors[ServerDescriptor](7, unsafe.iterRawConstruct)
+      val constructors = Constructors[ServerDescriptor](9, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
@@ -344,6 +346,8 @@ object Mxmodel {
       lazy val serverName: CaseClassParm[ServerDescriptor,DomainName] = CaseClassParm[ServerDescriptor,DomainName]("serverName", _.serverName, (d,v) => d.copy(serverName = v), None, 4)
       lazy val users: CaseClassParm[ServerDescriptor,Iterable[UserDescriptor]] = CaseClassParm[ServerDescriptor,Iterable[UserDescriptor]]("users", _.users, (d,v) => d.copy(users = v), None, 5)
       lazy val rsnapshot: CaseClassParm[ServerDescriptor,Option[RSnapshotDescriptor]] = CaseClassParm[ServerDescriptor,Option[RSnapshotDescriptor]]("rsnapshot", _.rsnapshot, (d,v) => d.copy(rsnapshot = v), Some(()=> None), 6)
+      lazy val a8VersionsExec: CaseClassParm[ServerDescriptor,Option[String]] = CaseClassParm[ServerDescriptor,Option[String]]("a8VersionsExec", _.a8VersionsExec, (d,v) => d.copy(a8VersionsExec = v), Some(()=> None), 7)
+      lazy val supervisorctlExec: CaseClassParm[ServerDescriptor,Option[String]] = CaseClassParm[ServerDescriptor,Option[String]]("supervisorctlExec", _.supervisorctlExec, (d,v) => d.copy(supervisorctlExec = v), Some(()=> None), 8)
     }
     
     
@@ -358,6 +362,8 @@ object Mxmodel {
           serverName = values(4).asInstanceOf[DomainName],
           users = values(5).asInstanceOf[Iterable[UserDescriptor]],
           rsnapshot = values(6).asInstanceOf[Option[RSnapshotDescriptor]],
+          a8VersionsExec = values(7).asInstanceOf[Option[String]],
+          supervisorctlExec = values(8).asInstanceOf[Option[String]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): ServerDescriptor = {
@@ -370,13 +376,15 @@ object Mxmodel {
             serverName = values.next().asInstanceOf[DomainName],
             users = values.next().asInstanceOf[Iterable[UserDescriptor]],
             rsnapshot = values.next().asInstanceOf[Option[RSnapshotDescriptor]],
+            a8VersionsExec = values.next().asInstanceOf[Option[String]],
+            supervisorctlExec = values.next().asInstanceOf[Option[String]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(name: ServerName, appInstallDirectory: AppsRootDirectory, supervisorDirectory: SupervisorDirectory, caddyDirectory: CaddyDirectory, serverName: DomainName, users: Iterable[UserDescriptor], rsnapshot: Option[RSnapshotDescriptor]): ServerDescriptor =
-        ServerDescriptor(name, appInstallDirectory, supervisorDirectory, caddyDirectory, serverName, users, rsnapshot)
+      def typedConstruct(name: ServerName, appInstallDirectory: AppsRootDirectory, supervisorDirectory: SupervisorDirectory, caddyDirectory: CaddyDirectory, serverName: DomainName, users: Iterable[UserDescriptor], rsnapshot: Option[RSnapshotDescriptor], a8VersionsExec: Option[String], supervisorctlExec: Option[String]): ServerDescriptor =
+        ServerDescriptor(name, appInstallDirectory, supervisorDirectory, caddyDirectory, serverName, users, rsnapshot, a8VersionsExec, supervisorctlExec)
     
     }
     

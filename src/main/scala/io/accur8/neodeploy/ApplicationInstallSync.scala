@@ -12,14 +12,14 @@ import io.accur8.neodeploy.ApplicationInstallSync.{Installer, State}
 import io.accur8.neodeploy.MxApplicationInstallSync._
 import io.accur8.neodeploy.model.Install.FromRepo
 import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, Install, Version}
-import io.accur8.neodeploy.resolvedmodel.ResolvedApp
+import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedServer}
 import zio.{Task, ZIO}
 
 import java.nio.file.Paths
 
 object ApplicationInstallSync extends Logging with LoggingF {
 
-  case class Installer(state: State) {
+  case class Installer(server: ResolvedServer, state: State) {
 
     lazy val appDir = dir(state.appInstallDir)
 
@@ -51,14 +51,14 @@ object ApplicationInstallSync extends Logging with LoggingF {
 
     def runInstallFromRepo(repo: FromRepo): Task[Unit] = {
       ZIO.attemptBlocking {
+        val a8VersionsExec = server.descriptor.a8VersionsExec.getOrElse("a8-versions")
         val repoConfig = applicationDescriptor.repository.getOrElse(RepoConfigPrefix.default)
         val args =
           Seq(
             "sudo",
             "-u",
             applicationDescriptor.user,
-//            "/nix/store/b2n71idin4yhsncpvj1w0q7pr3ff5q4d-devshell-dir/bin/a8-versions",
-            "a8-versions",
+            a8VersionsExec,
             "install",
             "--organization",
             repo.organization.value,
@@ -174,13 +174,13 @@ case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends 
         case Sync.Noop(_) =>
           zunit
         case Sync.Update(_, newState) =>
-          Installer(newState).install
+          Installer(input.get.server, newState).install
         case Sync.Delete(currentState) =>
           ZIO.attemptBlocking(
             dir(currentState.appInstallDir).delete()
           )
         case Sync.Insert(newState) =>
-          Installer(newState).install
+          Installer(input.get.server, newState).install
       }
 
     for {
