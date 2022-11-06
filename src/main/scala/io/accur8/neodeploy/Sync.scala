@@ -72,7 +72,7 @@ abstract class Sync[A : JsonCodec, B] {
 
   def applyAction(input: Option[B], action: Action[A]): Task[Unit]
 
-  def run(currentStateJs: Option[JsDoc], newInput: Option[B]): Task[Option[JsVal]] = {
+  def run(currentStateJs: Option[JsVal], newInput: Option[B]): Task[Option[JsVal]] = {
     val currentState = currentStateJs.map(_.unsafeAs[A])
     actions(currentState, newInput)
       .flatMap { case (newState, action) =>

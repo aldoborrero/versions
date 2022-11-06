@@ -28,7 +28,16 @@ object Main extends BootstrappedIOApp {
   lazy val config =
     configFile
       .readAsStringOpt()
-      .map(json.unsafeRead[Config])
+      .map { jsonStr =>
+        try {
+          json.unsafeRead[Config](jsonStr)
+        } catch {
+          case e: Exception =>
+            val msg = s"error reading ${configFile}"
+            logger.warn(msg, e)
+            throw new RuntimeException(msg, e)
+        }
+      }
       .getOrError(s"config file ${configFile} not found")
 
   lazy val resolvedRepository =

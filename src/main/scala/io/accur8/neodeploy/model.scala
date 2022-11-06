@@ -129,14 +129,16 @@ object model extends Logging {
 
   }
 
+  object UserLogin extends StringValue.Companion[UserLogin]
+  case class UserLogin(value: String) extends StringValue
+
   object UserDescriptor extends MxUserDescriptor
   @CompanionGen
   case class UserDescriptor(
-    login: String,
+    login: UserLogin,
     home: Option[String] = None,
     authorizedKeys: Iterable[AuthorizedKey] = Iterable.empty,
     authorizedPersonnel: Iterable[PersonnelId] = Iterable.empty,
-    appsDirectory: AppsRootDirectory,
   )
 
 
@@ -155,12 +157,11 @@ object model extends Logging {
   @CompanionGen
   case class ServerDescriptor(
     name: ServerName,
-    appsDirectory: AppsRootDirectory,
+    appInstallDirectory: AppsRootDirectory,
     supervisorDirectory: SupervisorDirectory,
     caddyDirectory: CaddyDirectory,
     serverName: DomainName,
     users: Iterable[UserDescriptor],
-    applications: Iterable[ApplicationDescriptor],
     rsnapshot: Option[RSnapshotDescriptor] = None,
   )
 
@@ -172,7 +173,7 @@ object model extends Logging {
   case class RepositoryDescriptor(
     rsnapshotKey: Option[AuthorizedKey] = None,
     personnel: Iterable[Personnel] = Iterable.empty,
-    servers: Iterable[ServerDescriptor] = Iterable.empty,
+    servers: Iterable[ServerDescriptor],
   )
 
   object PersonnelId extends StringValue.Companion[PersonnelId]
@@ -183,8 +184,8 @@ object model extends Logging {
   case class Personnel(
     id: PersonnelId,
     description: String,
-    authorizedKeysUrl: Option[String],
-    authorizedKeys: Iterable[AuthorizedKey],
+    authorizedKeysUrl: Option[String] = None,
+    authorizedKeys: Iterable[AuthorizedKey] = None,
   ) {
 
     def resolvedKeys: Vector[AuthorizedKey] =

@@ -3,12 +3,12 @@ package io.accur8.neodeploy
 
 import a8.shared.CompanionGen
 import a8.shared.FileSystem.Directory
-import io.accur8.neodeploy.model.{ApplicationDescriptor, ApplicationName, AppsRootDirectory, CaddyDirectory, Command, DomainName, GitServerDirectory, Install, SupervisorDirectory, UserDescriptor}
+import io.accur8.neodeploy.model.{ApplicationDescriptor, ApplicationName, AppsRootDirectory, CaddyDirectory, Command, DomainName, GitServerDirectory, Install, SupervisorDirectory, UserDescriptor, UserLogin}
 import zio.{Task, ZIO}
 import a8.shared.SharedImports._
 import a8.shared.app.{Logging, LoggingF}
 import a8.shared.json.ast
-import a8.shared.json.ast.JsObj
+import a8.shared.json.ast.{JsDoc, JsObj, JsVal}
 import a8.versions.Exec
 import io.accur8.neodeploy.SyncServer.loadState
 import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedServer, ResolvedUser, StoredSyncState}
@@ -45,6 +45,9 @@ object SyncServer extends Logging {
 
 
 case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
+
+  lazy val userStateDirectory: Directory =
+    ???
 
   lazy val applicationStateDirectory: Directory =
     resolvedServer
@@ -116,6 +119,23 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
       }
     }
 
+  def updateUserState(login: UserLogin, userDescriptor: UserDescriptor, states: Seq[(Sync.SyncName, Option[ast.JsVal])], delete: Boolean): Task[Unit] =
+    ZIO.attemptBlocking {
+      applicationStateDirectory.makeDirectories()
+      val stateFile = applicationStateDirectory.file(login.value + ".json")
+      if (delete) {
+        stateFile.delete()
+      } else {
+        val appSyncState =
+          StoredSyncState(
+            login,
+            userDescriptor,
+            states,
+          )
+        stateFile.write(appSyncState.prettyJson)
+      }
+    }
+
   def execCommand(command: Command): Task[Unit] = {
     ZIO
       .attemptBlocking(
@@ -123,6 +143,31 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
       )
       .logVoid
   }
+
+  def runSyncUser(newUserOpt: Option[ResolvedUser], currentStateOpt: Option[StoredSyncState]): Task[Unit] = {
+
+    val userLogin = newUserOpt.map(_.descriptor.login).getOrElse(UserLogin(currentStateOpt.get.name))
+    val descriptor = newUserOpt.map(_.descriptor).getOrElse(currentStateOpt.get.descriptor.asInstanceOf[UserDescriptor])
+
+    val runSyncEffect: ZIO[Any, Throwable, Unit] =
+      for {
+        newStates <-
+          userSyncs
+            .map { userSync =>
+              val currentSyncState: Option[JsVal] =
+                currentStateOpt
+                  .flatMap(_.syncState(userSync.name))
+              userSync
+                .run(currentSyncState, newUserOpt)
+                .map(userSync.name -> _)
+            }
+            .sequence
+        _ <- updateUserState(userLogin, descriptor, newStates, newUserOpt.isEmpty)
+      } yield ()
+
+    runSyncEffect.correlateWith0(z"${userLogin}")
+  }
+
 
   def runSyncApplication(appName: ApplicationName, currentState: Option[StoredSyncState], newApp: Option[ResolvedApp]): Task[Unit] = {
 
@@ -137,8 +182,11 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
         newStates <-
           appSyncs
             .map { sync =>
+              val currentSyncState: Option[JsVal] =
+                currentState
+                  .flatMap(_.syncState(sync.name))
               sync
-                .run(currentState.map(_.states(sync.name.value)), newApp)
+                .run(currentSyncState, newApp)
                 .map(sync.name -> _)
             }
             .sequence

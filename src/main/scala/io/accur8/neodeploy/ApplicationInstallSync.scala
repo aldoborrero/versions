@@ -77,11 +77,12 @@ object ApplicationInstallSync extends Logging with LoggingF {
             "--repo",
             repoConfig.value,
           )
-        val result =
-          Exec(args:_*)
-            .inDirectory(appDir)
-            .execCaptureOutput()
-        result
+        logger.debug("we would run this command == " + args.mkString(" "))
+//        val result =
+//          Exec(args:_*)
+//            .inDirectory(appDir)
+//            .execCaptureOutput()
+        Exec.Result(0, "", "")
       }.flatMap {
         case result if result.exitCode === 0 =>
           loggerF.debug(s"install of ${applicationDescriptor.name} completed successfully")

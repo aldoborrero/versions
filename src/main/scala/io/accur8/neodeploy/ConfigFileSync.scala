@@ -39,10 +39,12 @@ abstract class ConfigFileSync[B] extends Sync[State,B] {
   override def applyAction(input: Option[B], action: Sync.Action[State]): Task[Unit] = {
 
     def writeNewState(newState: State): Task[Unit] =
-      ZIO.attemptBlocking(
-        file(newState.filename)
+      ZIO.attemptBlocking {
+        val configFile = file(newState.filename)
+        configFile.parent.makeDirectories()
+        configFile
           .write(newState.fileContents)
-      )
+      }
 
     action match {
       case Sync.Noop(_) =>

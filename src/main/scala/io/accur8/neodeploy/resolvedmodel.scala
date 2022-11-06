@@ -1,8 +1,8 @@
 package io.accur8.neodeploy
 
 
-import a8.shared.{CascadingHocon, CompanionGen}
-import a8.shared.FileSystem.Directory
+import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, ConfigMojoOps}
+import a8.shared.FileSystem.{Directory, dir}
 import model._
 import a8.shared.SharedImports._
 import a8.shared.json.ast.{JsDoc, JsObj, JsVal}
@@ -39,16 +39,33 @@ object resolvedmodel {
     gitServerDirectory: GitServerDirectory,
     repository: ResolvedRepository,
   ) {
+
     def name = descriptor.name
-    lazy val resolvedApps = {
-      descriptor
-        .applications
-        .map(a => ResolvedApp(a, this, gitServerDirectory.unresolvedDirectory.subdir(a.name.value)))
-    }
-    def appsRootDirectory: AppsRootDirectory = descriptor.appsDirectory
+
+    lazy val resolvedApps =
+      gitServerDirectory
+        .unresolvedDirectory
+        .subdirs()
+        .flatMap(loadResolvedAppFromDisk)
+
+    def appsRootDirectory: AppsRootDirectory = descriptor.appInstallDirectory
     def supervisorDirectory: SupervisorDirectory = descriptor.supervisorDirectory
     def caddyDirectory: CaddyDirectory = descriptor.caddyDirectory
 
+    def loadResolvedAppFromDisk(appConfigDir: Directory): Option[ResolvedApp] = {
+      val appDescriptorFile = appConfigDir.file("application.json")
+      appDescriptorFile
+        .readAsStringOpt()
+        .flatMap { appDescriptorJsonStr =>
+          json.read[ApplicationDescriptor](appDescriptorJsonStr) match {
+            case Left(e) =>
+              logger.error(s"Failed to load application descriptor file: $appDescriptorFile -- ${e.prettyMessage}")
+              None
+            case Right(v) =>
+              Some(ResolvedApp(v, this, appConfigDir))
+          }
+        }
+    }
   }
 
   object ResolvedApp {
@@ -73,15 +90,17 @@ object resolvedmodel {
   object ResolvedRepository {
 
     def loadFromDisk(gitRootDirectory: GitRootDirectory): ResolvedRepository = {
-      val ch = CascadingHocon.loadConfigsInDirectory(gitRootDirectory.unresolvedDirectory.asNioPath, recurse = false)
-      ch.resolve
-      val file = gitRootDirectory.unresolvedDirectory.file("repository.hocon")
-      val jsonStr = file.readAsString()
-      val desc = json.unsafeRead[RepositoryDescriptor](jsonStr)
-      ResolvedRepository(
-        desc,
-        gitRootDirectory,
-      )
+      val cascadingHocon =
+        CascadingHocon
+          .loadConfigsInDirectory(gitRootDirectory.unresolvedDirectory.asNioPath, recurse = false)
+          .resolve
+      val configMojo =
+        ConfigMojoOps.impl.ConfigMojoRoot(
+          cascadingHocon.config.root(),
+          cascadingHocon,
+        )
+      val repositoryDescriptor = configMojo.as[RepositoryDescriptor]
+      ResolvedRepository(repositoryDescriptor, gitRootDirectory)
     }
 
   }
@@ -133,6 +152,25 @@ object resolvedmodel {
         JsObj(statesJsoValues).toJsDoc,
       )
     }
+
+    def apply(userLogin: UserLogin, userDescriptor: UserDescriptor, states: Seq[(SyncName, Option[JsVal])]): StoredSyncState = {
+      val statesJsoValues =
+        states
+          .flatMap {
+            case (syncName, Some(state)) =>
+              Some(syncName.value -> state)
+            case _ =>
+              None
+          }
+          .toMap
+
+      new StoredSyncState(
+        userLogin.value,
+        userDescriptor.toJsDoc,
+        JsObj(statesJsoValues).toJsDoc,
+      )
+    }
+
   }
   @CompanionGen
   case class StoredSyncState(
@@ -140,10 +178,12 @@ object resolvedmodel {
     descriptor: JsDoc,
     states: JsDoc,
   ) {
-    def syncState(name: String): Option[JsVal] =
+    def syncState(name: SyncName): Option[JsVal] =
       states.actualJsVal match {
         case jso: JsObj =>
-          jso.values.get(name)
+          jso
+            .values
+            .get(name.value)
         case _ =>
           None
       }

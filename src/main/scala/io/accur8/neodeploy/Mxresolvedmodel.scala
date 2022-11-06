@@ -14,7 +14,7 @@ import io.accur8.neodeploy.resolvedmodel.StoredSyncState
 
 //====
 
-import a8.shared.Meta.{CaseClassParm, Constructors, Generator}
+import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
 
 
 
