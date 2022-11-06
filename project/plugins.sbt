@@ -20,6 +20,8 @@ addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.0.0")
 //addSbtPlugin("io.get-coursier" % "sbt-coursier" % "2.0.0-RC6")
 //addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
 
+resolvers += "a8-sbt-plugins" at readRepoUrl()
+credentials += readRepoCredentials()
 
 
 //libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"
