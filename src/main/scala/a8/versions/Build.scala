@@ -18,14 +18,14 @@ object Build {
     val ArtifactoryBuild = BuildType("publish", false)
   }
 
-  def upgrade(dir: Directory)(implicit buildType: BuildType) = {
-    UpgradeVersions.runUpgrade(dir.file("version.properties"))
+  def upgrade(dir: Directory, repositoryOps: RepositoryOps)(implicit buildType: BuildType) = {
+    UpgradeVersions.runUpgrade(dir.file("version.properties"), repositoryOps)
     val g = new BuildDotSbtGenerator(dir)
     g.run()
   }
 
-  def upgradeAndPublish(dir: Directory)(implicit buildType: BuildType, buildTimestamp: Option[BuildTimestamp]) = {
-    upgrade(dir)
+  def upgradeAndPublish(dir: Directory, repositoryOps: RepositoryOps)(implicit buildType: BuildType, buildTimestamp: Option[BuildTimestamp]) = {
+    upgrade(dir, repositoryOps)
     publish(dir)
   }
 

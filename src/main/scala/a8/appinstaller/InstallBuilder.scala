@@ -13,7 +13,8 @@ import a8.versions.ast.Dependency
 import predef._
 
 case class InstallBuilder(
-  unresolvedConfig: AppInstallerConfig
+  unresolvedConfig: AppInstallerConfig,
+  repositoryOps: RepositoryOps,
 ) extends Logging {
 
   lazy val unresolvedArtifact = unresolvedConfig.unresolvedArtifact
@@ -37,7 +38,7 @@ case class InstallBuilder(
   }
 
   lazy val dependencyResult: DependencyTree =
-    RepositoryOps.resolveDependencyTree(unresolvedArtifact.asCoursierModule, rootVersion)(BuildType.ArtifactoryBuild)
+    repositoryOps.resolveDependencyTree(unresolvedArtifact.asCoursierModule, rootVersion)(BuildType.ArtifactoryBuild)
 
   private def buildLibDir() = {
     libDir.makeDirectories()
@@ -82,7 +83,7 @@ case class InstallBuilder(
   lazy val rootVersion: Version = {
     if ( unresolvedArtifact.version.rawValue == "latest") {
       val versions =
-        RepositoryOps
+        repositoryOps
           .remoteVersions(unresolvedArtifact.asCoursierModule)
           .filter(v => unresolvedConfig.branch.isEmpty || unresolvedConfig.branch == v.buildInfo.map(_.branch))
       versions.toList.sorted.last

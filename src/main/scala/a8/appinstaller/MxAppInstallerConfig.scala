@@ -1,7 +1,5 @@
 package a8.appinstaller
 
-import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
-
 /**
 
   WARNING THIS IS GENERATED CODE.  DO NOT EDIT.
@@ -14,22 +12,29 @@ import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
 import AppInstallerConfig.LibDirKind
 //====
 
+import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
+
+
 
 object MxAppInstallerConfig {
   
   trait MxAppInstallerConfig {
   
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[AppInstallerConfig,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[AppInstallerConfig,parameters.type] = builder
+    
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[AppInstallerConfig,a8.shared.json.ast.JsObj] =
-      a8.shared.json.JsonObjectCodecBuilder(generator)
-        .addField(_.organization)
-        .addField(_.artifact)
-        .addField(_.version)
-        .addField(_.branch)
-        .addField(_.installDir)
-        .addField(_.libDirKind)
-        .addField(_.webappExplode)
-        .addField(_.backup)
-        .build
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.organization)
+          .addField(_.artifact)
+          .addField(_.version)
+          .addField(_.branch)
+          .addField(_.installDir)
+          .addField(_.libDirKind)
+          .addField(_.webappExplode)
+          .addField(_.backup)
+      )
+      .build
     
     implicit val catsEq: cats.Eq[AppInstallerConfig] = cats.Eq.fromUniversalEquals
     

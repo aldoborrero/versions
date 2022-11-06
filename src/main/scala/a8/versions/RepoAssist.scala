@@ -34,15 +34,19 @@ object RepoAssist {
     }
   }
 
-
-  def readRepoCredentials(): Credentials = {
-    val repoUrl = new java.net.URL(readRepoUrl())
-    Credentials(
-      readRepoProperty("repo_realm"),
-      repoUrl.getHost,
-      readRepoProperty("repo_user"),
-      readRepoProperty("repo_password"),
-    )
+  def readRepoPropertyOpt(propertyName: String): Option[String] = {
+    repoProperties.get(propertyName)
   }
+
+
+  //  def readRepoCredentials(): Credentials = {
+//    val repoUrl = new java.net.URL(readRepoUrl())
+//    Credentials(
+//      readRepoProperty("repo_realm"),
+//      repoUrl.getHost,
+//      readRepoProperty("repo_user"),
+//      readRepoProperty("repo_password"),
+//    )
+//  }
 
 }

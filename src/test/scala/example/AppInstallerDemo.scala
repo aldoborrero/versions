@@ -3,6 +3,7 @@ package example
 
 import a8.appinstaller.AppInstallerConfig.LibDirKind
 import a8.appinstaller.{AppInstaller, AppInstallerConfig, InstallBuilder}
+import a8.versions.RepositoryOps
 import a8.versions.predef._
 
 object AppInstallerDemo {
@@ -22,7 +23,7 @@ object AppInstallerDemo {
         libDirKind = Some(LibDirKind.Repo),
       )
 
-    val installer = new AppInstaller(config)
+    val installer = new AppInstaller(config, RepositoryOps.default)
     installer.execute()
 
   }

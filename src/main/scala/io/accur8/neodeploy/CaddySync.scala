@@ -3,20 +3,20 @@ package io.accur8.neodeploy
 import a8.shared.SharedImports._
 import a8.shared.FileSystem.{Directory, File}
 import a8.shared.ZString
-import io.accur8.neodeploy.model.CaddyDirectory
+import io.accur8.neodeploy.model.{CaddyDirectory, ResolvedApp}
 import zio.{Task, ZIO}
 
 
 
-case class CaddySync(caddyDir: CaddyDirectory) extends ConfigFileSync(caddyDir) {
+case class CaddySync(caddyDir: CaddyDirectory) extends ConfigFileSync[ResolvedApp] {
 
-  override def filename(deployState: DeployState): ZString =
-    z"${deployState.applicationName}.caddy"
+  override val name: Sync.SyncName = Sync.SyncName("caddy")
 
-  override def state(applicationDescriptor: model.ApplicationDescriptor): Task[Option[String]] =
-    zsucceed(
-      caddyConfigContents(applicationDescriptor)
-    )
+  override def configFile(resolvedApp: ResolvedApp): File =
+    caddyDir.unresolvedDirectory.file(z"${resolvedApp.application.name}.caddy")
+
+  override def configFileContents(input: ResolvedApp): Task[Option[String]] =
+    zsucceed(caddyConfigContents(input.application))
 
   def caddyConfigContents(applicationDescriptor: model.ApplicationDescriptor): Option[String] = {
     import applicationDescriptor._

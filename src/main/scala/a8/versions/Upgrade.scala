@@ -7,8 +7,8 @@ import coursier.core.{Dependency, Module, ModuleName, Organization}
 
 sealed trait Upgrade {
 
-  def resolveVersion(upgrades: Map[String, Upgrade])(implicit buildType: BuildType): Version
-  def resolveDependencyTree(upgrades: Map[String, Upgrade])(implicit buildType: BuildType): Resolution
+  def resolveVersion(upgrades: Map[String, Upgrade], repositoryOps: RepositoryOps)(implicit buildType: BuildType): Version
+  def resolveDependencyTree(upgrades: Map[String, Upgrade], repositoryOps: RepositoryOps)(implicit buildType: BuildType): Resolution
 
 }
 
@@ -19,22 +19,23 @@ object Upgrade {
     branch: String,
   ) extends Upgrade {
 
-    lazy val remoteVersions =
-      RepositoryOps
+    def remoteVersions(repositoryOps: RepositoryOps) =
+      repositoryOps
         .remoteVersions(module)
         .filter(_.buildInfo.exists(_.branch == branch))
         .toIndexedSeq
 
-    lazy val localVersions =
-      RepositoryOps
+    def localVersions(repositoryOps: RepositoryOps) =
+      repositoryOps
         .localVersions(module)
         .filter(_.buildInfo.exists(_.branch == branch))
         .toIndexedSeq
 
-    def resolveVersion(upgrades: Map[String, Upgrade])(implicit buildType: BuildType): Version = {
+
+    override def resolveVersion(upgrades: Map[String, Upgrade], repositoryOps: RepositoryOps)(implicit buildType: BuildType): Version = {
       val versions =
-        if (buildType.useLocalRepo) localVersions ++ remoteVersions
-        else remoteVersions
+        if (buildType.useLocalRepo) localVersions(repositoryOps) ++ remoteVersions(repositoryOps)
+        else remoteVersions(repositoryOps)
 
       versions
         .sorted(Version.orderingByMajorMinorPathBuildTimestamp)
@@ -42,9 +43,9 @@ object Upgrade {
 
     }
 
-    def resolveDependencyTree(upgrades: Map[String, Upgrade])(implicit buildType: BuildType): Resolution = {
-      val resolvedVersion = resolveVersion(upgrades)
-      RepositoryOps.resolveDependencyTree(module, resolvedVersion).resolution
+    def resolveDependencyTree(upgrades: Map[String, Upgrade], repositoryOps: RepositoryOps)(implicit buildType: BuildType): Resolution = {
+      val resolvedVersion = resolveVersion(upgrades, repositoryOps)
+      repositoryOps.resolveDependencyTree(module, resolvedVersion).resolution
     }
 
   }
@@ -54,15 +55,14 @@ object Upgrade {
     module: Module,
   ) extends Upgrade {
 
-
-    override def resolveVersion(upgrades: Map[String, Upgrade])(implicit buildType: BuildType): Version = {
+    override def resolveVersion(upgrades: Map[String, Upgrade], repositoryOps: RepositoryOps)(implicit buildType: BuildType): Version = {
       val upgrade =
         upgrades
           .get(dependencyTreeProp)
           .getOrElse(throw new RuntimeException(s"unable to resolve dependencyTreeProp ${dependencyTreeProp}"))
       val dependencies =
         upgrade
-          .resolveDependencyTree(upgrades)
+          .resolveDependencyTree(upgrades, repositoryOps)
           .finalDependenciesCache
           .keys
       val dep =
@@ -72,9 +72,9 @@ object Upgrade {
       Version.parse(dep.version).get
     }
 
-    def resolveDependencyTree(upgrades: Map[String, Upgrade])(implicit buildType: BuildType): Resolution = {
-      val resolvedVersion = resolveVersion(upgrades)
-      RepositoryOps.resolveDependencyTree(module, resolvedVersion).resolution
+    def resolveDependencyTree(upgrades: Map[String, Upgrade], repositoryOps: RepositoryOps)(implicit buildType: BuildType): Resolution = {
+      val resolvedVersion = resolveVersion(upgrades, repositoryOps)
+      repositoryOps.resolveDependencyTree(module, resolvedVersion).resolution
     }
 
   }

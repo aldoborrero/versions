@@ -1,8 +1,7 @@
 package a8.versions.apps
 
 import java.util.Date
-
-import a8.versions.BuildTimestamp
+import a8.versions.{BuildTimestamp, RepositoryOps}
 
 object QubesVersionDance {
 
@@ -13,13 +12,15 @@ object QubesVersionDance {
     implicit val buildType = BuildType.ArtifactoryBuild
     implicit val buildTimestamp = Some(BuildTimestamp.now())
 
+    val repositoryOps = RepositoryOps.default
+
     println(s"using buildTimestamp = ${buildTimestamp}")
 
     val start = new Date()
 
     publish(codeHome \\ "model3")
-    upgradeAndPublish(codeHome \\ "manna")
-    upgrade(codeHome \\ "qubes")
+    upgradeAndPublish(codeHome \\ "manna", repositoryOps)
+    upgrade(codeHome \\ "qubes", repositoryOps)
 
     println(s"started at ${start}")
     println(s"started at ${new Date}")

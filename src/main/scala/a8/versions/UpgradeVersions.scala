@@ -8,7 +8,7 @@ import scala.jdk.CollectionConverters._
 
 object UpgradeVersions {
 
-  def runUpgrade(versionDotPropsFile: File)(implicit buildType: BuildType): Unit = {
+  def runUpgrade(versionDotPropsFile: File, repositoryOps: RepositoryOps)(implicit buildType: BuildType): Unit = {
 
     lazy val versionInfo: Map[String, String] = {
       val props = new Properties()
@@ -24,7 +24,7 @@ object UpgradeVersions {
 
 
     lazy val resolvedVersions =
-      upgrades.map(t => t._1 -> t._2.resolveVersion(upgrades))
+      upgrades.map(t => t._1 -> t._2.resolveVersion(upgrades, repositoryOps))
 
     lazy val newVersions =
       versionInfo

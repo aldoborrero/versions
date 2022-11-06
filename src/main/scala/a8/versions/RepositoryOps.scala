@@ -1,23 +1,62 @@
 package a8.versions
 
-import a8.shared.FileSystem
+import a8.shared.jdbcf.DatabaseConfig.Password
+import a8.shared.{CompanionGen, FileSystem, StringValue}
 
 import java.io.{FileInputStream, StringReader}
 import java.util.Properties
 import a8.versions.Build.BuildType
+import a8.versions.RepositoryOps.{DependencyTree, RepoConfigPrefix, ivyLocal}
 import a8.versions.predef._
-import com.softwaremill.sttp.{Uri, sttp}
+import com.softwaremill.sttp.{Request, Uri, sttp}
 import coursier.cache.{ArtifactError, Cache}
 import coursier.core.{Authentication, Module, ResolutionProcess}
 import coursier.maven.MavenRepository
 import coursier.util.{Artifact, EitherT, Task}
-import coursier.{Dependency, LocalRepositories, Resolution}
+import coursier.{Dependency, LocalRepositories, Profile, Resolution}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
 
-object RepositoryOps {
+object RepositoryOps extends Logging {
+
+  val default = RepositoryOps(RepoConfigPrefix.default)
+
+  object RepoConfigPrefix extends StringValue.Companion[RepoConfigPrefix] {
+    def default = RepoConfigPrefix("repo")
+  }
+
+  case class RepoConfigPrefix(
+    value: String,
+  ) extends StringValue {
+
+    object impl {
+      def readRepoPropertyOpt(suffix: String): Option[String] = {
+        val propertyName = s"${value}_${suffix}"
+        val result =
+          RepoAssist.readRepoPropertyOpt(propertyName) match {
+            case None =>
+              None
+            case Some(s) =>
+              Some(s)
+          }
+        logger.debug("reading repo property: " + propertyName + " = " + result)
+        result
+      }
+    }
+
+    lazy val url = impl.readRepoPropertyOpt("url").getOrElse(sys.error(s"minimally must supply a ${value}_url property"))
+    lazy val userOpt = impl.readRepoPropertyOpt("user")
+    lazy val passwordOpt =  impl.readRepoPropertyOpt("password")
+
+    def authentication: Option[Authentication] = {
+      for {
+        user <- userOpt
+        password <- passwordOpt
+      } yield Authentication(user, password)
+    }
+  }
 
   case class DependencyTree(
     resolution: Resolution,
@@ -41,6 +80,10 @@ object RepositoryOps {
   lazy val userHome = FileSystem.dir(System.getProperty("user.home"))
 
   lazy val ivyLocal = userHome \\ ".ivy2" \\ "local"
+
+}
+
+case class RepositoryOps(repoConfigPrefix: RepoConfigPrefix) {
 
   def resolveDependencyTree(module: Module, resolvedVersion: Version)(implicit buildType: BuildType): DependencyTree = {
 
@@ -74,15 +117,17 @@ object RepositoryOps {
 
   lazy val localRepository = LocalRepositories.ivy2Local
 
-  lazy val remoteRepositoryUri = Uri(new java.net.URI(RepoAssist.readRepoProperty("repo_url")))
-  lazy val remoteRepositoryUser = RepoAssist.readRepoProperty("repo_user")
-  lazy val remoteRepositoryPassword = RepoAssist.readRepoProperty("repo_password")
+  def remoteRepositoryUri = repoConfigPrefix.url
+//  def remoteRepositoryUser = repoConfig.user
+//  def remoteRepositoryPassword = repoConfig.password
 
   lazy val remoteRepository =
     MavenRepository(
       remoteRepositoryUri.toString,
-      authentication = Some(Authentication(remoteRepositoryUser, remoteRepositoryPassword))
+      authentication = remoteRepositoryAuthentication,
     )
+
+  def remoteRepositoryAuthentication: Option[Authentication] = repoConfigPrefix.authentication
 
   def localVersions(module: Module): Iterable[Version] = {
 
@@ -105,11 +150,16 @@ object RepositoryOps {
       try {
         val uri = Uri(new java.net.URI(artifact.url)).copy(userInfo = None)
 
-        val response = //url.openStream().readString
-          sttp
-            .get(uri)
-            .auth.basic(remoteRepositoryUser, remoteRepositoryPassword)
+        def addAuth(request: Request[String, Nothing]): Request[String,Nothing] = {
+          remoteRepositoryAuthentication
+            .map(auth => request.auth.basic(auth.user, auth.passwordOpt.get))
+            .getOrElse(request)
+        }
+
+        val response = { //url.openStream().readString
+          addAuth(sttp.get(uri))
             .send()
+        }
 
         val body = response.unsafeBody
 

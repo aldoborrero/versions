@@ -1,7 +1,5 @@
 package a8.appinstaller
 
-import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
-
 /**
 
   WARNING THIS IS GENERATED CODE.  DO NOT EDIT.
@@ -14,16 +12,23 @@ import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
 import a8.appinstaller.JarMetadata._
 //====
 
+import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
+
+
 
 object MxJarMetadata {
   
   trait MxExplode {
   
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[Explode,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[Explode,parameters.type] = builder
+    
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[Explode,a8.shared.json.ast.JsObj] =
-      a8.shared.json.JsonObjectCodecBuilder(generator)
-        .addField(_.jar)
-        .addField(_.includes)
-        .build
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.jar)
+          .addField(_.includes)
+      )
+      .build
     
     implicit val catsEq: cats.Eq[Explode] = cats.Eq.fromUniversalEquals
     
@@ -71,11 +76,15 @@ object MxJarMetadata {
   
   trait MxSymLink {
   
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[SymLink,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[SymLink,parameters.type] = builder
+    
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[SymLink,a8.shared.json.ast.JsObj] =
-      a8.shared.json.JsonObjectCodecBuilder(generator)
-        .addField(_.link)
-        .addField(_.target)
-        .build
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.link)
+          .addField(_.target)
+      )
+      .build
     
     implicit val catsEq: cats.Eq[SymLink] = cats.Eq.fromUniversalEquals
     
@@ -123,12 +132,16 @@ object MxJarMetadata {
   
   trait MxJarMetadata {
   
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[JarMetadata,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[JarMetadata,parameters.type] = builder
+    
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[JarMetadata,a8.shared.json.ast.JsObj] =
-      a8.shared.json.JsonObjectCodecBuilder(generator)
-        .addField(_.explode)
-        .addField(_.chmod_exec)
-        .addField(_.symlinks)
-        .build
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.explode)
+          .addField(_.chmod_exec)
+          .addField(_.symlinks)
+      )
+      .build
     
     implicit val catsEq: cats.Eq[JarMetadata] = cats.Eq.fromUniversalEquals
     

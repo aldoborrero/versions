@@ -1,8 +1,7 @@
 package a8.versions.apps
 
 import java.util.Date
-
-import a8.versions.BuildTimestamp
+import a8.versions.{BuildTimestamp, RepositoryOps}
 
 object AhsVersionDance {
 
@@ -15,12 +14,14 @@ object AhsVersionDance {
 
     val start = new Date()
 
+    val repositoryOps = RepositoryOps.default
+
     implicit val buildTimestamp = Some(BuildTimestamp.now())
 
     publish(codeHome \\ "model3")
-    upgradeAndPublish(codeHome \\ "manna")
-    upgradeAndPublish(codeHome \\ "qubes")
-    upgrade(codeHome \\ "ahs" \\ "scala")
+    upgradeAndPublish(codeHome \\ "manna", repositoryOps)
+    upgradeAndPublish(codeHome \\ "qubes", repositoryOps)
+    upgrade(codeHome \\ "ahs" \\ "scala", repositoryOps)
 
 
     println(s"started at ${start}")

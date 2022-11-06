@@ -1,7 +1,5 @@
 package a8.versions
 
-import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
-
 /**
 
   WARNING THIS IS GENERATED CODE.  DO NOT EDIT.
@@ -14,19 +12,26 @@ import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
 import ast._
 //====
 
+import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
+
+
 
 object Mxast {
   
   trait MxRepo {
   
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[Repo,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[Repo,parameters.type] = builder
+    
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[Repo,a8.shared.json.ast.JsObj] =
-      a8.shared.json.JsonObjectCodecBuilder(generator)
-        .addField(_.header)
-        .addField(_.organization)
-        .addField(_.gradle)
-        .addField(_.public)
-        .addField(_.modules)
-        .build
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.header)
+          .addField(_.organization)
+          .addField(_.gradle)
+          .addField(_.public)
+          .addField(_.modules)
+      )
+      .build
     
     implicit val catsEq: cats.Eq[Repo] = cats.Eq.fromUniversalEquals
     
@@ -83,18 +88,22 @@ object Mxast {
   
   trait MxModule {
   
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[Module,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[Module,parameters.type] = builder
+    
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[Module,a8.shared.json.ast.JsObj] =
-      a8.shared.json.JsonObjectCodecBuilder(generator)
-        .addField(_.sbtName)
-        .addField(_.projectType)
-        .addField(_.artifactName)
-        .addField(_.directory)
-        .addField(_.dependsOn)
-        .addField(_.dependencies)
-        .addField(_.jvmDependencies)
-        .addField(_.jsDependencies)
-        .addField(_.extraSettings)
-        .build
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.sbtName)
+          .addField(_.projectType)
+          .addField(_.artifactName)
+          .addField(_.directory)
+          .addField(_.dependsOn)
+          .addField(_.dependencies)
+          .addField(_.jvmDependencies)
+          .addField(_.jsDependencies)
+          .addField(_.extraSettings)
+      )
+      .build
     
     implicit val catsEq: cats.Eq[Module] = cats.Eq.fromUniversalEquals
     
@@ -163,15 +172,19 @@ object Mxast {
   
   trait MxDependency {
   
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[Dependency,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[Dependency,parameters.type] = builder
+    
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[Dependency,a8.shared.json.ast.JsObj] =
-      a8.shared.json.JsonObjectCodecBuilder(generator)
-        .addField(_.organization)
-        .addField(_.scalaArtifactSeparator)
-        .addField(_.artifactName)
-        .addField(_.version)
-        .addField(_.configuration)
-        .addField(_.exclusions)
-        .build
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.organization)
+          .addField(_.scalaArtifactSeparator)
+          .addField(_.artifactName)
+          .addField(_.version)
+          .addField(_.configuration)
+          .addField(_.exclusions)
+      )
+      .build
     
     implicit val catsEq: cats.Eq[Dependency] = cats.Eq.fromUniversalEquals
     

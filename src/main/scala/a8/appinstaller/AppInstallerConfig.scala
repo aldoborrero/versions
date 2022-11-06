@@ -1,7 +1,7 @@
 package a8.appinstaller
 
 
-import a8.appinstaller.MxAppInstallerConfig.MxAppInstallerConfig
+import a8.appinstaller.MxAppInstallerConfig._
 import a8.shared.json.{JsonCodec, JsonTypedCodec}
 import a8.shared.{CompanionGen, FileSystem}
 import a8.versions.ast
@@ -26,6 +26,7 @@ object AppInstallerConfig extends MxAppInstallerConfig {
         .asJsonCodec
 
   }
+
 }
 
 @CompanionGen

@@ -12,6 +12,7 @@ object DependencyTreeDemo {
 
     val tree =
       RepositoryOps
+        .default
         .resolveDependencyTree(
           coursier.core.Module(Organization("a8"), ModuleName("a8-qubes-dist_2.12"), Map()),
           Version.parse("2.7.0-20180418_0536_master").get

@@ -7,10 +7,11 @@ import a8.versions.Build.BuildType
 import a8.versions._
 import a8.versions.Upgrade.LatestArtifact
 import a8.versions.apps.Main.{Conf, Runner}
-import org.rogach.scallop.{ScallopConf, Subcommand}
+import org.rogach.scallop.{ScallopConf, ScallopOption, Subcommand}
 import a8.versions.predef._
 import coursier.core.{ModuleName, Organization}
 import a8.shared.SharedImports._
+import a8.versions.RepositoryOps.RepoConfigPrefix
 import wvlet.log.{LogLevel, Logger}
 
 import scala.annotation.tailrec
@@ -37,6 +38,14 @@ object Main extends Logging {
          |""".stripMargin
     )
 
+    def repositoryOps(repo: ScallopOption[String]): RepositoryOps = {
+      repo
+        .map(r => RepositoryOps.apply(RepoConfigPrefix(v)))
+      RepositoryOps(
+        repo.getOrElse(RepositoryOps.RepoConfigPrefix.default)
+      )
+    }
+
     val resolve = new Subcommand("resolve") with Runner {
 
       val organization = opt[String](required = true, descr = "organization of the artifact to resolve")
@@ -44,11 +53,14 @@ object Main extends Logging {
       val branch = opt[String](descr = "branch name")
       val version = opt[String](descr = "specific version")
 
+      val repo: ScallopOption[String] = opt[String](descr = "repository name", required = false)
+
       descr("setup app installer json files if they have not already been setup")
 
       override def run(main: Main) = {
         val r = this
-        main.runResolve(coursier.Module(Organization(r.organization.apply()), ModuleName(r.artifact.apply())), r.branch.toOption, r.version.toOption)
+        val ro = repositoryOps(r.repo)
+        main.runResolve(coursier.Module(Organization(r.organization.apply()), ModuleName(r.artifact.apply())), r.branch.toOption, r.version.toOption, ro)
       }
 
     }
@@ -64,9 +76,12 @@ object Main extends Logging {
       val webappExplode = opt[String](descr = "do webapp explode", required = false)
       val backup = opt[String](descr = "run backup of existing install before install", required = false)
 
+      val repoUrl = opt[String](descr = "repository url", required = false)
+      val repoCredentials: ScallopOption[String] = opt[String](descr = "repository credentials prefix", required = false)
+
       descr("install app into the installDir")
 
-      override def run(main: Main) =
+      override def run(main: Main) = {
         Main
           .runInstall(
             coursier.Module(Organization(organization.apply()), ModuleName(artifact.apply())),
@@ -76,7 +91,9 @@ object Main extends Logging {
             libDirKind.toOption,
             webappExplode.map(_.toBoolean).toOption,
             backup = backup.toOption.map(_.toBoolean).getOrElse(true),
+            repositoryOps = repositoryOps(repoUrl, repoCredentials),
           )
+      }
 
     }
 
@@ -155,6 +172,7 @@ object Main extends Logging {
     libDirKind: Option[String],
     webappExplode: Option[Boolean] = Some(true),
     backup: Boolean = true,
+    repositoryOps: RepositoryOps,
   ): Unit = {
 
     implicit val buildType = BuildType.ArtifactoryBuild
@@ -167,7 +185,7 @@ object Main extends Logging {
           sys.error("must supply a branch or version not both")
         case (Some(b), None) =>
           val resolvedBranch = scrubBranchName(b)
-          LatestArtifact(module, resolvedBranch).resolveVersion(Map()) -> Some(s"latest_${resolvedBranch}.json")
+          LatestArtifact(module, resolvedBranch).resolveVersion(Map(), repositoryOps) -> Some(s"latest_${resolvedBranch}.json")
         case (None, Some(v)) =>
           Version.parse(v).get -> None
       }
@@ -197,7 +215,7 @@ object Main extends Logging {
         backup = backup,
       )
 
-    AppInstaller(config).execute()
+    AppInstaller(config, repositoryOps).execute()
 
   }
 
@@ -234,7 +252,7 @@ class Main(args: Seq[String]) {
   }
 
 
-  def runResolve(module: coursier.Module, branch: Option[String], version: Option[String]): Unit = {
+  def runResolve(module: coursier.Module, branch: Option[String], version: Option[String], repositoryOps: RepositoryOps): Unit = {
 
     val (resolvedVersion, latest) =
       (branch, version) match {
@@ -243,14 +261,14 @@ class Main(args: Seq[String]) {
         case (Some(_), Some(_)) =>
           sys.error("must supply a branch or version not both")
         case (Some(b), None) =>
-          LatestArtifact(module, b).resolveVersion(Map()) -> Some(s"latest_${b}.json")
+          LatestArtifact(module, b).resolveVersion(Map(), repositoryOps) -> Some(s"latest_${b}.json")
         case (None, Some(v)) =>
           Version.parse(v).get -> None
       }
 
     println(s"using version ${resolvedVersion}")
 
-    val tree = RepositoryOps.resolveDependencyTree(module, resolvedVersion)
+    val tree = repositoryOps.resolveDependencyTree(module, resolvedVersion)
 
     val aic =
       AppInstallerConfig(
@@ -260,7 +278,7 @@ class Main(args: Seq[String]) {
         branch = None,
       )
 
-    val installBuilder = InstallBuilder(aic)
+    val installBuilder = InstallBuilder(aic, repositoryOps)
 
     val inventoryDir = a8VersionsCache \\ module.organization.value \\ module.name.value
 
@@ -296,7 +314,7 @@ class Main(args: Seq[String]) {
   }
 
   def runVersionBump(): Unit = {
-    Build.upgrade(FileSystem.dir("."))
+    Build.upgrade(FileSystem.dir("."), RepositoryOps.default)
   }
 
 }

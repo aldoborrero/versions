@@ -7,6 +7,7 @@ import a8.shared.FileSystem
 import language.postfixOps
 import a8.versions.predef._
 import a8.shared.SharedImports._
+import a8.versions.RepositoryOps
 import predef.tryLog
 
 object AppInstaller {
@@ -32,9 +33,9 @@ object AppInstaller {
 }
 
 
-case class AppInstaller(config: AppInstallerConfig) extends Logging {
+case class AppInstaller(config: AppInstallerConfig, repositoryOps: RepositoryOps) extends Logging {
 
-  lazy val installBuilder = InstallBuilder(config)
+  lazy val installBuilder = InstallBuilder(config, repositoryOps)
 
   lazy val backupDir: FileSystem.Directory = config.resolvedInstallDir \\ "_bak" \\ FileSystem.fileSystemCompatibleTimestamp()
 

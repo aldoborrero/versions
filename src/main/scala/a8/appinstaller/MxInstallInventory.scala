@@ -1,7 +1,5 @@
 package a8.appinstaller
 
-import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
-
 /**
 
   WARNING THIS IS GENERATED CODE.  DO NOT EDIT.
@@ -14,16 +12,23 @@ import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
 
 //====
 
+import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
+
+
 
 object MxInstallInventory {
   
   trait MxInstallInventory {
   
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[InstallInventory,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[InstallInventory,parameters.type] = builder
+    
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[InstallInventory,a8.shared.json.ast.JsObj] =
-      a8.shared.json.JsonObjectCodecBuilder(generator)
-        .addField(_.appInstallerConfig)
-        .addField(_.classpath)
-        .build
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.appInstallerConfig)
+          .addField(_.classpath)
+      )
+      .build
     
     implicit val catsEq: cats.Eq[InstallInventory] = cats.Eq.fromUniversalEquals
     

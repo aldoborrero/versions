@@ -3,46 +3,35 @@ package io.accur8.neodeploy
 
 import a8.shared.CompanionGen
 import a8.shared.FileSystem.Directory
-import io.accur8.neodeploy.SyncServer.Config
-import io.accur8.neodeploy.MxMain._
-import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, CaddyDirectory, Command, DomainName, GitServerDirectory, Install, SupervisorDirectory}
+import io.accur8.neodeploy.model.{ApplicationDescriptor, ApplicationName, AppsRootDirectory, CaddyDirectory, Command, DomainName, GitServerDirectory, Install, ResolvedApp, ResolvedServer, ResolvedUser, StoredSyncState, SupervisorDirectory, UserDescriptor}
 import zio.{Task, ZIO}
 import a8.shared.SharedImports._
-import a8.shared.app.LoggingF
+import a8.shared.app.{Logging, LoggingF}
+import a8.shared.json.ast
+import a8.shared.json.ast.JsObj
 import a8.versions.Exec
+import io.accur8.neodeploy.SyncServer.loadState
 
-object SyncServer {
+object SyncServer extends Logging {
 
-  object Config extends MxConfig
-  @CompanionGen
-  case class Config(
-    supervisorDirectory: SupervisorDirectory,
-    caddyDirectory: CaddyDirectory,
-    appsRootDirectory: AppsRootDirectory,
-    gitServerDirectory: GitServerDirectory,
-    serverName: DomainName,
-  )
+//  object Config extends MxConfig
+//  @CompanionGen
+//  case class Config(
+//    supervisorDirectory: SupervisorDirectory,
+//    caddyDirectory: CaddyDirectory,
+//    appsRootDirectory: AppsRootDirectory,
+//    gitServerDirectory: GitServerDirectory,
+//    serverName: DomainName,
+//  )
 
-}
-
-
-case class SyncServer(config: Config) extends LoggingF {
-
-  lazy val stateDirectory: Directory =
-    config
-      .appsRootDirectory
-      .unresolvedDirectory
-      .subdir(".state")
-      .resolve
-
-  lazy val currentApplicationDescriptors: Vector[ApplicationDescriptor] = {
-    stateDirectory
+  def loadState(directory: Directory): Vector[StoredSyncState] = {
+    directory
       .files()
       .toVector
       .flatMap { f =>
         try {
           val jsonStr = f.readAsString()
-          json.unsafeRead[ApplicationDescriptor](jsonStr).some
+          json.unsafeRead[StoredSyncState](jsonStr).some
         } catch {
           case e: Throwable =>
             logger.error(s"error reading file ${f.canonicalPath}", e)
@@ -51,79 +40,78 @@ case class SyncServer(config: Config) extends LoggingF {
       }
   }
 
-  lazy val newApplicationDescriptors: Iterable[ApplicationDescriptor] =
-    config
-      .gitServerDirectory
+}
+
+
+case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
+
+  lazy val applicationStateDirectory: Directory =
+    resolvedServer
+      .appsRootDirectory
       .unresolvedDirectory
-      .subdirs()
-      .filter(_.name != ".git")
-      .toVector
-      .flatMap { d =>
-        val f = d.file("application.json")
-        try {
-          val jsonStr = f.readAsString()
-          json.unsafeRead[ApplicationDescriptor](jsonStr).some
-        } catch {
-          case e: Throwable =>
-            logger.error(s"error reading ${f}", e)
-            None
-        }
-      }
+      .subdir(".state")
+      .resolve
 
-  lazy val currentApplicationDescriptorsByName =
-    currentApplicationDescriptors
-      .map(d => d.name -> d)
+  lazy val currentApplicationStates: Vector[StoredSyncState] =
+    loadState(applicationStateDirectory)
+
+  lazy val newResolvedApps: Iterable[ResolvedApp] =
+    resolvedServer
+      .resolvedApps
+
+  lazy val currentApplicationStatesByName =
+    currentApplicationStates
+      .map(d => ApplicationName(d.name) -> d)
       .toMap
 
-  lazy val newApplicationDescriptorsByName =
-    newApplicationDescriptors
-      .map(d => d.name -> d)
+  lazy val newResolvedAppsByName: Map[model.ApplicationName, ResolvedApp] =
+    newResolvedApps
+      .map(ra => ra.application.name -> ra)
       .toMap
 
-  lazy val allNames =
-    (currentApplicationDescriptorsByName.keySet ++ newApplicationDescriptorsByName.keySet)
+  lazy val allApplicationNames =
+    (currentApplicationStatesByName.keySet ++ newResolvedAppsByName.keySet)
       .toVector
       .distinct
 
-  lazy val deploys =
-    allNames
-      .map { applicationName =>
-        DeployState(
-          applicationName,
-          config.gitServerDirectory.resolvedDirectory.subdir(applicationName.value),
-          currentApplicationDescriptorsByName.get(applicationName),
-          newApplicationDescriptorsByName.get(applicationName),
-        )
-      }
-
-  lazy val syncs: Seq[Sync[_]] =
+  lazy val appSyncs: Seq[Sync[_, ResolvedApp]] =
     Vector(
-      CaddySync(config.caddyDirectory),
-      SupervisorSync(config.supervisorDirectory),
-      ApplicationInstallSync(config.appsRootDirectory),
+      CaddySync(resolvedServer.caddyDirectory),
+      SupervisorSync(resolvedServer.supervisorDirectory),
+      ApplicationInstallSync(resolvedServer.appsRootDirectory),
+    )
+
+  lazy val userSyncs: Seq[Sync[_, ResolvedUser]] =
+    Vector(
+      AuthorizedKeys2Sync,
     )
 
   def run: Task[Unit] =
-    deploys
-      .map(deploy =>
-        if ( deploy.needsSync ) {
-          runSyncApplication(deploy)
-        } else {
-          loggerF.info(z"no changes for ${deploy.applicationName}")
-        }
+    allApplicationNames
+      .map(appName =>
+        runSyncApplication(
+          appName,
+          currentApplicationStatesByName.get(appName),
+          newResolvedAppsByName.get(appName),
+        )
       )
       .sequencePar
       .logVoid
 
-  def updateDeployState(deployState: DeployState): Task[Unit] =
+  def updateAppState(appName: ApplicationName, application: ApplicationDescriptor, states: Seq[(Sync.SyncName, Option[ast.JsVal])], delete: Boolean): Task[Unit] =
     ZIO.attemptBlocking {
-      stateDirectory.makeDirectories()
-      val stateFile = stateDirectory.file(deployState.applicationName.value + ".json")
-      deployState.newApplicationDescriptor match {
-        case Some(newApplicationDescriptor) =>
-          stateFile.write(newApplicationDescriptor.prettyJson)
-        case None =>
-          stateFile.delete()
+      applicationStateDirectory.makeDirectories()
+      val stateFile = applicationStateDirectory.file(appName.value + ".json")
+      if (delete) {
+        stateFile.delete()
+      } else {
+        val appSyncState =
+          StoredSyncState(
+            appName,
+            application,
+            states,
+          )
+        stateFile.write(appSyncState.prettyJson)
       }
     }
 
@@ -135,35 +123,29 @@ case class SyncServer(config: Config) extends LoggingF {
       .logVoid
   }
 
-  def runSyncApplication(deployState: DeployState): Task[Unit] = {
+  def runSyncApplication(appName: ApplicationName, currentState: Option[StoredSyncState], newApp: Option[ResolvedApp]): Task[Unit] = {
 
-    val runSyncEffect =
+    val currentApplication = currentState.map(_.descriptor.unsafeAs[ApplicationDescriptor])
+    val newApplication = newApp.map(_.application)
+
+    val application = newApplication.getOrElse(currentApplication.get)
+
+    val runSyncEffect: ZIO[Any, Throwable, Unit] =
       for {
-        _ <- deployState.stopCommand.map(execCommand).getOrElse(zunit)
-        _ <-
-          syncs
-            .map(_.run(deployState))
+        _ <- currentApplication.map(_.resolvedStopCommand).map(execCommand).getOrElse(zunit)
+        newStates <-
+          appSyncs
+            .map { sync =>
+              sync
+                .run(currentState.map(_.states(sync.name.value)), newApp)
+                .map(sync.name -> _)
+            }
             .sequence
-        _ <- deployState.startCommand.map(execCommand).getOrElse(zunit)
+        _ <- newApplication.map(_.resolvedStartCommand).map(execCommand).getOrElse(zunit)
+        _ <- updateAppState(appName, application, newStates, newApp.isEmpty)
       } yield ()
 
-    val effect =
-      for {
-        dryRunActions <-
-          syncs
-            .map(_.actions(deployState))
-            .sequencePar
-            .map(_.filter(_.actionRequired))
-        _ <-
-          if ( dryRunActions.nonEmpty ) {
-            runSyncEffect
-          } else {
-            loggerF.info("no sync actions required")
-          }
-        _ <- updateDeployState(deployState)
-      } yield ()
-
-    effect.correlateWith0(z"${deployState.applicationName}")
+    runSyncEffect.correlateWith0(z"${appName}")
   }
 
 }

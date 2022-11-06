@@ -3,23 +3,28 @@ package io.accur8.neodeploy
 
 import a8.appinstaller.AppInstallerConfig.LibDirKind
 import a8.shared.{CompanionGen, Exec}
-import a8.shared.FileSystem.{Directory, File, Path}
+import a8.shared.FileSystem.{Directory, File, Path, dir}
 import a8.shared.SharedImports._
 import a8.shared.app.{Logging, LoggingF}
+import a8.versions.RepositoryOps.RepoConfigPrefix
 import coursier.core.{ModuleName, Organization}
-import io.accur8.neodeploy.ApplicationInstallSync.{Installer}
+import io.accur8.neodeploy.ApplicationInstallSync.{Installer, State}
+import io.accur8.neodeploy.MxApplicationInstallSync._
 import io.accur8.neodeploy.model.Install.FromRepo
-import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, Install, Version}
+import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, Install, ResolvedApp, Version}
 import zio.{Task, ZIO}
+
+import java.nio.file.Paths
 
 object ApplicationInstallSync extends Logging with LoggingF {
 
-  case class Installer(deployState: DeployState, appDir: Directory) {
+  case class Installer(state: State) {
+
+    lazy val appDir = dir(state.appInstallDir)
 
     def applicationDescriptor: ApplicationDescriptor =
-      deployState
-        .newApplicationDescriptor
-        .getOrError("no new applicationDescriptor this should not happen")
+      state
+        .applicationDescriptor
 
     def appRootBinDir = appDir.parentOpt.get.subdir("bin")
 
@@ -45,8 +50,9 @@ object ApplicationInstallSync extends Logging with LoggingF {
 
     def runInstallFromRepo(repo: FromRepo): Task[Unit] = {
       ZIO.attemptBlocking {
-        val result =
-          Exec(
+        val repoConfig = applicationDescriptor.repository.getOrElse(RepoConfigPrefix.default)
+        val args =
+          Seq(
             "sudo",
             "-u",
             applicationDescriptor.user,
@@ -66,8 +72,12 @@ object ApplicationInstallSync extends Logging with LoggingF {
             "--webapp-explode",
             repo.webappExplode.toString,
             "--backup",
-            "false"
+            "false",
+            "--repo",
+            repoConfig.value,
           )
+        val result =
+          Exec(args:_*)
             .inDirectory(appDir)
             .execCaptureOutput()
         result
@@ -80,12 +90,12 @@ object ApplicationInstallSync extends Logging with LoggingF {
     }
 
     def symlinkConfig: Task[Unit] =
-      updateSymLink(deployState.gitAppDirectory, appDir.file("config"))
+      updateSymLink(dir(state.gitAppDirectory), appDir.file("config"))
 
     def symlinkJavaExecutable: Task[Unit] =
       updateSymLink(
-        target = appRootBinDir.file(z"java${deployState.javaVersion}"),
-        link = appRootBinDir.file(z"${deployState.applicationName}"),
+        target = appRootBinDir.file(z"java${state.applicationDescriptor.javaVersion}"),
+        link = appRootBinDir.file(z"${state.applicationDescriptor.name}"),
       )
 
     def updateSymLink(
@@ -112,9 +122,18 @@ object ApplicationInstallSync extends Logging with LoggingF {
 
   }
 
+  object State extends MxState
+  @CompanionGen
+  case class State(
+    appInstallDir: String,
+    fromRepo: FromRepo,
+    gitAppDirectory: String,
+    applicationDescriptor: ApplicationDescriptor,
+  )
+
 }
 
-case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends Sync[FromRepo] with LoggingF {
+case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends ApplicationSync[State] with LoggingF {
 
   // Install
   //    create app directory
@@ -128,32 +147,38 @@ case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends 
   // Uninstall
   //     remove app directory
 
-  override def state(applicationDescriptor: model.ApplicationDescriptor): Task[Option[FromRepo]] =
-    applicationDescriptor.install match {
+  override val name: Sync.SyncName = Sync.SyncName("installer")
+
+  override def state(resolvedApp: ResolvedApp): Task[Option[State]] =
+    resolvedApp.application.install match {
       case fr: FromRepo =>
-        zsucceed(Some(fr))
+        zsucceed(Some(
+          State(
+            appInstallDir = appsRootDirectory.unresolvedDirectory.subdir(resolvedApp.application.name.value).toString(),
+            fromRepo = fr,
+            gitAppDirectory = resolvedApp.gitDirectory.toString(),
+            applicationDescriptor = resolvedApp.application,
+          )
+        ))
       case Install.Manual =>
         zsucceed(None)
     }
 
-  def appDir(deployState: DeployState): Directory = {
-    appsRootDirectory.resolvedDirectory.subdir(deployState.applicationName.value)
-  }
 
-  override def applyAction(action: Sync.Action[FromRepo]): Task[Unit] = {
-
-    def installer = Installer(action.deployState, appDir(action.deployState))
+  override def applyAction(input: Option[ResolvedApp], action: Sync.Action[State]): Task[Unit] = {
 
     val actionEffect =
       action match {
-        case Sync.Noop(deployState) =>
+        case Sync.Noop(_) =>
           zunit
-        case Sync.Update(deployState, _, newState) =>
-          installer.install
-        case Sync.Delete(deployState, _) =>
-          installer.deleteAppDir
-        case Sync.Insert(deployState, state) =>
-          installer.install
+        case Sync.Update(_, newState) =>
+          Installer(newState).install
+        case Sync.Delete(currentState) =>
+          ZIO.attemptBlocking(
+            dir(currentState.appInstallDir).delete()
+          )
+        case Sync.Insert(newState) =>
+          Installer(newState).install
       }
 
     for {
