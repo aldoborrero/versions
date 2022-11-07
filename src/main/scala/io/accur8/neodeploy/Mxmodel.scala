@@ -1,5 +1,7 @@
 package io.accur8.neodeploy
 
+import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
+
 /**
 
   WARNING THIS IS GENERATED CODE.  DO NOT EDIT.
@@ -17,9 +19,6 @@ import io.accur8.neodeploy.model._
 import io.accur8.neodeploy.model.Install.{FromRepo, Manual}
 
 //====
-
-import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
-
 
 
 object Mxmodel {
@@ -107,6 +106,7 @@ object Mxmodel {
           .addField(_.stopServerCommand)
           .addField(_.startServerCommand)
           .addField(_.domainName)
+          .addField(_.domainNames)
           .addField(_.trigger)
           .addField(_.repository)
       )
@@ -115,7 +115,7 @@ object Mxmodel {
     implicit val catsEq: cats.Eq[ApplicationDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[ApplicationDescriptor,parameters.type] =  {
-      val constructors = Constructors[ApplicationDescriptor](14, unsafe.iterRawConstruct)
+      val constructors = Constructors[ApplicationDescriptor](15, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
@@ -131,9 +131,10 @@ object Mxmodel {
       lazy val javaVersion: CaseClassParm[ApplicationDescriptor,JavaVersion] = CaseClassParm[ApplicationDescriptor,JavaVersion]("javaVersion", _.javaVersion, (d,v) => d.copy(javaVersion = v), Some(()=> JavaVersion(11)), 8)
       lazy val stopServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("stopServerCommand", _.stopServerCommand, (d,v) => d.copy(stopServerCommand = v), Some(()=> None), 9)
       lazy val startServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("startServerCommand", _.startServerCommand, (d,v) => d.copy(startServerCommand = v), Some(()=> None), 10)
-      lazy val domainName: CaseClassParm[ApplicationDescriptor,Option[DomainName]] = CaseClassParm[ApplicationDescriptor,Option[DomainName]]("domainName", _.domainName, (d,v) => d.copy(domainName = v), None, 11)
-      lazy val trigger: CaseClassParm[ApplicationDescriptor,JsDoc] = CaseClassParm[ApplicationDescriptor,JsDoc]("trigger", _.trigger, (d,v) => d.copy(trigger = v), Some(()=> JsDoc.empty), 12)
-      lazy val repository: CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]] = CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]]("repository", _.repository, (d,v) => d.copy(repository = v), Some(()=> None), 13)
+      lazy val domainName: CaseClassParm[ApplicationDescriptor,Option[DomainName]] = CaseClassParm[ApplicationDescriptor,Option[DomainName]]("domainName", _.domainName, (d,v) => d.copy(domainName = v), Some(()=> None), 11)
+      lazy val domainNames: CaseClassParm[ApplicationDescriptor,Iterable[DomainName]] = CaseClassParm[ApplicationDescriptor,Iterable[DomainName]]("domainNames", _.domainNames, (d,v) => d.copy(domainNames = v), Some(()=> Iterable.empty), 12)
+      lazy val trigger: CaseClassParm[ApplicationDescriptor,JsDoc] = CaseClassParm[ApplicationDescriptor,JsDoc]("trigger", _.trigger, (d,v) => d.copy(trigger = v), Some(()=> JsDoc.empty), 13)
+      lazy val repository: CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]] = CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]]("repository", _.repository, (d,v) => d.copy(repository = v), Some(()=> None), 14)
     }
     
     
@@ -153,8 +154,9 @@ object Mxmodel {
           stopServerCommand = values(9).asInstanceOf[Option[Command]],
           startServerCommand = values(10).asInstanceOf[Option[Command]],
           domainName = values(11).asInstanceOf[Option[DomainName]],
-          trigger = values(12).asInstanceOf[JsDoc],
-          repository = values(13).asInstanceOf[Option[RepoConfigPrefix]],
+          domainNames = values(12).asInstanceOf[Iterable[DomainName]],
+          trigger = values(13).asInstanceOf[JsDoc],
+          repository = values(14).asInstanceOf[Option[RepoConfigPrefix]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): ApplicationDescriptor = {
@@ -172,6 +174,7 @@ object Mxmodel {
             stopServerCommand = values.next().asInstanceOf[Option[Command]],
             startServerCommand = values.next().asInstanceOf[Option[Command]],
             domainName = values.next().asInstanceOf[Option[DomainName]],
+            domainNames = values.next().asInstanceOf[Iterable[DomainName]],
             trigger = values.next().asInstanceOf[JsDoc],
             repository = values.next().asInstanceOf[Option[RepoConfigPrefix]],
           )
@@ -179,8 +182,8 @@ object Mxmodel {
            sys.error("")
         value
       }
-      def typedConstruct(name: ApplicationName, install: Install, jvmArgs: Iterable[String], autoStart: Option[Boolean], appArgs: Iterable[String], mainClass: String, user: String, listenPort: Option[ListenPort], javaVersion: JavaVersion, stopServerCommand: Option[Command], startServerCommand: Option[Command], domainName: Option[DomainName], trigger: JsDoc, repository: Option[RepoConfigPrefix]): ApplicationDescriptor =
-        ApplicationDescriptor(name, install, jvmArgs, autoStart, appArgs, mainClass, user, listenPort, javaVersion, stopServerCommand, startServerCommand, domainName, trigger, repository)
+      def typedConstruct(name: ApplicationName, install: Install, jvmArgs: Iterable[String], autoStart: Option[Boolean], appArgs: Iterable[String], mainClass: String, user: String, listenPort: Option[ListenPort], javaVersion: JavaVersion, stopServerCommand: Option[Command], startServerCommand: Option[Command], domainName: Option[DomainName], domainNames: Iterable[DomainName], trigger: JsDoc, repository: Option[RepoConfigPrefix]): ApplicationDescriptor =
+        ApplicationDescriptor(name, install, jvmArgs, autoStart, appArgs, mainClass, user, listenPort, javaVersion, stopServerCommand, startServerCommand, domainName, domainNames, trigger, repository)
     
     }
     

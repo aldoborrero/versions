@@ -4,10 +4,24 @@
 
 * setup correct permissions on the .ssh folder and authorized_keys2 file
 
+* proper setup of /opt/bin/locus symlink
+    * I think it works if /opt/bin/ exists but doesn't work otherwise
+* supervisor config tweaked for includes
+* rsnapshot setup
+    * rsnapshot server setup
+    * client setup of authorized keys
+
+* transition from sysadmin-bootstrap to sync_server_apps
+    * how does root get access to java
+    * properly segment parts to run using the appropriate user
+
+* unify across the various combinations of {server|app(s)|sync} for action and config file names
 
 
-
-
-
-
+* sync_server_apps security layers
+    * root
+        * supervisor
+    * user / dev
+        * caddy
+        * authorized_keys2
 

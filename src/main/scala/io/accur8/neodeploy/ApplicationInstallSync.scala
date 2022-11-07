@@ -27,7 +27,7 @@ object ApplicationInstallSync extends Logging with LoggingF {
       state
         .applicationDescriptor
 
-    def appRootBinDir = appDir.parentOpt.get.subdir("bin")
+    def appRootBinDir = appDir.parentOpt.get.subdir("bin").resolve
 
     def deleteAppDir: Task[Unit] =
       ZIO.attemptBlocking(
@@ -77,12 +77,11 @@ object ApplicationInstallSync extends Logging with LoggingF {
             "--repo",
             repoConfig.value,
           )
-        logger.debug("we would run this command == " + args.mkString(" "))
-//        val result =
-//          Exec(args:_*)
-//            .inDirectory(appDir)
-//            .execCaptureOutput()
-        Exec.Result(0, "", "")
+        val result =
+          Exec(args:_*)
+            .inDirectory(appDir)
+            .execCaptureOutput()
+        result
       }.flatMap {
         case result if result.exitCode === 0 =>
           loggerF.debug(s"install of ${applicationDescriptor.name} completed successfully")

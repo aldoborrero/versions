@@ -1,5 +1,7 @@
 package a8.versions
 
+import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
+
 /**
 
   WARNING THIS IS GENERATED CODE.  DO NOT EDIT.
@@ -11,9 +13,6 @@ package a8.versions
 //====
 import ast._
 //====
-
-import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
-
 
 
 object Mxast {

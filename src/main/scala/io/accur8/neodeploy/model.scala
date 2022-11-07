@@ -114,10 +114,13 @@ object model extends Logging {
     javaVersion: JavaVersion = JavaVersion(11),
     stopServerCommand: Option[Command] = None,
     startServerCommand: Option[Command] = None,
-    domainName: Option[DomainName],
+    domainName: Option[DomainName] = None,
+    domainNames: Iterable[DomainName] = Iterable.empty,
     trigger: JsDoc = JsDoc.empty,
     repository: Option[RepoConfigPrefix] = None,
-  )
+  ) {
+    def resolvedDomainNames = domainName ++ domainNames
+  }
 
   object UserLogin extends StringValue.Companion[UserLogin]
   case class UserLogin(value: String) extends StringValue
