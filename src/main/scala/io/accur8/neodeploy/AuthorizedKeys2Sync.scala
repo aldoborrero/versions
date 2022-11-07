@@ -15,7 +15,7 @@ object AuthorizedKeys2Sync extends ConfigFileSync[ResolvedUser] with Logging {
   override val name: Sync.SyncName = Sync.SyncName("authorized_keys2")
 
   override def configFile(input: ResolvedUser): FileSystem.File =
-    input.home.subdir("ssh").file("authorized_keys2")
+    input.home.subdir(".ssh").file("authorized_keys2")
 
   override def configFileContents(input: ResolvedUser): Task[Option[String]] = {
 

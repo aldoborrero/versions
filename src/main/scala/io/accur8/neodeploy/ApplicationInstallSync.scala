@@ -152,14 +152,14 @@ case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends 
   override val name: Sync.SyncName = Sync.SyncName("installer")
 
   override def state(resolvedApp: ResolvedApp): Task[Option[State]] =
-    resolvedApp.application.install match {
+    resolvedApp.descriptor.install match {
       case fr: FromRepo =>
         zsucceed(Some(
           State(
-            appInstallDir = appsRootDirectory.unresolvedDirectory.subdir(resolvedApp.application.name.value).toString(),
+            appInstallDir = appsRootDirectory.unresolvedDirectory.subdir(resolvedApp.descriptor.name.value).toString(),
             fromRepo = fr,
             gitAppDirectory = resolvedApp.gitDirectory.toString(),
-            applicationDescriptor = resolvedApp.application,
+            applicationDescriptor = resolvedApp.descriptor,
           )
         ))
       case Install.Manual =>

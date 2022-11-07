@@ -14,10 +14,10 @@ case class CaddySync(caddyDir: CaddyDirectory) extends ConfigFileSync[ResolvedAp
   override val name: Sync.SyncName = Sync.SyncName("caddy")
 
   override def configFile(resolvedApp: ResolvedApp): File =
-    caddyDir.unresolvedDirectory.file(z"${resolvedApp.application.name}.caddy")
+    caddyDir.unresolvedDirectory.file(z"${resolvedApp.descriptor.name}.caddy")
 
   override def configFileContents(input: ResolvedApp): Task[Option[String]] =
-    zsucceed(caddyConfigContents(input.application))
+    zsucceed(caddyConfigContents(input.descriptor))
 
   def caddyConfigContents(applicationDescriptor: model.ApplicationDescriptor): Option[String] = {
     import applicationDescriptor._

@@ -1,7 +1,8 @@
 
 
-* set some log level defaults
-* show log categories
+== neo-depoy ==
+
+* setup correct permissions on the .ssh folder and authorized_keys2 file
 
 
 
@@ -10,43 +11,3 @@
 
 
 
-* when doing a cross project build to share the same build number
-
-
-* turn off generation of build info and only turn it on for published builds
-
-
-
-notes:
-
-* handle different organizations per repo
-    * will be needed for AHS
-
-* interesting settings
-
-    * cwd for run
-
-
-
-
-Done:
-
-    0) turn off git related stuff if we aren't in a git repo
-
-    1) generate project files
-
-      * elegantly handle js projects (need to auto add scalajs)
-      * create a common that supports scalajs and jsProject() and crossProject()
-
-    * version stamp working when not a git repo - we just hardcode the version to 1.0-SNAPSHOT
-
-
-    * provide a way to override settings
-
-      *
-        .enablePlugins(WorkbenchPlugin)
-          .settings(
-            workbenchDefaultRootObject := Some(("client/manna/default.html", ".")),
-            localUrl := ("localhost", 8000),
-            workbenchStartMode := WorkbenchStartModes.Manual,
-          )

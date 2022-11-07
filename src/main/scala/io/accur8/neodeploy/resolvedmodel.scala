@@ -1,11 +1,12 @@
 package io.accur8.neodeploy
 
 
-import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, ConfigMojoOps, Exec}
+import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, ConfigMojoOps, Exec, StringValue}
 import a8.shared.FileSystem.{Directory, dir}
 import model._
 import a8.shared.SharedImports._
 import a8.shared.app.LoggingF
+import a8.shared.json.JsonCodec
 import a8.shared.json.ast.{JsDoc, JsObj, JsVal}
 import io.accur8.neodeploy.Mxresolvedmodel.MxStoredSyncState
 import io.accur8.neodeploy.Sync.SyncName
@@ -17,7 +18,6 @@ object resolvedmodel extends LoggingF {
   case class ResolvedUser(
     descriptor: UserDescriptor,
     home: Directory,
-    appsDirectory: Directory,
     server: ResolvedServer,
   ) {
 
@@ -41,6 +41,17 @@ object resolvedmodel extends LoggingF {
     gitServerDirectory: GitServerDirectory,
     repository: ResolvedRepository,
   ) {
+
+    lazy val resolvedUsers =
+      descriptor
+        .users
+        .map( userDescriptor =>
+          ResolvedUser(
+            descriptor = userDescriptor,
+            home = dir(userDescriptor.home.getOrElse(z"/home/${userDescriptor.login}")),
+            server = this,
+          )
+        )
 
     def supervisorCommand(action: String, applicationName: ApplicationName): Command =
       Command(Seq(
@@ -103,7 +114,7 @@ object resolvedmodel extends LoggingF {
   }
 
   case class ResolvedApp(
-    application: ApplicationDescriptor,
+    descriptor: ApplicationDescriptor,
     server: ResolvedServer,
     gitDirectory: Directory,
   ) {
@@ -158,7 +169,7 @@ object resolvedmodel extends LoggingF {
 
 
   object StoredSyncState extends MxStoredSyncState {
-    def apply(appName: ApplicationName, applicationDescriptor: ApplicationDescriptor, states: Seq[(SyncName,Option[JsVal])]): StoredSyncState = {
+    def apply[A : JsonCodec](name: StringValue, descriptor: A, states: Seq[(SyncName,Option[JsVal])]): StoredSyncState = {
       val statesJsoValues =
         states
           .flatMap {
@@ -170,30 +181,11 @@ object resolvedmodel extends LoggingF {
           .toMap
 
       new StoredSyncState(
-        appName.value,
-        applicationDescriptor.toJsDoc,
+        name.value,
+        descriptor.toJsDoc,
         JsObj(statesJsoValues).toJsDoc,
       )
     }
-
-    def apply(userLogin: UserLogin, userDescriptor: UserDescriptor, states: Seq[(SyncName, Option[JsVal])]): StoredSyncState = {
-      val statesJsoValues =
-        states
-          .flatMap {
-            case (syncName, Some(state)) =>
-              Some(syncName.value -> state)
-            case _ =>
-              None
-          }
-          .toMap
-
-      new StoredSyncState(
-        userLogin.value,
-        userDescriptor.toJsDoc,
-        JsObj(statesJsoValues).toJsDoc,
-      )
-    }
-
   }
   @CompanionGen
   case class StoredSyncState(

@@ -13,11 +13,11 @@ case class SupervisorSync(supervisorDir: SupervisorDirectory) extends ConfigFile
   override val name: Sync.SyncName = Sync.SyncName("supervisor")
 
   override def configFile(input: ResolvedApp): File =
-    supervisorDir.unresolvedDirectory.file(z"${input.application.name}.conf")
+    supervisorDir.unresolvedDirectory.file(z"${input.descriptor.name}.conf")
 
   override def configFileContents(input: ResolvedApp): Task[Option[String]] =
     zsucceed(
-      supervisorConfigContents(input.application).some
+      supervisorConfigContents(input.descriptor).some
     )
 
   def supervisorConfigContents(applicationDescriptor: model.ApplicationDescriptor) = {
