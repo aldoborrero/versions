@@ -12,7 +12,6 @@
     * client setup of authorized keys
 
 * transition from sysadmin-bootstrap to sync_server_apps
-    * how does root get access to java
     * properly segment parts to run using the appropriate user
 
 * unify across the various combinations of {server|app(s)|sync} for action and config file names
@@ -24,4 +23,5 @@
     * user / dev
         * caddy
         * authorized_keys2
+    * per user app folders
 
