@@ -9,7 +9,7 @@ import a8.shared.app.LoggingF
 import a8.shared.json.JsonCodec
 import a8.shared.json.ast.{JsDoc, JsObj, JsVal}
 import io.accur8.neodeploy.Mxresolvedmodel.MxStoredSyncState
-import io.accur8.neodeploy.Sync.SyncName
+import io.accur8.neodeploy.Sync.{ContainerSteps, Phase, ResolvedSteps, Step, SyncName}
 import zio.{Task, ZIO}
 
 
@@ -60,16 +60,20 @@ object resolvedmodel extends LoggingF {
         applicationName.value
       ))
 
-    def runAppCommand(supervisorAction: String, currentApplicationOpt: Option[ApplicationDescriptor]): Task[Unit] = {
+    def appCommandStep(phase: Phase, supervisorAction: String, currentApplicationOpt: Option[ApplicationDescriptor]): Seq[Step] = {
       currentApplicationOpt match {
         case None =>
-          zunit
+          Seq.empty
         case Some(currentApplication) =>
-          execCommand(
+          val command =
             currentApplication
               .stopServerCommand
               .getOrElse(supervisorCommand(supervisorAction, currentApplication.name))
-          )
+          Seq(Step(
+            phase = phase,
+            description = s"run command -- ${command.args.mkString(" ")}",
+            action = execCommand(command),
+          ))
       }
     }
 
@@ -169,15 +173,11 @@ object resolvedmodel extends LoggingF {
 
 
   object StoredSyncState extends MxStoredSyncState {
-    def apply[A : JsonCodec](name: StringValue, descriptor: A, states: Seq[(SyncName,Option[JsVal])]): StoredSyncState = {
+    def fromResolvedSteps[A : JsonCodec](name: StringValue, descriptor: A, containerSteps: ContainerSteps): StoredSyncState = {
       val statesJsoValues =
-        states
-          .flatMap {
-            case (syncName, Some(state)) =>
-              Some(syncName.value -> state)
-            case _ =>
-              None
-          }
+        containerSteps
+          .resolvedSteps
+          .flatMap(rs => rs.newState.map(rs.syncName.value -> _))
           .toMap
 
       new StoredSyncState(

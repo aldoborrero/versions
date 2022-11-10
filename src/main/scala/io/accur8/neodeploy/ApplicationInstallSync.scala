@@ -10,6 +10,7 @@ import a8.versions.RepositoryOps.RepoConfigPrefix
 import coursier.core.{ModuleName, Organization}
 import io.accur8.neodeploy.ApplicationInstallSync.{Installer, State}
 import io.accur8.neodeploy.MxApplicationInstallSync._
+import io.accur8.neodeploy.Sync.{Phase, Step}
 import io.accur8.neodeploy.model.Install.FromRepo
 import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, Install, Version}
 import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedServer}
@@ -55,9 +56,6 @@ object ApplicationInstallSync extends Logging with LoggingF {
         val repoConfig = applicationDescriptor.repository.getOrElse(RepoConfigPrefix.default)
         val args =
           Seq(
-            "sudo",
-            "-u",
-            applicationDescriptor.user,
             a8VersionsExec,
             "install",
             "--organization",
@@ -104,16 +102,20 @@ object ApplicationInstallSync extends Logging with LoggingF {
       link: File,
     ): Task[Unit] = {
       for {
-        _ <- ZIO.attemptBlocking {
-          if (link.exists()) {
-            link.delete()
-          }
-        }
-        _ <- PathAssist.symlink(target, link)
+        _ <- PathAssist.symlink(target, link, deleteIfExists = false)
       } yield ()
     }
 
-    def install: Task[Unit] =
+    def asSteps: Vector[Step] =
+      Vector(
+        Step(
+          phase = Phase.Apply,
+          description = z"install ${state.applicationDescriptor.name} ${applicationDescriptor.install.description} into ${appDir.toString}",
+          action = installAction,
+        ),
+      )
+
+    def installAction: Task[Unit] =
       for {
         _ <- createAppDir
         _ <- runInstall(applicationDescriptor.install)
@@ -166,26 +168,21 @@ case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends 
     }
 
 
-  override def applyAction(input: Option[ResolvedApp], action: Sync.Action[State]): Task[Unit] = {
-
-    val actionEffect =
-      action match {
-        case Sync.Noop(_) =>
-          zunit
-        case Sync.Update(_, newState) =>
-          Installer(input.get.server, newState).install
-        case Sync.Delete(currentState) =>
+  override def resolveStepsFromModification(modification: Sync.Modification[State, ResolvedApp]): Vector[Sync.Step] = {
+    modification match {
+      case Sync.Update(_, newState, newInput) =>
+        Installer(newInput.server, newState).asSteps
+      case Sync.Delete(currentState) =>
+        Vector(Step(
+          Phase.Apply,
+          z"uninstall ${currentState.applicationDescriptor.name} by deleting it's ${currentState.appInstallDir} installed directory",
           ZIO.attemptBlocking(
             dir(currentState.appInstallDir).delete()
           )
-        case Sync.Insert(newState) =>
-          Installer(input.get.server, newState).install
-      }
-
-    for {
-      _ <- actionEffect
-    } yield ()
-
+        ))
+      case Sync.Insert(newState, newInput) =>
+        Installer(newInput.server, newState).asSteps
+    }
   }
 
 

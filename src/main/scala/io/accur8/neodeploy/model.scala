@@ -74,7 +74,9 @@ object model extends Logging {
   object GitRootDirectory extends StringValue.Companion[GitRootDirectory]
   case class GitRootDirectory(value: String) extends DirectoryValue
 
-  sealed trait Install
+  sealed trait Install {
+    def description: String
+  }
   object Install {
 
     implicit val jsonCodec =
@@ -93,9 +95,13 @@ object model extends Logging {
       artifact: Artifact,
       version: Version,
       webappExplode: Boolean = true,
-    ) extends Install
+    ) extends Install {
+      override def description: String = s"$organization:$artifact:$version"
+    }
 
-    case object Manual extends Install
+    case object Manual extends Install {
+      override def description: String = "Manual install"
+    }
 
   }
 

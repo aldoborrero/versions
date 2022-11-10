@@ -8,9 +8,20 @@ import java.nio.file.Files
 
 object PathAssist extends LoggingF {
 
-  def symlink(target: Path, link: File): Task[Unit] =
+  def symlink(target: Path, link: File, deleteIfExists: Boolean): Task[Unit] =
     ZIO.attemptBlocking {
-      Files.createSymbolicLink(link.asNioPath, target.asNioPath)
+
+      def linkExists() =
+        Files.exists(link.asNioPath, java.nio.file.LinkOption.NOFOLLOW_LINKS)
+
+      if (deleteIfExists && linkExists() ) {
+        logger.debug(s"deleting ${link}")
+        Files.delete(link.asNioPath)
+      }
+      if ( !linkExists()) {
+        logger.debug(s"Files.createSymbolicLink(${link.asNioPath}, ${target.asNioPath})")
+        Files.createSymbolicLink(link.asNioPath, target.asNioPath)
+      }
     }
 
 }

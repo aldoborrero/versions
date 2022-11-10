@@ -10,6 +10,7 @@ import a8.shared.app.{Logging, LoggingF}
 import a8.shared.json.ast
 import a8.shared.json.ast.{JsDoc, JsObj, JsVal}
 import a8.versions.Exec
+import io.accur8.neodeploy.Sync.Phase
 import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedServer, ResolvedUser, StoredSyncState}
 
 object SyncServer extends Logging {
@@ -24,17 +25,7 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
       .unresolvedDirectory
       .subdir(".state")
 
-  lazy val userStateDirectory: Directory =
-    stateDirectory
-      .subdir("users")
-      .resolve
-
-  lazy val applicationStateDirectory: Directory =
-    stateDirectory
-      .subdir("apps")
-      .resolve
-
-  case object userSync extends SyncContainer[ResolvedUser, UserDescriptor, UserLogin]("user", this, userStateDirectory) {
+  case object userSync extends SyncContainer[ResolvedUser, UserDescriptor, UserLogin](SyncContainer.Prefix("user"), this, stateDirectory) {
 
     override val newResolveds: Iterable[ResolvedUser] = resolvedServer.resolvedUsers
 
@@ -51,7 +42,7 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
       Seq(AuthorizedKeys2Sync)
   }
 
-  case object appSync extends SyncContainer[ResolvedApp, ApplicationDescriptor, ApplicationName]("app", this, applicationStateDirectory) {
+  case object appSync extends SyncContainer[ResolvedApp, ApplicationDescriptor, ApplicationName](SyncContainer.Prefix("app"), this, stateDirectory) {
 
     override val newResolveds: Iterable[ResolvedApp] = resolvedServer.resolvedApps
 
@@ -71,12 +62,24 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
         ApplicationInstallSync(resolvedServer.appsRootDirectory),
       )
 
-    override def runBeforeSync(newResolvedOpt: Option[ResolvedApp], currentStateOpt: Option[ApplicationDescriptor]): Task[Unit] =
-      resolvedServer.runAppCommand("stop", currentStateOpt)
 
-    override def runAfterSync(newResolvedOpt: Option[ResolvedApp], currentDescriptorOpt: Option[ApplicationDescriptor]): Task[Unit] =
-      resolvedServer.runAppCommand("start", newResolvedOpt.map(_.descriptor))
+    override def additionalSteps(name: ApplicationName, newResolvedOpt: Option[ResolvedApp], currentStateOpt: Option[ApplicationDescriptor], containerSteps: Sync.ContainerSteps): Seq[Sync.Step] = {
 
+      val stopAppSteps =
+        if ( containerSteps.nonEmpty)
+          resolvedServer.appCommandStep(Phase.Pre, "stop", currentStateOpt)
+        else
+          Seq.empty
+
+      val startAppSteps =
+        if (containerSteps.nonEmpty)
+          resolvedServer.appCommandStep(Phase.Post, "start", newResolvedOpt.map(_.descriptor))
+        else
+          Seq.empty
+
+      stopAppSteps ++ startAppSteps
+
+    }
   }
 
   def run: Task[Unit] =

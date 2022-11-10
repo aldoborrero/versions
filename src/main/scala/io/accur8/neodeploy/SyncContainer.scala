@@ -10,14 +10,16 @@ import a8.shared.ZString.ZStringer
 import a8.shared.app.{Logging, LoggingF}
 import a8.shared.jdbcf.ISeriesDialect.logger
 import a8.shared.json.ast.{JsDoc, JsVal}
-import io.accur8.neodeploy.SyncContainer.loadState
+import io.accur8.neodeploy.Sync.{ContainerSteps, ResolvedSteps, Step}
+import io.accur8.neodeploy.SyncContainer.{Prefix, loadState}
 import zio.{Task, ZIO}
 
 object SyncContainer extends Logging {
 
-  def loadState(directory: Directory): Vector[StoredSyncState] = {
+  def loadState(directory: Directory, prefix: Prefix): Vector[StoredSyncState] = {
     directory
       .files()
+      .filter(f => f.name.startsWith(prefix.value) && f.name.endsWith(".json") )
       .toVector
       .flatMap { f =>
         try {
@@ -31,10 +33,12 @@ object SyncContainer extends Logging {
       }
   }
 
+  case class Prefix(value: String)
+
 }
 
 abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringValue](
-  context: String,
+  prefix: Prefix,
   syncServer: SyncServer,
   stateDirectory: Directory,
 )
@@ -42,7 +46,7 @@ abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringVal
 {
 
   lazy val currentApplicationStates: Vector[StoredSyncState] =
-    loadState(stateDirectory)
+    loadState(stateDirectory, prefix)
 
   val newResolveds: Iterable[Resolved]
 
@@ -53,8 +57,8 @@ abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringVal
   def nameFromResolved(resolved: Resolved): Name =
     name(descriptorFromResolved(resolved))
 
-  def descriptorToJson(descriptor: Descriptor): JsVal =
-    descriptor.toJsVal
+  def descriptorToJson(descriptor: Descriptor): JsDoc =
+    descriptor.toJsDoc
 
   def jsonToDescriptor(jsd: JsDoc): Descriptor =
     jsd.unsafeAs[Descriptor]
@@ -81,7 +85,7 @@ abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringVal
   def run: Task[Unit] =
     allNames
       .map(name =>
-        runSync(
+        runSyncs(
           name,
           newResolvedsByName.get(name),
           currentApplicationStatesByName.get(name),
@@ -90,24 +94,24 @@ abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringVal
       .sequencePar
       .logVoid
 
-  def updateState(name: Name, descriptor: Descriptor, states: Seq[(Sync.SyncName, Option[JsVal])], delete: Boolean): Task[Unit] =
+  def updateState(name: Name, descriptor: Descriptor, containerSteps: ContainerSteps, delete: Boolean): Task[Unit] =
     ZIO.attemptBlocking {
       stateDirectory.makeDirectories()
-      val stateFile = stateDirectory.file(name.value + ".json")
+      val stateFile = stateDirectory.file(prefix.value + "-" + name.value + ".json")
       if (delete) {
         stateFile.delete()
       } else {
         val appSyncState =
-          StoredSyncState(
-            name,
-            descriptor,
-            states,
+          StoredSyncState.fromResolvedSteps(
+            name = name,
+            descriptor = descriptorToJson(descriptor),
+            containerSteps = containerSteps,
           )
         stateFile.write(appSyncState.prettyJson)
       }
     }
 
-  def runSync(name: Name, newResolvedOpt: Option[Resolved], currentStateOpt: Option[StoredSyncState]): Task[Unit] = {
+  def runSyncs(name: Name, newResolvedOpt: Option[Resolved], currentStateOpt: Option[StoredSyncState]): Task[Unit] = {
 
     val currentDescriptor = currentStateOpt.map(cs => jsonToDescriptor(cs.descriptor))
     val nameStr = nameToString(name)
@@ -116,33 +120,45 @@ abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringVal
 
     val runSyncEffect: Task[Unit] =
       for {
-        _ <- runBeforeSync(newResolvedOpt, currentDescriptor)
-        newStates <-
+        containerSteps <-
           syncs
             .map { sync =>
               val currentSyncState: Option[JsVal] =
                 currentStateOpt
                   .flatMap(_.syncState(sync.name))
               sync
-                .run(currentSyncState, newResolvedOpt)
-                .map(sync.name -> _)
+                .resolveSteps(currentSyncState, newResolvedOpt)
             }
             .sequencePar
-        _ <- runAfterSync(newResolvedOpt, currentDescriptor)
-        _ <- updateState(name, descriptor, newStates, newResolvedOpt.isEmpty)
+            .map(rs => containerSteps(name, newResolvedOpt, currentDescriptor, rs))
+        _ <- runSteps(containerSteps)
+        _ <- updateState(name, descriptor, containerSteps, newResolvedOpt.isEmpty)
       } yield ()
 
-    if ( context.trim.length == 0 )
-      toString
-
-    runSyncEffect.correlateWith0(s"${context} - ${nameStr}")
+    runSyncEffect.correlateWith0(s"${prefix.value} - ${nameStr}")
 
   }
 
-  def runBeforeSync(newResolvedOpt: Option[Resolved], currentDescriptorOpt: Option[Descriptor]): Task[Unit] =
-    zunit
+  def runSteps(containerSteps: ContainerSteps): Task[Unit] = {
+    if ( containerSteps.nonEmpty ) (
+      loggerF.debug(s"running the following steps for ${containerSteps.name}\n${containerSteps.descriptions("        ")}")
+        *>
+          containerSteps
+            .sortedSteps
+            .map(_.action)
+            .sequence
+            .as(())
+    ) else {
+      zunit
+    }
+  }
 
-  def runAfterSync(newResolvedOpt: Option[Resolved], currentDescriptorOpt: Option[Descriptor]): Task[Unit] =
-    zunit
+  def containerSteps(name: Name, newResolvedOpt: Option[Resolved], currentStateOpt: Option[Descriptor], resolvedSteps: Seq[ResolvedSteps]): ContainerSteps = {
+    val initialContainerSteps = ContainerSteps(name, resolvedSteps, Seq.empty)
+    initialContainerSteps.copy(additionalSteps = additionalSteps(name, newResolvedOpt, currentStateOpt, initialContainerSteps))
+  }
+
+  def additionalSteps(name: Name, newResolvedOpt: Option[Resolved], currentStateOpt: Option[Descriptor], containerSteps: ContainerSteps): Seq[Step] =
+    Seq.empty
 
 }

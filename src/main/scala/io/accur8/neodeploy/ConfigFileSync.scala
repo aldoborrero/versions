@@ -5,6 +5,7 @@ import a8.shared.SharedImports._
 import a8.shared.{CompanionGen, StringValue, ZString}
 import io.accur8.neodeploy.ConfigFileSync.State
 import io.accur8.neodeploy.MxConfigFileSync._
+import io.accur8.neodeploy.Sync.Step
 import io.accur8.neodeploy.model.DirectoryValue
 import zio.{Task, ZIO}
 
@@ -36,26 +37,36 @@ abstract class ConfigFileSync[B] extends Sync[State,B] {
       }
   }
 
-  override def applyAction(input: Option[B], action: Sync.Action[State]): Task[Unit] = {
 
-    def writeNewState(newState: State): Task[Unit] =
-      ZIO.attemptBlocking {
-        val configFile = file(newState.filename)
-        configFile.parent.makeDirectories()
-        configFile
-          .write(newState.fileContents)
-      }
+  override def resolveStepsFromModification(modification: Sync.Modification[State, B]): Vector[Sync.Step] = {
 
-    action match {
-      case Sync.Noop(_) =>
-        zunit
+    def writeNewState(newState: State): Vector[Sync.Step] = {
+      val action =
+        ZIO.attemptBlocking {
+          val configFile = file(newState.filename)
+          configFile.parent.makeDirectories()
+          configFile
+            .write(newState.fileContents)
+        }
+      Vector(Step(
+        phase = Sync.Phase.Apply,
+        description = z"write ${newState.filename}",
+        action = action
+      ))
+    }
+
+    modification match {
       case Sync.Delete(currentState) =>
-        ZIO.attemptBlocking(
-          file(currentState.filename).delete()
-        )
-      case Sync.Update(_, newState) =>
+        Vector(Step(
+          phase = Sync.Phase.Apply,
+          description = s"delete ${currentState.filename}",
+          ZIO.attemptBlocking(
+            file(currentState.filename).delete()
+          )
+        ))
+      case Sync.Update(_, newState, _) =>
         writeNewState(newState)
-      case Sync.Insert(newState) =>
+      case Sync.Insert(newState, _) =>
         writeNewState(newState)
     }
 

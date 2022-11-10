@@ -10,27 +10,52 @@ import io.accur8.neodeploy.Sync.SyncName
 
 object Sync {
 
-  abstract class Action[A: JsonCodec] {
-    def actionRequired: Boolean = true
+  abstract class Modification[A: JsonCodec, B] {
     def newStateOpt: Option[A]
   }
 
-  case class Noop[A: JsonCodec](newStateOpt: Option[A]) extends Action[A] {
-    override def actionRequired: Boolean = false
-  }
+//  case class Noop[A: JsonCodec, B](newStateOpt: Option[A]) extends Modification[A, B] {
+//    override def actionRequired: Boolean = false
+//  }
 
-  case class Delete[A: JsonCodec](currentState: A) extends Action[A] {
+  case class Delete[A: JsonCodec, B](currentState: A) extends Modification[A, B] {
     def newStateOpt = None
   }
-  case class Update[A: JsonCodec](currentState: A, newState: A) extends Action[A] {
+  case class Update[A: JsonCodec, B](currentState: A, newState: A, newInput: B) extends Modification[A, B] {
     def newStateOpt = Some(newState)
   }
-  case class Insert[A: JsonCodec](newState: A) extends Action[A] {
+  case class Insert[A: JsonCodec, B](newState: A, newInput: B) extends Modification[A, B] {
     def newStateOpt = Some(newState)
   }
 
   object SyncName extends StringValue.Companion[SyncName]
   case class SyncName(value: String) extends StringValue
+
+
+  case class Phase(sequence: Int)
+  object Phase {
+    val Pre = Phase(10)
+    val Apply = Phase(20)
+    val Post = Phase(30)
+  }
+
+  case class Step(phase: Phase, description: String, action: Task[Unit])
+  case class ResolvedSteps(syncName: SyncName, newState: Option[JsVal], steps: Vector[Step])
+
+  case class ContainerSteps(name: StringValue, resolvedSteps: Seq[ResolvedSteps], additionalSteps: Seq[Step]) {
+
+    def nonEmpty: Boolean = sortedSteps.nonEmpty
+
+    lazy val sortedSteps: Seq[Step] =
+      (resolvedSteps.flatMap(_.steps) ++ additionalSteps)
+        .sortBy(_.phase.sequence)
+
+    def descriptions(indent: String) =
+      sortedSteps
+        .map(step => s"${indent}${step.description}")
+        .mkString("\n")
+
+  }
 
 }
 
@@ -48,7 +73,7 @@ abstract class Sync[A : JsonCodec, B] {
 
   def state(input: B): Task[Option[A]]
 
-  def actions(currentState: Option[A], newInput: Option[B]): Task[(Option[A], Action[A])] = {
+  def resolveModification(currentState: Option[A], newInput: Option[B]): Task[(Option[A], Option[Modification[A,B]])] = {
     for {
       newState <- newInput.map(state).getOrElse(zsucceed(None))
     } yield {
@@ -56,29 +81,52 @@ abstract class Sync[A : JsonCodec, B] {
         (currentState, newState) match {
           case (None, None) =>
             // this won't happen
-            Noop(newState)
+            None
           case (Some(cs), None) =>
-            Delete(cs)
+            Delete[A,B](cs).some
           case (Some(cs), Some(ns)) if cs == ns =>
-            Noop(newState)
+            None
           case (Some(cs), Some(ns)) =>
-            Update(cs, ns)
+            Update[A,B](cs, ns, newInput.get).some
           case (None, Some(ns)) =>
-            Insert(ns)
+            Insert[A,B](ns, newInput.get).some
         }
       newState -> action
     }
   }
 
-  def applyAction(input: Option[B], action: Action[A]): Task[Unit]
+  def resolveStepsFromModification(modification: Modification[A,B]): Vector[Step]
 
-  def run(currentStateJs: Option[JsVal], newInput: Option[B]): Task[Option[JsVal]] = {
-    val currentState = currentStateJs.map(_.unsafeAs[A])
-    actions(currentState, newInput)
-      .flatMap { case (newState, action) =>
-        applyAction(newInput, action)
-          .as(newState.map(_.toJsVal))
+
+  def resolveSteps(currentStateJsv: Option[JsVal], newInput: Option[B]): Task[ResolvedSteps] = {
+    val currentStateOpt = currentStateJsv.map(_.unsafeAs[A])
+    resolveModification(currentStateOpt, newInput)
+      .map { case (newState, modificationOpt) =>
+        val newStateJsv = newState.map(_.toJsVal)
+        modificationOpt match {
+          case Some(modification) =>
+            ResolvedSteps(
+              name,
+              newStateJsv,
+              resolveStepsFromModification(modification),
+            )
+          case None =>
+            ResolvedSteps(
+              name,
+              newStateJsv,
+              Vector.empty,
+            )
+        }
       }
   }
+
+  //  def run(currentStateJs: Option[JsVal], newInput: Option[B]): Task[Option[JsVal]] = {
+//    val currentState = currentStateJs.map(_.unsafeAs[A])
+//    actions(currentState, newInput)
+//      .flatMap { case (newState, action) =>
+//        applyAction(newInput, action)
+//          .as(newState.map(_.toJsVal))
+//      }
+//  }
 
 }
