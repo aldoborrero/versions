@@ -5,14 +5,24 @@ import a8.shared.SharedImports._
 import a8.shared.{CompanionGen, FileSystem}
 import a8.shared.app.BootstrappedIOApp
 import a8.shared.app.BootstrappedIOApp.BootstrapEnv
+import a8.versions.Exec
 import io.accur8.neodeploy.MxMain._
 import io.accur8.neodeploy.model.{AppsRootDirectory, CaddyDirectory, DomainName, GitRootDirectory, GitServerDirectory, ServerName, SupervisorDirectory}
 import io.accur8.neodeploy.resolvedmodel.ResolvedRepository
 import zio.ZIO
 
+import java.net.InetAddress
+
 object Main extends BootstrappedIOApp {
 
-  object Config extends MxConfig
+  object Config extends MxConfig {
+    def default() =
+      Config(
+        GitRootDirectory(FileSystem.userHome.subdir("server-app-configs").asNioPath.toAbsolutePath.toString),
+        ServerName.thisServer(),
+      )
+  }
+
   @CompanionGen
   case class Config(
     gitRootDirectory: GitRootDirectory,
@@ -38,7 +48,14 @@ object Main extends BootstrappedIOApp {
             throw new RuntimeException(msg, e)
         }
       }
-      .getOrError(s"config file ${configFile} not found")
+      .getOrElse {
+        val d = Config.default()
+        if (d.gitRootDirectory.unresolvedDirectory.exists()) {
+          d
+        } else {
+          sys.error(s"tried using default config ${d} but ${d.gitRootDirectory} does not exist")
+        }
+      }
 
   lazy val resolvedRepository =
     ResolvedRepository.loadFromDisk(config.gitRootDirectory)

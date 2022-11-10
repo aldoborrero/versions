@@ -36,6 +36,7 @@ case class CaddySync(caddyDir: CaddyDirectory) extends ConfigFileSync[ResolvedAp
       } yield
         z"""
 ${applicationDescriptor.resolvedDomainNames.map(_.value).mkString(", ")} {
+  encode gzip
   reverse_proxy localhost:${listenPort}
 }
 """.trim

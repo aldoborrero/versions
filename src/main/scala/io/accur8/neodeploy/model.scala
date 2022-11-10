@@ -2,7 +2,7 @@ package io.accur8.neodeploy
 
 
 import a8.shared.FileSystem.{Directory, dir}
-import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, LongValue, StringValue}
+import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, Exec, LongValue, StringValue}
 import io.accur8.neodeploy.Mxmodel._
 import a8.shared.SharedImports._
 import a8.shared.app.Logging
@@ -146,7 +146,16 @@ object model extends Logging {
   )
 
 
-  object ServerName extends StringValue.Companion[ServerName]
+  object ServerName extends StringValue.Companion[ServerName] {
+    def thisServer(): ServerName =
+      ServerName(
+        Exec("hostname")
+          .execCaptureOutput()
+          .stdout
+          .splitList("\\.")
+          .head
+    )
+  }
   case class ServerName(value: String) extends StringValue
 
   object RSnapshotDescriptor extends MxRSnapshotDescriptor
