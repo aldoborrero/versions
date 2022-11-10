@@ -1,12 +1,15 @@
 package io.accur8.neodeploy
 
 
+import a8.shared.FileSystem.Directory
 import a8.shared.json.JsonCodec
-import zio.Task
+import zio.{Task, ZIO}
 import a8.shared.SharedImports._
 import a8.shared.StringValue
 import a8.shared.json.ast.{JsDoc, JsVal}
+import a8.versions.Exec
 import io.accur8.neodeploy.Sync.SyncName
+import io.accur8.neodeploy.model.Command
 
 object Sync {
 
@@ -37,6 +40,27 @@ object Sync {
     val Pre = Phase(10)
     val Apply = Phase(20)
     val Post = Phase(30)
+  }
+
+  object Step {
+
+    def runCommand(
+      phase: Phase,
+      command: Command,
+      workingDirectory: Option[Directory] = None,
+      failOnNonZeroExitCode: Boolean = true
+    ): Step = {
+      Step(
+        phase = phase,
+        description = z"run command: ${command.args.mkString(" ")}",
+        action =
+          ZIO.attemptBlocking {
+            val exec = new Exec(command.args, workingDirectory)
+            exec.execCaptureOutput(failOnNonZeroExitCode)
+          }
+      )
+    }
+
   }
 
   case class Step(phase: Phase, description: String, action: Task[Unit])

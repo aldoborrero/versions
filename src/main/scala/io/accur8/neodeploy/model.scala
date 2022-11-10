@@ -40,11 +40,16 @@ object model extends Logging {
   case class Artifact(value: String) extends StringValue
 
   object Command {
+
     implicit val jsonCodec =
       JsonTypedCodec.JsArr.dimap[Command](
         arr => Command(arr.values.collect{ case JsStr(s) => s }),
         cmd => JsArr(cmd.args.map(JsStr.apply).toList)
       )
+
+    def apply(args: String*): Command =
+      new Command(args)
+
   }
   case class Command(args: Iterable[String])
 

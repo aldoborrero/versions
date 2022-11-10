@@ -24,6 +24,7 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
       .appsRootDirectory
       .unresolvedDirectory
       .subdir(".state")
+      .resolve
 
   case object userSync extends SyncContainer[ResolvedUser, UserDescriptor, UserLogin](SyncContainer.Prefix("user"), this, stateDirectory) {
 
