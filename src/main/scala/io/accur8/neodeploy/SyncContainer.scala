@@ -141,7 +141,7 @@ abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringVal
 
   def runSteps(containerSteps: ContainerSteps): Task[Unit] = {
     if ( containerSteps.nonEmpty ) (
-      loggerF.debug(s"running the following steps for ${containerSteps.name}\n${containerSteps.descriptions("        ")}")
+      loggerF.debug(s"running the following steps for ${containerSteps.name}\n${containerSteps.descriptions("        ")}\n            ")
         *>
           containerSteps
             .sortedSteps
