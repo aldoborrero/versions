@@ -202,7 +202,6 @@ object Mxmodel {
           .addField(_.login)
           .addField(_.home)
           .addField(_.authorizedKeys)
-          .addField(_.authorizedPersonnel)
           .addField(_.a8VersionsExec)
           .addField(_.manageSshKeys)
       )
@@ -211,17 +210,16 @@ object Mxmodel {
     implicit val catsEq: cats.Eq[UserDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[UserDescriptor,parameters.type] =  {
-      val constructors = Constructors[UserDescriptor](6, unsafe.iterRawConstruct)
+      val constructors = Constructors[UserDescriptor](5, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
       lazy val login: CaseClassParm[UserDescriptor,UserLogin] = CaseClassParm[UserDescriptor,UserLogin]("login", _.login, (d,v) => d.copy(login = v), None, 0)
       lazy val home: CaseClassParm[UserDescriptor,Option[String]] = CaseClassParm[UserDescriptor,Option[String]]("home", _.home, (d,v) => d.copy(home = v), Some(()=> None), 1)
-      lazy val authorizedKeys: CaseClassParm[UserDescriptor,Iterable[AuthorizedKey]] = CaseClassParm[UserDescriptor,Iterable[AuthorizedKey]]("authorizedKeys", _.authorizedKeys, (d,v) => d.copy(authorizedKeys = v), Some(()=> Iterable.empty), 2)
-      lazy val authorizedPersonnel: CaseClassParm[UserDescriptor,Iterable[PersonnelId]] = CaseClassParm[UserDescriptor,Iterable[PersonnelId]]("authorizedPersonnel", _.authorizedPersonnel, (d,v) => d.copy(authorizedPersonnel = v), Some(()=> Iterable.empty), 3)
-      lazy val a8VersionsExec: CaseClassParm[UserDescriptor,Option[String]] = CaseClassParm[UserDescriptor,Option[String]]("a8VersionsExec", _.a8VersionsExec, (d,v) => d.copy(a8VersionsExec = v), Some(()=> None), 4)
-      lazy val manageSshKeys: CaseClassParm[UserDescriptor,Boolean] = CaseClassParm[UserDescriptor,Boolean]("manageSshKeys", _.manageSshKeys, (d,v) => d.copy(manageSshKeys = v), Some(()=> true), 5)
+      lazy val authorizedKeys: CaseClassParm[UserDescriptor,Vector[QualifiedUserName]] = CaseClassParm[UserDescriptor,Vector[QualifiedUserName]]("authorizedKeys", _.authorizedKeys, (d,v) => d.copy(authorizedKeys = v), Some(()=> Vector.empty), 2)
+      lazy val a8VersionsExec: CaseClassParm[UserDescriptor,Option[String]] = CaseClassParm[UserDescriptor,Option[String]]("a8VersionsExec", _.a8VersionsExec, (d,v) => d.copy(a8VersionsExec = v), Some(()=> None), 3)
+      lazy val manageSshKeys: CaseClassParm[UserDescriptor,Boolean] = CaseClassParm[UserDescriptor,Boolean]("manageSshKeys", _.manageSshKeys, (d,v) => d.copy(manageSshKeys = v), Some(()=> true), 4)
     }
     
     
@@ -231,10 +229,9 @@ object Mxmodel {
         UserDescriptor(
           login = values(0).asInstanceOf[UserLogin],
           home = values(1).asInstanceOf[Option[String]],
-          authorizedKeys = values(2).asInstanceOf[Iterable[AuthorizedKey]],
-          authorizedPersonnel = values(3).asInstanceOf[Iterable[PersonnelId]],
-          a8VersionsExec = values(4).asInstanceOf[Option[String]],
-          manageSshKeys = values(5).asInstanceOf[Boolean],
+          authorizedKeys = values(2).asInstanceOf[Vector[QualifiedUserName]],
+          a8VersionsExec = values(3).asInstanceOf[Option[String]],
+          manageSshKeys = values(4).asInstanceOf[Boolean],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): UserDescriptor = {
@@ -242,8 +239,7 @@ object Mxmodel {
           UserDescriptor(
             login = values.next().asInstanceOf[UserLogin],
             home = values.next().asInstanceOf[Option[String]],
-            authorizedKeys = values.next().asInstanceOf[Iterable[AuthorizedKey]],
-            authorizedPersonnel = values.next().asInstanceOf[Iterable[PersonnelId]],
+            authorizedKeys = values.next().asInstanceOf[Vector[QualifiedUserName]],
             a8VersionsExec = values.next().asInstanceOf[Option[String]],
             manageSshKeys = values.next().asInstanceOf[Boolean],
           )
@@ -251,8 +247,8 @@ object Mxmodel {
            sys.error("")
         value
       }
-      def typedConstruct(login: UserLogin, home: Option[String], authorizedKeys: Iterable[AuthorizedKey], authorizedPersonnel: Iterable[PersonnelId], a8VersionsExec: Option[String], manageSshKeys: Boolean): UserDescriptor =
-        UserDescriptor(login, home, authorizedKeys, authorizedPersonnel, a8VersionsExec, manageSshKeys)
+      def typedConstruct(login: UserLogin, home: Option[String], authorizedKeys: Vector[QualifiedUserName], a8VersionsExec: Option[String], manageSshKeys: Boolean): UserDescriptor =
+        UserDescriptor(login, home, authorizedKeys, a8VersionsExec, manageSshKeys)
     
     }
     
@@ -488,7 +484,7 @@ object Mxmodel {
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.rsnapshotKey)
-          .addField(_.personnel)
+          .addField(_.publicKeys)
           .addField(_.servers)
       )
       .build
@@ -502,7 +498,7 @@ object Mxmodel {
     
     object parameters {
       lazy val rsnapshotKey: CaseClassParm[RepositoryDescriptor,Option[AuthorizedKey]] = CaseClassParm[RepositoryDescriptor,Option[AuthorizedKey]]("rsnapshotKey", _.rsnapshotKey, (d,v) => d.copy(rsnapshotKey = v), Some(()=> None), 0)
-      lazy val personnel: CaseClassParm[RepositoryDescriptor,Iterable[Personnel]] = CaseClassParm[RepositoryDescriptor,Iterable[Personnel]]("personnel", _.personnel, (d,v) => d.copy(personnel = v), Some(()=> Iterable.empty), 1)
+      lazy val publicKeys: CaseClassParm[RepositoryDescriptor,Iterable[Personnel]] = CaseClassParm[RepositoryDescriptor,Iterable[Personnel]]("publicKeys", _.publicKeys, (d,v) => d.copy(publicKeys = v), Some(()=> Iterable.empty), 1)
       lazy val servers: CaseClassParm[RepositoryDescriptor,Vector[ServerDescriptor]] = CaseClassParm[RepositoryDescriptor,Vector[ServerDescriptor]]("servers", _.servers, (d,v) => d.copy(servers = v), None, 2)
     }
     
@@ -512,7 +508,7 @@ object Mxmodel {
       def rawConstruct(values: IndexedSeq[Any]): RepositoryDescriptor = {
         RepositoryDescriptor(
           rsnapshotKey = values(0).asInstanceOf[Option[AuthorizedKey]],
-          personnel = values(1).asInstanceOf[Iterable[Personnel]],
+          publicKeys = values(1).asInstanceOf[Iterable[Personnel]],
           servers = values(2).asInstanceOf[Vector[ServerDescriptor]],
         )
       }
@@ -520,15 +516,15 @@ object Mxmodel {
         val value =
           RepositoryDescriptor(
             rsnapshotKey = values.next().asInstanceOf[Option[AuthorizedKey]],
-            personnel = values.next().asInstanceOf[Iterable[Personnel]],
+            publicKeys = values.next().asInstanceOf[Iterable[Personnel]],
             servers = values.next().asInstanceOf[Vector[ServerDescriptor]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(rsnapshotKey: Option[AuthorizedKey], personnel: Iterable[Personnel], servers: Vector[ServerDescriptor]): RepositoryDescriptor =
-        RepositoryDescriptor(rsnapshotKey, personnel, servers)
+      def typedConstruct(rsnapshotKey: Option[AuthorizedKey], publicKeys: Iterable[Personnel], servers: Vector[ServerDescriptor]): RepositoryDescriptor =
+        RepositoryDescriptor(rsnapshotKey, publicKeys, servers)
     
     }
     
@@ -562,7 +558,7 @@ object Mxmodel {
     }
     
     object parameters {
-      lazy val id: CaseClassParm[Personnel,PersonnelId] = CaseClassParm[Personnel,PersonnelId]("id", _.id, (d,v) => d.copy(id = v), None, 0)
+      lazy val id: CaseClassParm[Personnel,QualifiedUserName] = CaseClassParm[Personnel,QualifiedUserName]("id", _.id, (d,v) => d.copy(id = v), None, 0)
       lazy val description: CaseClassParm[Personnel,String] = CaseClassParm[Personnel,String]("description", _.description, (d,v) => d.copy(description = v), None, 1)
       lazy val authorizedKeysUrl: CaseClassParm[Personnel,Option[String]] = CaseClassParm[Personnel,Option[String]]("authorizedKeysUrl", _.authorizedKeysUrl, (d,v) => d.copy(authorizedKeysUrl = v), Some(()=> None), 2)
       lazy val authorizedKeys: CaseClassParm[Personnel,Iterable[AuthorizedKey]] = CaseClassParm[Personnel,Iterable[AuthorizedKey]]("authorizedKeys", _.authorizedKeys, (d,v) => d.copy(authorizedKeys = v), Some(()=> None), 3)
@@ -573,7 +569,7 @@ object Mxmodel {
     
       def rawConstruct(values: IndexedSeq[Any]): Personnel = {
         Personnel(
-          id = values(0).asInstanceOf[PersonnelId],
+          id = values(0).asInstanceOf[QualifiedUserName],
           description = values(1).asInstanceOf[String],
           authorizedKeysUrl = values(2).asInstanceOf[Option[String]],
           authorizedKeys = values(3).asInstanceOf[Iterable[AuthorizedKey]],
@@ -582,7 +578,7 @@ object Mxmodel {
       def iterRawConstruct(values: Iterator[Any]): Personnel = {
         val value =
           Personnel(
-            id = values.next().asInstanceOf[PersonnelId],
+            id = values.next().asInstanceOf[QualifiedUserName],
             description = values.next().asInstanceOf[String],
             authorizedKeysUrl = values.next().asInstanceOf[Option[String]],
             authorizedKeys = values.next().asInstanceOf[Iterable[AuthorizedKey]],
@@ -591,7 +587,7 @@ object Mxmodel {
            sys.error("")
         value
       }
-      def typedConstruct(id: PersonnelId, description: String, authorizedKeysUrl: Option[String], authorizedKeys: Iterable[AuthorizedKey]): Personnel =
+      def typedConstruct(id: QualifiedUserName, description: String, authorizedKeysUrl: Option[String], authorizedKeys: Iterable[AuthorizedKey]): Personnel =
         Personnel(id, description, authorizedKeysUrl, authorizedKeys)
     
     }

@@ -46,7 +46,8 @@ case class ValidateRepo(resolvedRepository: ResolvedRepository) extends LoggingF
         val lines =
           Seq(
             ".gitattributes !filter !diff",
-            "**/ed25519.priv filter=git-crypt diff=git-crypt",
+            "**/*.priv filter=git-crypt diff=git-crypt",
+            "*.priv filter=git-crypt diff=git-crypt",
           )
         gitAttributesFile.write(lines.mkString("", "\n", "\n"))
       }

@@ -22,6 +22,25 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
       .servers
       .filter(serverMatches)
 
+  lazy val updatePublicKeysEffect =
+    ZIO.attemptBlocking {
+      val publicKeysDir =
+        resolvedRepository
+          .gitRootDirectory
+          .unresolvedDirectory
+          .subdir("public-keys")
+          .resolve
+      publicKeysDir.deleteChildren()
+      for {
+        user <- resolvedRepository.allUsers
+        publicKey <- user.publicKey
+      } yield {
+        publicKeysDir
+          .file(user.qualifiedUserName.value)
+          .write(publicKey.value)
+      }
+    }
+
   def serverMatches(resolvedServer: ResolvedServer): Boolean =
     filterServers.isEmpty || filterServers.exists(_ === resolvedServer.name)
 
@@ -30,6 +49,7 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
 
   override def runT: ZIO[BootstrapEnv, Throwable, Unit] =
     for {
+      _ <- updatePublicKeysEffect
       _ <- validateRepo.run
       _ <-
         ZIO.collectAllPar(
@@ -72,6 +92,7 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
         "--stats",
         "--exclude=\".*\"",
         z"--include=${remoteServer}/",
+        z"--include=pubkeys/",
         z"--include=\"${remoteServer}/${resolvedUser.login}/**\"",
         "--include=config.hocon",
         "--exclude=\"*\"",
@@ -87,7 +108,7 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
         .appendArgsSeq(filteredAppArgs)
         .execLogOutput
 
-    (validateRepoEffect *> rsyncEffect *> sshEffect)
+    (rsyncEffect *> sshEffect)
       .either
       .tap {
         case Left(ce) =>

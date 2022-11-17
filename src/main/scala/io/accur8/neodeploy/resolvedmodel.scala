@@ -22,6 +22,8 @@ object resolvedmodel extends LoggingF {
     server: ResolvedServer,
   ) {
 
+    lazy val qualifiedUserName = QualifiedUserName(qname)
+
     def qname = z"${login}@${server.name}"
 
     def login = descriptor.login
@@ -52,18 +54,15 @@ object resolvedmodel extends LoggingF {
     def sshPublicKeyFileInHome =
       home.subdir(".ssh").file("id_ed25519.pub")
 
-    def personnel =
-      descriptor
-        .authorizedPersonnel
-        .flatMap( personnelId =>
-          server
-            .repository
-            .personnel(personnelId)
-        )
+    def publicKey: Option[AuthorizedKey] =
+      sshPublicKeyFileInRepo
+        .readAsStringOpt()
+        .map(AuthorizedKey.apply)
 
     def authorizedKeys =
       descriptor
         .authorizedKeys
+        .flatMap(n => server.repository.authorizedKeys(n))
 
   }
 
@@ -209,15 +208,25 @@ object resolvedmodel extends LoggingF {
         .find(_.name == serverName)
         .getOrError(z"server ${serverName} not found")
 
-    def personnel(id: PersonnelId): Option[Personnel] = {
-      val result =
-        descriptor
-          .personnel
-          .find(_.id === id)
-      if ( result.isEmpty ) {
-        logger.warn(s"Personnel not found: $id")
+    def authorizedKeys(id: QualifiedUserName): Vector[AuthorizedKey] = {
+      descriptor.publicKeys.find(_.id === id) match {
+        case None =>
+          val contentsOpt =
+            gitRootDirectory
+              .resolvedDirectory
+              .subdir("public-keys")
+              .file(id.value)
+              .readAsStringOpt()
+          contentsOpt match {
+            case None =>
+              logger.warn(s"no public key found for ${id}")
+              Vector.empty
+            case Some(contents) =>
+              Vector(AuthorizedKey(s"# from ${id}"), AuthorizedKey(contents))
+          }
+        case Some(personnel) =>
+          personnel.resolvedKeys
       }
-      result
     }
 
     lazy val servers =

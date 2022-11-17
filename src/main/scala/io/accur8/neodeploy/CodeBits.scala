@@ -22,10 +22,9 @@ object CodeBits extends Logging {
     }
   }
 
-  def downloadKeys(url: Option[String]): Vector[AuthorizedKey] =
+  def downloadKeys(url: String): Vector[AuthorizedKey] =
     for {
-      u <- url.toVector
-      allKeysStr <- downloadAsString(u).toVector
+      allKeysStr <- downloadAsString(url).toVector
       key <-
         allKeysStr
           .linesIterator

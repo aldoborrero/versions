@@ -12,7 +12,6 @@ import a8.shared.json.{JsonCodec, JsonTypedCodec, UnionCodecBuilder}
 import a8.versions.RepositoryOps.RepoConfigPrefix
 import com.softwaremill.sttp.Uri
 import io.accur8.neodeploy.Sync.SyncName
-import io.accur8.neodeploy.model.PersonnelId
 import io.accur8.neodeploy.resolvedmodel.ResolvedApp
 import zio.process.CommandError
 import zio.process.CommandError.NonZeroErrorCode
@@ -148,8 +147,7 @@ object model extends LoggingF {
   case class UserDescriptor(
     login: UserLogin,
     home: Option[String] = None,
-    authorizedKeys: Iterable[AuthorizedKey] = Iterable.empty,
-    authorizedPersonnel: Iterable[PersonnelId] = Iterable.empty,
+    authorizedKeys: Vector[QualifiedUserName] = Vector.empty,
     a8VersionsExec: Option[String] = None,
     manageSshKeys: Boolean = true,
   )
@@ -209,25 +207,34 @@ object model extends LoggingF {
   @CompanionGen
   case class RepositoryDescriptor(
     rsnapshotKey: Option[AuthorizedKey] = None,
-    personnel: Iterable[Personnel] = Iterable.empty,
+    publicKeys: Iterable[Personnel] = Iterable.empty,
     servers: Vector[ServerDescriptor],
   )
 
-  object PersonnelId extends StringValue.Companion[PersonnelId]
-  case class PersonnelId(value: String) extends StringValue
+  object QualifiedUserName extends StringValue.Companion[QualifiedUserName]
+  case class QualifiedUserName(value: String) extends StringValue
 
   object Personnel extends MxPersonnel
   @CompanionGen
   case class Personnel(
-    id: PersonnelId,
+    id: QualifiedUserName,
     description: String,
     authorizedKeysUrl: Option[String] = None,
     authorizedKeys: Iterable[AuthorizedKey] = None,
   ) {
 
-    def resolvedKeys: Vector[AuthorizedKey] = {
-      Vector(AuthorizedKey(s"# from ${authorizedKeysUrl}")) ++ CodeBits.downloadKeys(authorizedKeysUrl)
+    lazy val resolvedKeys: Vector[AuthorizedKey] = {
+      val keysFromUrl =
+        authorizedKeysUrl
+          .toVector
+          .flatMap { url =>
+            Vector(AuthorizedKey(s"# from ${url}")) ++ CodeBits.downloadKeys(url)
+          }
+
+      Vector(AuthorizedKey(s"# from ${id.value}")) ++ authorizedKeys ++ keysFromUrl
+
     }
+
 
   }
 

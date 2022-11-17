@@ -7,7 +7,7 @@ import a8.shared.SharedImports._
 import a8.shared.app.Logging
 import a8.shared.{FileSystem, ZString}
 import com.softwaremill.sttp.Uri
-import io.accur8.neodeploy.model.{AuthorizedKey, PersonnelId, UserDescriptor}
+import io.accur8.neodeploy.model.{AuthorizedKey, UserDescriptor}
 import io.accur8.neodeploy.resolvedmodel.ResolvedUser
 
 object AuthorizedKeys2Sync extends ConfigFileSync[ResolvedUser] with Logging {
@@ -19,20 +19,14 @@ object AuthorizedKeys2Sync extends ConfigFileSync[ResolvedUser] with Logging {
   override def configFile(input: ResolvedUser): FileSystem.File =
     input.home.subdir(".ssh").file("authorized_keys2")
 
-  override def configFileContents(input: ResolvedUser): Task[Option[String]] = {
-
-    val personnelKeys =
-      input
-        .personnel
-        .flatMap(_.resolvedKeys)
-
+  override def configFileContents(input: ResolvedUser): Task[Option[String]] =
     zsucceed(
-      (personnelKeys ++ input.authorizedKeys)
+      input
+        .authorizedKeys
         .map(_.value)
         .mkString("\n")
         .some
     )
-  }
 
   override def resolveStepsFromModification(modification: Sync.Modification[ConfigFileSync.State, ResolvedUser]): Vector[Sync.Step] = {
     def setSshDirPermsStep(user: ResolvedUser): Option[Sync.Step] =
