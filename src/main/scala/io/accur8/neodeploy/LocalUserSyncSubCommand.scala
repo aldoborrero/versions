@@ -5,21 +5,22 @@ import a8.shared.SharedImports._
 import a8.shared.{CompanionGen, FileSystem}
 import a8.shared.app.BootstrappedIOApp
 import a8.shared.app.BootstrappedIOApp.BootstrapEnv
-import a8.versions.Exec
-import io.accur8.neodeploy.MxMain._
-import io.accur8.neodeploy.model.{AppsRootDirectory, CaddyDirectory, DomainName, GitRootDirectory, GitServerDirectory, ServerName, SupervisorDirectory}
+import io.accur8.neodeploy.MxLocalUserSyncSubCommand._
+import io.accur8.neodeploy.LocalUserSyncSubCommand.Config
+import io.accur8.neodeploy.model.{ApplicationName, AppsRootDirectory, CaddyDirectory, DomainName, GitRootDirectory, GitServerDirectory, ServerName, SupervisorDirectory, UserLogin}
 import io.accur8.neodeploy.resolvedmodel.ResolvedRepository
 import zio.ZIO
 
 import java.net.InetAddress
 
-object Main extends BootstrappedIOApp {
+object LocalUserSyncSubCommand {
 
   object Config extends MxConfig {
     def default() =
       Config(
         GitRootDirectory(FileSystem.userHome.subdir("server-app-configs").asNioPath.toAbsolutePath.toString),
         ServerName.thisServer(),
+        userLogin = UserLogin.thisUser(),
       )
   }
 
@@ -27,7 +28,12 @@ object Main extends BootstrappedIOApp {
   case class Config(
     gitRootDirectory: GitRootDirectory,
     serverName: ServerName,
+    userLogin: UserLogin = UserLogin.thisUser(),
   )
+
+}
+
+case class LocalUserSyncSubCommand(filterApps: Vector[ApplicationName]) extends BootstrappedIOApp {
 
   lazy val configFile =
     FileSystem
@@ -66,9 +72,10 @@ object Main extends BootstrappedIOApp {
       .find(_.name == config.serverName)
       .getOrError(s"server ${config.serverName} not found")
 
-  override def runT: ZIO[BootstrapEnv, Throwable, Unit] = {
-    val syncServer = SyncServer(resolvedServer)
-    syncServer.run
-  }
+  override def runT: ZIO[BootstrapEnv, Throwable, Unit] =
+    LocalUserSync(resolvedServer.fetchUser(config.userLogin), filterApps)
+      .run
+      .logVoid
+
 
 }

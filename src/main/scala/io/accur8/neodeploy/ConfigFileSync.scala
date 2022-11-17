@@ -2,7 +2,7 @@ package io.accur8.neodeploy
 
 import a8.shared.FileSystem.{Directory, File, file}
 import a8.shared.SharedImports._
-import a8.shared.{CompanionGen, StringValue, ZString}
+import a8.shared.{CompanionGen, FileSystem, StringValue, ZString}
 import io.accur8.neodeploy.ConfigFileSync.State
 import io.accur8.neodeploy.MxConfigFileSync._
 import io.accur8.neodeploy.Sync.Step
@@ -22,6 +22,8 @@ object ConfigFileSync {
 }
 
 abstract class ConfigFileSync[B] extends Sync[State,B] {
+
+  val perms: Option[String] = None
 
   def configFile(input: B): File
 
@@ -48,11 +50,13 @@ abstract class ConfigFileSync[B] extends Sync[State,B] {
           configFile
             .write(newState.fileContents)
         }
-      Vector(Step(
-        phase = Sync.Phase.Apply,
-        description = z"write ${newState.filename}",
-        action = action
-      ))
+      Vector(
+        Step(
+          phase = Sync.Phase.Apply,
+          description = z"write ${newState.filename}",
+          action = action
+        )
+      ) ++ perms.map(Sync.Step.chmod(_, FileSystem.file(newState.filename)))
     }
 
     modification match {

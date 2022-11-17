@@ -1,34 +1,34 @@
 package io.accur8.neodeploy
 
 
-import a8.shared.CompanionGen
+import a8.shared.{CompanionGen, StringValue}
 import a8.shared.FileSystem.Directory
-import io.accur8.neodeploy.model.{ApplicationDescriptor, ApplicationName, AppsRootDirectory, CaddyDirectory, Command, DomainName, GitServerDirectory, Install, SupervisorDirectory, UserDescriptor, UserLogin}
-import zio.{Task, ZIO}
+import io.accur8.neodeploy.model.{ApplicationDescriptor, ApplicationName, AppsRootDirectory, CaddyDirectory, DomainName, GitServerDirectory, Install, SupervisorDirectory, UserDescriptor, UserLogin}
+import zio.{Task, UIO, ZIO}
 import a8.shared.SharedImports._
 import a8.shared.app.{Logging, LoggingF}
 import a8.shared.json.ast
 import a8.shared.json.ast.{JsDoc, JsObj, JsVal}
-import a8.versions.Exec
 import io.accur8.neodeploy.Sync.Phase
-import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedServer, ResolvedUser, StoredSyncState}
-
-object SyncServer extends Logging {
-}
+import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedRSnapshotServer, ResolvedServer, ResolvedUser, StoredSyncState}
 
 
-case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
+
+case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[ApplicationName]) extends LoggingF {
+
+  lazy val resolvedServer = resolvedUser.server
 
   lazy val stateDirectory: Directory =
     resolvedServer
       .appsRootDirectory
       .unresolvedDirectory
       .subdir(".state")
+      .subdir(resolvedUser.login.value)
       .resolve
 
   case object userSync extends SyncContainer[ResolvedUser, UserDescriptor, UserLogin](SyncContainer.Prefix("user"), this, stateDirectory) {
 
-    override val newResolveds: Iterable[ResolvedUser] = resolvedServer.resolvedUsers
+    override val newResolveds: Iterable[ResolvedUser] = Iterable(resolvedUser)
 
     override def descriptorFromResolved(resolved: ResolvedUser): UserDescriptor =
       resolved.descriptor
@@ -40,10 +40,11 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
       descriptor.login
 
     override val syncs: Seq[Sync[_, ResolvedUser]] =
-      Seq(AuthorizedKeys2Sync)
+      Seq(AuthorizedKeys2Sync, new ManagedSshKeysSync)
+
   }
 
-  case object appSync extends SyncContainer[ResolvedApp, ApplicationDescriptor, ApplicationName](SyncContainer.Prefix("app"), this, stateDirectory) {
+  case object appSync extends SyncContainer[ResolvedApp, ApplicationDescriptor, ApplicationName](SyncContainer.Prefix("app"), this, stateDirectory, filterApps) {
 
     override val newResolveds: Iterable[ResolvedApp] = resolvedServer.resolvedApps
 
@@ -63,7 +64,6 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
         ApplicationInstallSync(resolvedServer.appsRootDirectory),
       )
 
-
     override def additionalSteps(name: ApplicationName, newResolvedOpt: Option[ResolvedApp], currentStateOpt: Option[ApplicationDescriptor], containerSteps: Sync.ContainerSteps): Seq[Sync.Step] = {
 
       val stopAppSteps =
@@ -81,11 +81,17 @@ case class SyncServer(resolvedServer: ResolvedServer) extends LoggingF {
       stopAppSteps ++ startAppSteps
 
     }
+
   }
 
-  def run: Task[Unit] =
-    Vector(userSync.run, appSync.run)
-      .sequencePar
-      .logVoid
+  def run: UIO[Vector[(StringValue, Either[Throwable, Unit])]] = {
+    // we only sync 1 user
+    userSync
+      .run
+      .zipPar(appSync.run)
+      .map { case (u, a) =>
+        u ++ a
+      }
+  }
 
 }

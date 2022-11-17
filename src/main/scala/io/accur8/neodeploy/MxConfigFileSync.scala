@@ -1,7 +1,5 @@
 package io.accur8.neodeploy
 
-import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
-
 /**
 
   WARNING THIS IS GENERATED CODE.  DO NOT EDIT.
@@ -14,6 +12,9 @@ import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
 import io.accur8.neodeploy.ConfigFileSync.State
 
 //====
+
+import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
+
 
 
 object MxConfigFileSync {

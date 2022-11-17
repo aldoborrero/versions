@@ -1,0 +1,37 @@
+
+
+
+* user level systemd service and timers
+
+        https://gist.github.com/oprypin/0f0c3479ab53e00988b52919e5d7c144
+        https://opensource.com/article/20/7/systemd-timers
+
+
+
+* launchy
+
+
+
+* configure rsnapshot on server
+        rsnapshot client properly secured
+                https://www.backupcentral.com/forum/18/52693
+
+
+* configure pgbackrest
+        on client
+        on pgbackrest server
+
+
+* version
+        
+        authorized_keys2 proper permissions set
+       
+
+
+* detecting and handling of drift
+        various config file based syncs could load the existing file
+
+
+
+* generate healthchecks.io slugs
+

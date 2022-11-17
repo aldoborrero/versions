@@ -65,7 +65,7 @@ autorestart     = ${resolvedAutoStart}
 startretries    = 3
 startsecs       = 30
 redirect_stderr = true
-user            = ${user}
+user            = ${app.user.login}
 
 #
 """.trim

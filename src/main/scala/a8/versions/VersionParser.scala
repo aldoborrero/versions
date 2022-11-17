@@ -1,5 +1,7 @@
 package a8.versions
 
+import a8.versions.model.BranchName
+
 import java.time.{LocalDate, LocalDateTime, LocalTime, Month}
 
 object VersionParser {
@@ -20,7 +22,7 @@ object VersionParser {
 
   val BuildInfo =
     P("-" ~ BuildTimestampP ~ "_" ~ Branch)
-      .map { case (ts, br) => Version.BuildInfo(ts, br) }
+      .map { case (ts, br) => Version.BuildInfo(ts, BranchName(br.trim)) }
 
   val BuildTimestampP: P[BuildTimestamp] = P(
     BuildDate ~ "_" ~ BuildTime

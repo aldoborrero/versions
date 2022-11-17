@@ -7,6 +7,8 @@ import java.io.{FileInputStream, StringReader}
 import java.util.Properties
 import a8.versions.Build.BuildType
 import a8.versions.RepositoryOps.{DependencyTree, RepoConfigPrefix, ivyLocal}
+import a8.versions.Upgrade.LatestArtifact
+import a8.versions.model.{ArtifactResponse, ResolutionRequest, ResolutionResponse}
 import a8.versions.predef._
 import com.softwaremill.sttp.{Request, Uri, sttp}
 import coursier.cache.{ArtifactError, Cache}
@@ -92,9 +94,51 @@ object RepositoryOps extends Logging {
 
   lazy val ivyLocal = userHome \\ ".ivy2" \\ "local"
 
+  def runResolve(request: ResolutionRequest): ResolutionResponse = {
+    val repositoryOps = RepositoryOps(request.repoPrefix)
+
+    implicit val buildType = BuildType.ArtifactoryBuild
+
+    lazy val resolvedVersion: Version =
+      request.version match {
+        case "latest" =>
+          LatestArtifact(request.coursierModule, request.branch.getOrElse(sys.error("branch is required for latest")))
+            .resolveVersion(Map.empty, repositoryOps)
+        case s =>
+          Version
+            .parse(s)
+            .getOrElse(sys.error(s"Invalid version: $s"))
+      }
+
+    lazy val dependencyTree: RepositoryOps.DependencyTree =
+      repositoryOps
+        .resolveDependencyTree(request.coursierModule, resolvedVersion)
+
+    lazy val resolution: Resolution = dependencyTree.resolution
+
+    lazy val artifactResponses: Seq[ArtifactResponse] =
+      resolution
+        .artifacts()
+        .map { a =>
+          ArtifactResponse(
+            a.url,
+            a.checksumUrls.keySet.toSeq,
+          )
+        }
+
+    lazy val response =
+      ResolutionResponse(
+        resolvedVersion.toString(),
+        artifactResponses,
+      )
+
+    response
+
+  }
+
 }
 
-case class RepositoryOps(repoConfigPrefix: RepoConfigPrefix) {
+case class RepositoryOps(repoConfigPrefix: RepoConfigPrefix) extends Logging {
 
   def resolveDependencyTree(module: Module, resolvedVersion: Version)(implicit buildType: BuildType): DependencyTree = {
 
@@ -174,8 +218,7 @@ case class RepositoryOps(repoConfigPrefix: RepoConfigPrefix) {
 
         val body = response.unsafeBody
 
-        println("================ " + artifact.url)
-        println(body)
+        logger.debug("================ " + artifact.url + "\n" + body)
 
         Future.successful(Right(body))
       } catch {

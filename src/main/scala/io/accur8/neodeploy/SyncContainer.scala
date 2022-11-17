@@ -12,7 +12,8 @@ import a8.shared.jdbcf.ISeriesDialect.logger
 import a8.shared.json.ast.{JsDoc, JsVal}
 import io.accur8.neodeploy.Sync.{ContainerSteps, ResolvedSteps, Step}
 import io.accur8.neodeploy.SyncContainer.{Prefix, loadState}
-import zio.{Task, ZIO}
+import io.accur8.neodeploy.model.ApplicationName
+import zio.{Task, UIO, ZIO}
 
 object SyncContainer extends Logging {
 
@@ -39,11 +40,15 @@ object SyncContainer extends Logging {
 
 abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringValue](
   prefix: Prefix,
-  syncServer: SyncServer,
+  syncServer: LocalUserSync,
   stateDirectory: Directory,
+  filter: Vector[Name] = Vector.empty,
 )
   extends LoggingF
 {
+
+  def matches(name: Name): Boolean =
+    filter.isEmpty || filter.contains(name)
 
   lazy val currentApplicationStates: Vector[StoredSyncState] =
     loadState(stateDirectory, prefix)
@@ -78,21 +83,23 @@ abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringVal
   lazy val allNames: Vector[Name] =
     (currentApplicationStatesByName.keySet ++ newResolvedsByName.keySet)
       .toVector
+      .filter(matches)
       .distinct
 
   val syncs: Seq[Sync[_, Resolved]]
 
-  def run: Task[Unit] =
-    allNames
-      .map(name =>
-        runSyncs(
-          name,
-          newResolvedsByName.get(name),
-          currentApplicationStatesByName.get(name),
+  def run: UIO[Vector[(Name,Either[Throwable,Unit])]] =
+    ZIO.collectAll(
+      allNames
+        .map(name =>
+          runSyncs(
+            name,
+            newResolvedsByName.get(name),
+            currentApplicationStatesByName.get(name),
+          )
         )
-      )
-      .sequencePar
-      .logVoid
+    )
+
 
   def updateState(name: Name, descriptor: Descriptor, containerSteps: ContainerSteps, delete: Boolean): Task[Unit] =
     ZIO.attemptBlocking {
@@ -111,7 +118,7 @@ abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringVal
       }
     }
 
-  def runSyncs(name: Name, newResolvedOpt: Option[Resolved], currentStateOpt: Option[StoredSyncState]): Task[Unit] = {
+  def runSyncs(name: Name, newResolvedOpt: Option[Resolved], currentStateOpt: Option[StoredSyncState]): UIO[(Name,Either[Throwable,Unit])] = {
 
     val currentDescriptor = currentStateOpt.map(cs => jsonToDescriptor(cs.descriptor))
     val nameStr = nameToString(name)
@@ -135,7 +142,10 @@ abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringVal
         _ <- updateState(name, descriptor, containerSteps, newResolvedOpt.isEmpty)
       } yield ()
 
-    runSyncEffect.correlateWith0(s"${prefix.value} - ${nameStr}")
+    runSyncEffect
+      .correlateWith(s"${prefix.value} - ${nameStr}")
+      .either
+      .map(name -> _)
 
   }
 

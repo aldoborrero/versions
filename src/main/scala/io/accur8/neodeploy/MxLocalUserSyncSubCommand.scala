@@ -1,7 +1,5 @@
 package io.accur8.neodeploy
 
-import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
-
 /**
 
   WARNING THIS IS GENERATED CODE.  DO NOT EDIT.
@@ -11,13 +9,16 @@ import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
 */
 
 //====
-import io.accur8.neodeploy.Main.Config
-import io.accur8.neodeploy.model.{GitRootDirectory, ServerName}
+import io.accur8.neodeploy.LocalUserSyncSubCommand._
+import io.accur8.neodeploy.model._
 
 //====
 
+import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
 
-object MxMain {
+
+
+object MxLocalUserSyncSubCommand {
   
   trait MxConfig {
   
@@ -28,19 +29,21 @@ object MxMain {
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.gitRootDirectory)
           .addField(_.serverName)
+          .addField(_.userLogin)
       )
       .build
     
     implicit val catsEq: cats.Eq[Config] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[Config,parameters.type] =  {
-      val constructors = Constructors[Config](2, unsafe.iterRawConstruct)
+      val constructors = Constructors[Config](3, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
       lazy val gitRootDirectory: CaseClassParm[Config,GitRootDirectory] = CaseClassParm[Config,GitRootDirectory]("gitRootDirectory", _.gitRootDirectory, (d,v) => d.copy(gitRootDirectory = v), None, 0)
       lazy val serverName: CaseClassParm[Config,ServerName] = CaseClassParm[Config,ServerName]("serverName", _.serverName, (d,v) => d.copy(serverName = v), None, 1)
+      lazy val userLogin: CaseClassParm[Config,UserLogin] = CaseClassParm[Config,UserLogin]("userLogin", _.userLogin, (d,v) => d.copy(userLogin = v), Some(()=> UserLogin.thisUser()), 2)
     }
     
     
@@ -50,6 +53,7 @@ object MxMain {
         Config(
           gitRootDirectory = values(0).asInstanceOf[GitRootDirectory],
           serverName = values(1).asInstanceOf[ServerName],
+          userLogin = values(2).asInstanceOf[UserLogin],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): Config = {
@@ -57,13 +61,14 @@ object MxMain {
           Config(
             gitRootDirectory = values.next().asInstanceOf[GitRootDirectory],
             serverName = values.next().asInstanceOf[ServerName],
+            userLogin = values.next().asInstanceOf[UserLogin],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(gitRootDirectory: GitRootDirectory, serverName: ServerName): Config =
-        Config(gitRootDirectory, serverName)
+      def typedConstruct(gitRootDirectory: GitRootDirectory, serverName: ServerName, userLogin: UserLogin): Config =
+        Config(gitRootDirectory, serverName, userLogin)
     
     }
     

@@ -2,7 +2,7 @@ package a8.versions.apps
 
 import a8.appinstaller.AppInstallerConfig.LibDirKind
 import a8.appinstaller.{AppInstaller, AppInstallerConfig, InstallBuilder}
-import a8.shared.FileSystem
+import a8.shared.{FileSystem, FromString}
 import a8.versions.Build.BuildType
 import a8.versions._
 import a8.versions.Upgrade.LatestArtifact
@@ -13,6 +13,8 @@ import coursier.core.{ModuleName, Organization}
 import a8.shared.SharedImports._
 import a8.shared.app.A8LogFormatter
 import a8.versions.RepositoryOps.RepoConfigPrefix
+import a8.versions.model.BranchName
+import io.accur8.neodeploy.model.{ApplicationName, ServerName, UserLogin}
 import wvlet.log.{LogLevel, Logger}
 
 import scala.annotation.tailrec
@@ -104,12 +106,52 @@ object Main extends Logging {
 
     }
 
-    val serverAppSync = new Subcommand("server_app_sync") with Runner {
+    val pushRemoteSync = new Subcommand("push_remote_sync") with Runner {
 
-      descr("synchronizes the installed apps with there setup in git, syncing any changes necessary yo get the server to match the setup in git")
+      descr("pushes a sync to a remote server")
+
+      val server = opt[String](descr = "server to push to", required = false)
+      val servers = opt[String](descr = "comma separated list of servers to push to", required = false)
+
+      val user = opt[String](descr = "user to push to", required = false)
+      val users = opt[String](descr = "comma separated list of users to push to", required = false)
+
+      val app = opt[String](descr = "app to push", required = false)
+      val apps = opt[String](descr = "comma separated list of apps to push", required = false)
 
       override def run(main: Main) = {
-        io.accur8.neodeploy.Main.main(Array())
+
+        val pushRemoteSync =
+          io.accur8.neodeploy.PushRemoteSyncSubCommand(
+            filterServers = resolveArgs[ServerName](server, servers),
+            filterUsers = resolveArgs[UserLogin](user, users),
+            filterApps = resolveArgs[ApplicationName](app, apps),
+          )
+
+        pushRemoteSync.main(Array.empty)
+
+      }
+
+    }
+
+    def resolveArgs[A: FromString](singleArg: ScallopOption[String], csvArg: ScallopOption[String]): Vector[A] = {
+      val values: Iterable[String] = singleArg.toOption ++ csvArg.toOption.toVector.flatMap(_.split(","))
+      val fromString = implicitly[FromString[A]].fromString _
+      values
+        .flatMap(fromString)
+        .toVector
+    }
+
+    val localUserSync = new Subcommand("local_user_sync") with Runner {
+
+      descr("synchronizes the user settings and any apps that run under this user")
+
+      val app = opt[String](descr = "sync this app only", required = false)
+      val apps = opt[String](descr = "sync the comma separated list of apps", required = false)
+
+      override def run(main: Main) = {
+        val runLocalServer = io.accur8.neodeploy.LocalUserSyncSubCommand(resolveArgs[ApplicationName](app, apps))
+        runLocalServer.main(Array.empty)
       }
 
     }
@@ -139,7 +181,8 @@ object Main extends Logging {
     addSubcommand(buildDotSbt)
     addSubcommand(gitignore)
     addSubcommand(version_bump)
-    addSubcommand(serverAppSync)
+    addSubcommand(pushRemoteSync)
+    addSubcommand(localUserSync)
 
     verify()
 
@@ -224,10 +267,12 @@ object Main extends Logging {
   }
 
   // same method as a8.sbt_a8.scrubBranchName() in sbt-a8 project
-  def scrubBranchName(unscrubbedName: String): String = {
-    unscrubbedName
-      .filter(ch => ch.isLetterOrDigit)
-      .toLowerCase
+  def scrubBranchName(unscrubbedName: String): BranchName = {
+    BranchName(
+      unscrubbedName
+        .filter(ch => ch.isLetterOrDigit)
+        .toLowerCase
+    )
   }
 }
 
@@ -265,7 +310,7 @@ class Main(args: Seq[String]) {
         case (Some(_), Some(_)) =>
           sys.error("must supply a branch or version not both")
         case (Some(b), None) =>
-          LatestArtifact(module, b).resolveVersion(Map(), repositoryOps) -> Some(s"latest_${b}.json")
+          LatestArtifact(module, BranchName(b.trim)).resolveVersion(Map(), repositoryOps) -> Some(s"latest_${b}.json")
         case (None, Some(v)) =>
           Version.parse(v).get -> None
       }

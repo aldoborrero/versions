@@ -1,6 +1,7 @@
 package a8.versions
 
 import a8.versions.Build.BuildType
+import a8.versions.model.BranchName
 import coursier.Resolution
 import coursier.core.{Dependency, Module, ModuleName, Organization}
 
@@ -16,7 +17,7 @@ object Upgrade {
 
   case class LatestArtifact(
     module: Module,
-    branch: String,
+    branch: BranchName,
   ) extends Upgrade {
 
     def remoteVersions(repositoryOps: RepositoryOps) =
@@ -103,8 +104,8 @@ object Upgrade {
           }
         case List(artifact) =>
           artifact.split(":").toList match {
-            case List(org, artifact, branch) =>
-              LatestArtifact(Module(Organization(org.trim), ModuleName(artifact.trim), Map()), branch.trim)
+            case List(org, artifact, branchStr) =>
+              LatestArtifact(Module(Organization(org.trim), ModuleName(artifact.trim), Map()), BranchName(branchStr.trim))
             case _ =>
               error()
           }

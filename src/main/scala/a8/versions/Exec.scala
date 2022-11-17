@@ -74,6 +74,6 @@ case class Exec(
       .mkString(" ")
 
   override def toString =
-    s"running ${workingDirectory.map(d=>s"with a cwd of ${d}").getOrElse("")} the command -- ${argsAsString}"
+    s"running${workingDirectory.map(d=>s" with a cwd of ${d}").getOrElse("")} the command -- ${argsAsString}"
 
 }

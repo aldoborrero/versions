@@ -1,19 +1,20 @@
 package io.accur8.neodeploy
 
 
-import a8.shared.FileSystem.Directory
+import a8.shared.FileSystem.{Directory, File, Path}
 import a8.shared.json.JsonCodec
 import zio.{Task, ZIO}
 import a8.shared.SharedImports._
 import a8.shared.StringValue
+import a8.shared.app.{LoggerF, LoggingF}
 import a8.shared.json.ast.{JsDoc, JsVal}
 import a8.versions.Exec
-import io.accur8.neodeploy.Sync.SyncName
-import io.accur8.neodeploy.model.Command
+import io.accur8.neodeploy.Sync.{Step, SyncName}
+import PredefAssist._
 
-object Sync {
+object Sync extends LoggingF {
 
-  abstract class Modification[A: JsonCodec, B] {
+  sealed abstract class Modification[A: JsonCodec, B] {
     def newStateOpt: Option[A]
   }
 
@@ -44,20 +45,47 @@ object Sync {
 
   object Step {
 
+    def copyFile(from: File, to: File, phase: Phase = Phase.Apply): Step = {
+      val action = ZIO.attemptBlocking {
+        to.parent.makeDirectories()
+        from.copyTo(to)
+      }
+      Step(phase, z"copy ${from} --> ${to}", action)
+    }
+
+    def chmod(perms: String, path: Path, phase: Phase = Phase.Apply): Step =
+      runCommand(phase, Command("chmod", perms, z"${path}"))
+
+    def deleteFile(f: File, phase: Phase = Phase.Apply)(implicit loggerF: LoggerF): Step = {
+      Step(
+        phase = phase,
+        description = z"delete file ${f}",
+        action = ZIO.attemptBlocking {
+          if (f.exists()) {
+            f.delete()
+          }
+        }
+      )
+    }
+
     def runCommand(
       phase: Phase,
       command: Command,
       workingDirectory: Option[Directory] = None,
       failOnNonZeroExitCode: Boolean = true
-    ): Step = {
+    )(implicit loggerF: LoggerF): Step = {
       Step(
         phase = phase,
         description = z"run command: ${command.args.mkString(" ")}",
         action =
-          ZIO.attemptBlocking {
-            val exec = new Exec(command.args, workingDirectory)
-            exec.execCaptureOutput(failOnNonZeroExitCode)
-          }
+          zio.process.Command(command.args.head, command.args.tail.toSeq :_*)
+            .redirectErrorStream(true)
+            .linesStream
+            .foreach(line => loggerF.debug(line))
+//          ZIO.attemptBlocking {
+//            val exec = new Exec(command.args, workingDirectory)
+//            exec.execCaptureOutput(failOnNonZeroExitCode)
+//          }
       )
     }
 

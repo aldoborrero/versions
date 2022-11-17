@@ -1,13 +1,22 @@
 package a8.versions
 
 
-import a8.shared.Chord
+import a8.shared.{Chord, CompanionGen, StringValue}
 import a8.shared.FileSystem.Directory
 import a8.shared.HoconOps.parseHocon
 import a8.shared.SharedImports._
 import a8.shared.HoconOps._
+import a8.versions.Mxmodel._
+import a8.versions.RepositoryOps.RepoConfigPrefix
 
 object model {
+
+  object BranchName extends StringValue.Companion[BranchName] {
+  }
+  case class BranchName(value: String) extends StringValue {
+    override def toString: String = value
+  }
+
 
   object impl {
     /** quote string */
@@ -277,6 +286,34 @@ object model {
       }
     }
 
+  }
+
+
+  object ArtifactResponse extends MxArtifactResponse
+  @CompanionGen
+  case class ArtifactResponse(
+    url: String,
+    checksums: Iterable[String],
+  )
+
+  object ResolutionResponse extends MxResolutionResponse
+  @CompanionGen
+  case class ResolutionResponse(
+    version: String,
+    artifacts: Iterable[ArtifactResponse],
+  )
+
+  object ResolutionRequest extends MxResolutionRequest
+  @CompanionGen
+  case class ResolutionRequest(
+    repoPrefix: RepoConfigPrefix = RepoConfigPrefix.default,
+    organization: String,
+    artifact: String,
+    version: String,
+    branch: Option[BranchName],
+  ) {
+    lazy val coursierModule =
+      coursier.Module(coursier.Organization(organization), coursier.ModuleName(artifact))
   }
 
 }

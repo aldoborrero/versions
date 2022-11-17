@@ -1,7 +1,5 @@
 package io.accur8.neodeploy
 
-import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
-
 /**
 
   WARNING THIS IS GENERATED CODE.  DO NOT EDIT.
@@ -19,6 +17,9 @@ import io.accur8.neodeploy.model._
 import io.accur8.neodeploy.model.Install.{FromRepo, Manual}
 
 //====
+
+import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
+
 
 
 object Mxmodel {
@@ -100,7 +101,6 @@ object Mxmodel {
           .addField(_.autoStart)
           .addField(_.appArgs)
           .addField(_.mainClass)
-          .addField(_.user)
           .addField(_.listenPort)
           .addField(_.javaVersion)
           .addField(_.stopServerCommand)
@@ -115,7 +115,7 @@ object Mxmodel {
     implicit val catsEq: cats.Eq[ApplicationDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[ApplicationDescriptor,parameters.type] =  {
-      val constructors = Constructors[ApplicationDescriptor](15, unsafe.iterRawConstruct)
+      val constructors = Constructors[ApplicationDescriptor](14, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
@@ -126,15 +126,14 @@ object Mxmodel {
       lazy val autoStart: CaseClassParm[ApplicationDescriptor,Option[Boolean]] = CaseClassParm[ApplicationDescriptor,Option[Boolean]]("autoStart", _.autoStart, (d,v) => d.copy(autoStart = v), Some(()=> None), 3)
       lazy val appArgs: CaseClassParm[ApplicationDescriptor,Iterable[String]] = CaseClassParm[ApplicationDescriptor,Iterable[String]]("appArgs", _.appArgs, (d,v) => d.copy(appArgs = v), Some(()=> Iterable.empty), 4)
       lazy val mainClass: CaseClassParm[ApplicationDescriptor,String] = CaseClassParm[ApplicationDescriptor,String]("mainClass", _.mainClass, (d,v) => d.copy(mainClass = v), None, 5)
-      lazy val user: CaseClassParm[ApplicationDescriptor,String] = CaseClassParm[ApplicationDescriptor,String]("user", _.user, (d,v) => d.copy(user = v), Some(()=> "dev"), 6)
-      lazy val listenPort: CaseClassParm[ApplicationDescriptor,Option[ListenPort]] = CaseClassParm[ApplicationDescriptor,Option[ListenPort]]("listenPort", _.listenPort, (d,v) => d.copy(listenPort = v), Some(()=> None), 7)
-      lazy val javaVersion: CaseClassParm[ApplicationDescriptor,JavaVersion] = CaseClassParm[ApplicationDescriptor,JavaVersion]("javaVersion", _.javaVersion, (d,v) => d.copy(javaVersion = v), Some(()=> JavaVersion(11)), 8)
-      lazy val stopServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("stopServerCommand", _.stopServerCommand, (d,v) => d.copy(stopServerCommand = v), Some(()=> None), 9)
-      lazy val startServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("startServerCommand", _.startServerCommand, (d,v) => d.copy(startServerCommand = v), Some(()=> None), 10)
-      lazy val domainName: CaseClassParm[ApplicationDescriptor,Option[DomainName]] = CaseClassParm[ApplicationDescriptor,Option[DomainName]]("domainName", _.domainName, (d,v) => d.copy(domainName = v), Some(()=> None), 11)
-      lazy val domainNames: CaseClassParm[ApplicationDescriptor,Iterable[DomainName]] = CaseClassParm[ApplicationDescriptor,Iterable[DomainName]]("domainNames", _.domainNames, (d,v) => d.copy(domainNames = v), Some(()=> Iterable.empty), 12)
-      lazy val trigger: CaseClassParm[ApplicationDescriptor,JsDoc] = CaseClassParm[ApplicationDescriptor,JsDoc]("trigger", _.trigger, (d,v) => d.copy(trigger = v), Some(()=> JsDoc.empty), 13)
-      lazy val repository: CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]] = CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]]("repository", _.repository, (d,v) => d.copy(repository = v), Some(()=> None), 14)
+      lazy val listenPort: CaseClassParm[ApplicationDescriptor,Option[ListenPort]] = CaseClassParm[ApplicationDescriptor,Option[ListenPort]]("listenPort", _.listenPort, (d,v) => d.copy(listenPort = v), Some(()=> None), 6)
+      lazy val javaVersion: CaseClassParm[ApplicationDescriptor,JavaVersion] = CaseClassParm[ApplicationDescriptor,JavaVersion]("javaVersion", _.javaVersion, (d,v) => d.copy(javaVersion = v), Some(()=> JavaVersion(11)), 7)
+      lazy val stopServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("stopServerCommand", _.stopServerCommand, (d,v) => d.copy(stopServerCommand = v), Some(()=> None), 8)
+      lazy val startServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("startServerCommand", _.startServerCommand, (d,v) => d.copy(startServerCommand = v), Some(()=> None), 9)
+      lazy val domainName: CaseClassParm[ApplicationDescriptor,Option[DomainName]] = CaseClassParm[ApplicationDescriptor,Option[DomainName]]("domainName", _.domainName, (d,v) => d.copy(domainName = v), Some(()=> None), 10)
+      lazy val domainNames: CaseClassParm[ApplicationDescriptor,Iterable[DomainName]] = CaseClassParm[ApplicationDescriptor,Iterable[DomainName]]("domainNames", _.domainNames, (d,v) => d.copy(domainNames = v), Some(()=> Iterable.empty), 11)
+      lazy val trigger: CaseClassParm[ApplicationDescriptor,JsDoc] = CaseClassParm[ApplicationDescriptor,JsDoc]("trigger", _.trigger, (d,v) => d.copy(trigger = v), Some(()=> JsDoc.empty), 12)
+      lazy val repository: CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]] = CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]]("repository", _.repository, (d,v) => d.copy(repository = v), Some(()=> None), 13)
     }
     
     
@@ -148,15 +147,14 @@ object Mxmodel {
           autoStart = values(3).asInstanceOf[Option[Boolean]],
           appArgs = values(4).asInstanceOf[Iterable[String]],
           mainClass = values(5).asInstanceOf[String],
-          user = values(6).asInstanceOf[String],
-          listenPort = values(7).asInstanceOf[Option[ListenPort]],
-          javaVersion = values(8).asInstanceOf[JavaVersion],
-          stopServerCommand = values(9).asInstanceOf[Option[Command]],
-          startServerCommand = values(10).asInstanceOf[Option[Command]],
-          domainName = values(11).asInstanceOf[Option[DomainName]],
-          domainNames = values(12).asInstanceOf[Iterable[DomainName]],
-          trigger = values(13).asInstanceOf[JsDoc],
-          repository = values(14).asInstanceOf[Option[RepoConfigPrefix]],
+          listenPort = values(6).asInstanceOf[Option[ListenPort]],
+          javaVersion = values(7).asInstanceOf[JavaVersion],
+          stopServerCommand = values(8).asInstanceOf[Option[Command]],
+          startServerCommand = values(9).asInstanceOf[Option[Command]],
+          domainName = values(10).asInstanceOf[Option[DomainName]],
+          domainNames = values(11).asInstanceOf[Iterable[DomainName]],
+          trigger = values(12).asInstanceOf[JsDoc],
+          repository = values(13).asInstanceOf[Option[RepoConfigPrefix]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): ApplicationDescriptor = {
@@ -168,7 +166,6 @@ object Mxmodel {
             autoStart = values.next().asInstanceOf[Option[Boolean]],
             appArgs = values.next().asInstanceOf[Iterable[String]],
             mainClass = values.next().asInstanceOf[String],
-            user = values.next().asInstanceOf[String],
             listenPort = values.next().asInstanceOf[Option[ListenPort]],
             javaVersion = values.next().asInstanceOf[JavaVersion],
             stopServerCommand = values.next().asInstanceOf[Option[Command]],
@@ -182,8 +179,8 @@ object Mxmodel {
            sys.error("")
         value
       }
-      def typedConstruct(name: ApplicationName, install: Install, jvmArgs: Iterable[String], autoStart: Option[Boolean], appArgs: Iterable[String], mainClass: String, user: String, listenPort: Option[ListenPort], javaVersion: JavaVersion, stopServerCommand: Option[Command], startServerCommand: Option[Command], domainName: Option[DomainName], domainNames: Iterable[DomainName], trigger: JsDoc, repository: Option[RepoConfigPrefix]): ApplicationDescriptor =
-        ApplicationDescriptor(name, install, jvmArgs, autoStart, appArgs, mainClass, user, listenPort, javaVersion, stopServerCommand, startServerCommand, domainName, domainNames, trigger, repository)
+      def typedConstruct(name: ApplicationName, install: Install, jvmArgs: Iterable[String], autoStart: Option[Boolean], appArgs: Iterable[String], mainClass: String, listenPort: Option[ListenPort], javaVersion: JavaVersion, stopServerCommand: Option[Command], startServerCommand: Option[Command], domainName: Option[DomainName], domainNames: Iterable[DomainName], trigger: JsDoc, repository: Option[RepoConfigPrefix]): ApplicationDescriptor =
+        ApplicationDescriptor(name, install, jvmArgs, autoStart, appArgs, mainClass, listenPort, javaVersion, stopServerCommand, startServerCommand, domainName, domainNames, trigger, repository)
     
     }
     
@@ -206,13 +203,15 @@ object Mxmodel {
           .addField(_.home)
           .addField(_.authorizedKeys)
           .addField(_.authorizedPersonnel)
+          .addField(_.a8VersionsExec)
+          .addField(_.manageSshKeys)
       )
       .build
     
     implicit val catsEq: cats.Eq[UserDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[UserDescriptor,parameters.type] =  {
-      val constructors = Constructors[UserDescriptor](4, unsafe.iterRawConstruct)
+      val constructors = Constructors[UserDescriptor](6, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
@@ -221,6 +220,8 @@ object Mxmodel {
       lazy val home: CaseClassParm[UserDescriptor,Option[String]] = CaseClassParm[UserDescriptor,Option[String]]("home", _.home, (d,v) => d.copy(home = v), Some(()=> None), 1)
       lazy val authorizedKeys: CaseClassParm[UserDescriptor,Iterable[AuthorizedKey]] = CaseClassParm[UserDescriptor,Iterable[AuthorizedKey]]("authorizedKeys", _.authorizedKeys, (d,v) => d.copy(authorizedKeys = v), Some(()=> Iterable.empty), 2)
       lazy val authorizedPersonnel: CaseClassParm[UserDescriptor,Iterable[PersonnelId]] = CaseClassParm[UserDescriptor,Iterable[PersonnelId]]("authorizedPersonnel", _.authorizedPersonnel, (d,v) => d.copy(authorizedPersonnel = v), Some(()=> Iterable.empty), 3)
+      lazy val a8VersionsExec: CaseClassParm[UserDescriptor,Option[String]] = CaseClassParm[UserDescriptor,Option[String]]("a8VersionsExec", _.a8VersionsExec, (d,v) => d.copy(a8VersionsExec = v), Some(()=> None), 4)
+      lazy val manageSshKeys: CaseClassParm[UserDescriptor,Boolean] = CaseClassParm[UserDescriptor,Boolean]("manageSshKeys", _.manageSshKeys, (d,v) => d.copy(manageSshKeys = v), Some(()=> true), 5)
     }
     
     
@@ -232,6 +233,8 @@ object Mxmodel {
           home = values(1).asInstanceOf[Option[String]],
           authorizedKeys = values(2).asInstanceOf[Iterable[AuthorizedKey]],
           authorizedPersonnel = values(3).asInstanceOf[Iterable[PersonnelId]],
+          a8VersionsExec = values(4).asInstanceOf[Option[String]],
+          manageSshKeys = values(5).asInstanceOf[Boolean],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): UserDescriptor = {
@@ -241,13 +244,15 @@ object Mxmodel {
             home = values.next().asInstanceOf[Option[String]],
             authorizedKeys = values.next().asInstanceOf[Iterable[AuthorizedKey]],
             authorizedPersonnel = values.next().asInstanceOf[Iterable[PersonnelId]],
+            a8VersionsExec = values.next().asInstanceOf[Option[String]],
+            manageSshKeys = values.next().asInstanceOf[Boolean],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(login: UserLogin, home: Option[String], authorizedKeys: Iterable[AuthorizedKey], authorizedPersonnel: Iterable[PersonnelId]): UserDescriptor =
-        UserDescriptor(login, home, authorizedKeys, authorizedPersonnel)
+      def typedConstruct(login: UserLogin, home: Option[String], authorizedKeys: Iterable[AuthorizedKey], authorizedPersonnel: Iterable[PersonnelId], a8VersionsExec: Option[String], manageSshKeys: Boolean): UserDescriptor =
+        UserDescriptor(login, home, authorizedKeys, authorizedPersonnel, a8VersionsExec, manageSshKeys)
     
     }
     
@@ -259,56 +264,128 @@ object Mxmodel {
   
   
   
-  trait MxRSnapshotDescriptor {
+  trait MxRSnapshotClientDescriptor {
   
-    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[RSnapshotDescriptor,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[RSnapshotDescriptor,parameters.type] = builder
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[RSnapshotClientDescriptor,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[RSnapshotClientDescriptor,parameters.type] = builder
     
-    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[RSnapshotDescriptor,a8.shared.json.ast.JsObj] =
+    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[RSnapshotClientDescriptor,a8.shared.json.ast.JsObj] =
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.directories)
           .addField(_.runAt)
+          .addField(_.hourly)
+          .addField(_.user)
+          .addField(_.includeExcludeLines)
       )
       .build
     
-    implicit val catsEq: cats.Eq[RSnapshotDescriptor] = cats.Eq.fromUniversalEquals
+    implicit val catsEq: cats.Eq[RSnapshotClientDescriptor] = cats.Eq.fromUniversalEquals
     
-    lazy val generator: Generator[RSnapshotDescriptor,parameters.type] =  {
-      val constructors = Constructors[RSnapshotDescriptor](2, unsafe.iterRawConstruct)
+    lazy val generator: Generator[RSnapshotClientDescriptor,parameters.type] =  {
+      val constructors = Constructors[RSnapshotClientDescriptor](5, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
-      lazy val directories: CaseClassParm[RSnapshotDescriptor,Vector[String]] = CaseClassParm[RSnapshotDescriptor,Vector[String]]("directories", _.directories, (d,v) => d.copy(directories = v), None, 0)
-      lazy val runAt: CaseClassParm[RSnapshotDescriptor,String] = CaseClassParm[RSnapshotDescriptor,String]("runAt", _.runAt, (d,v) => d.copy(runAt = v), None, 1)
+      lazy val directories: CaseClassParm[RSnapshotClientDescriptor,Vector[String]] = CaseClassParm[RSnapshotClientDescriptor,Vector[String]]("directories", _.directories, (d,v) => d.copy(directories = v), None, 0)
+      lazy val runAt: CaseClassParm[RSnapshotClientDescriptor,String] = CaseClassParm[RSnapshotClientDescriptor,String]("runAt", _.runAt, (d,v) => d.copy(runAt = v), None, 1)
+      lazy val hourly: CaseClassParm[RSnapshotClientDescriptor,Boolean] = CaseClassParm[RSnapshotClientDescriptor,Boolean]("hourly", _.hourly, (d,v) => d.copy(hourly = v), Some(()=> false), 2)
+      lazy val user: CaseClassParm[RSnapshotClientDescriptor,UserLogin] = CaseClassParm[RSnapshotClientDescriptor,UserLogin]("user", _.user, (d,v) => d.copy(user = v), None, 3)
+      lazy val includeExcludeLines: CaseClassParm[RSnapshotClientDescriptor,Iterable[String]] = CaseClassParm[RSnapshotClientDescriptor,Iterable[String]]("includeExcludeLines", _.includeExcludeLines, (d,v) => d.copy(includeExcludeLines = v), Some(()=> Iterable.empty), 4)
     }
     
     
     object unsafe {
     
-      def rawConstruct(values: IndexedSeq[Any]): RSnapshotDescriptor = {
-        RSnapshotDescriptor(
+      def rawConstruct(values: IndexedSeq[Any]): RSnapshotClientDescriptor = {
+        RSnapshotClientDescriptor(
           directories = values(0).asInstanceOf[Vector[String]],
           runAt = values(1).asInstanceOf[String],
+          hourly = values(2).asInstanceOf[Boolean],
+          user = values(3).asInstanceOf[UserLogin],
+          includeExcludeLines = values(4).asInstanceOf[Iterable[String]],
         )
       }
-      def iterRawConstruct(values: Iterator[Any]): RSnapshotDescriptor = {
+      def iterRawConstruct(values: Iterator[Any]): RSnapshotClientDescriptor = {
         val value =
-          RSnapshotDescriptor(
+          RSnapshotClientDescriptor(
             directories = values.next().asInstanceOf[Vector[String]],
             runAt = values.next().asInstanceOf[String],
+            hourly = values.next().asInstanceOf[Boolean],
+            user = values.next().asInstanceOf[UserLogin],
+            includeExcludeLines = values.next().asInstanceOf[Iterable[String]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(directories: Vector[String], runAt: String): RSnapshotDescriptor =
-        RSnapshotDescriptor(directories, runAt)
+      def typedConstruct(directories: Vector[String], runAt: String, hourly: Boolean, user: UserLogin, includeExcludeLines: Iterable[String]): RSnapshotClientDescriptor =
+        RSnapshotClientDescriptor(directories, runAt, hourly, user, includeExcludeLines)
     
     }
     
     
-    lazy val typeName = "RSnapshotDescriptor"
+    lazy val typeName = "RSnapshotClientDescriptor"
+  
+  }
+  
+  
+  
+  
+  trait MxRSnapshotServerDescriptor {
+  
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[RSnapshotServerDescriptor,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[RSnapshotServerDescriptor,parameters.type] = builder
+    
+    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[RSnapshotServerDescriptor,a8.shared.json.ast.JsObj] =
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.user)
+          .addField(_.rsnapshotRootDir)
+          .addField(_.rsnapshotConfigDir)
+      )
+      .build
+    
+    implicit val catsEq: cats.Eq[RSnapshotServerDescriptor] = cats.Eq.fromUniversalEquals
+    
+    lazy val generator: Generator[RSnapshotServerDescriptor,parameters.type] =  {
+      val constructors = Constructors[RSnapshotServerDescriptor](3, unsafe.iterRawConstruct)
+      Generator(constructors, parameters)
+    }
+    
+    object parameters {
+      lazy val user: CaseClassParm[RSnapshotServerDescriptor,UserLogin] = CaseClassParm[RSnapshotServerDescriptor,UserLogin]("user", _.user, (d,v) => d.copy(user = v), None, 0)
+      lazy val rsnapshotRootDir: CaseClassParm[RSnapshotServerDescriptor,RSnapshotRootDirectory] = CaseClassParm[RSnapshotServerDescriptor,RSnapshotRootDirectory]("rsnapshotRootDir", _.rsnapshotRootDir, (d,v) => d.copy(rsnapshotRootDir = v), None, 1)
+      lazy val rsnapshotConfigDir: CaseClassParm[RSnapshotServerDescriptor,RSnapshotConfigDirectory] = CaseClassParm[RSnapshotServerDescriptor,RSnapshotConfigDirectory]("rsnapshotConfigDir", _.rsnapshotConfigDir, (d,v) => d.copy(rsnapshotConfigDir = v), None, 2)
+    }
+    
+    
+    object unsafe {
+    
+      def rawConstruct(values: IndexedSeq[Any]): RSnapshotServerDescriptor = {
+        RSnapshotServerDescriptor(
+          user = values(0).asInstanceOf[UserLogin],
+          rsnapshotRootDir = values(1).asInstanceOf[RSnapshotRootDirectory],
+          rsnapshotConfigDir = values(2).asInstanceOf[RSnapshotConfigDirectory],
+        )
+      }
+      def iterRawConstruct(values: Iterator[Any]): RSnapshotServerDescriptor = {
+        val value =
+          RSnapshotServerDescriptor(
+            user = values.next().asInstanceOf[UserLogin],
+            rsnapshotRootDir = values.next().asInstanceOf[RSnapshotRootDirectory],
+            rsnapshotConfigDir = values.next().asInstanceOf[RSnapshotConfigDirectory],
+          )
+        if ( values.hasNext )
+           sys.error("")
+        value
+      }
+      def typedConstruct(user: UserLogin, rsnapshotRootDir: RSnapshotRootDirectory, rsnapshotConfigDir: RSnapshotConfigDirectory): RSnapshotServerDescriptor =
+        RSnapshotServerDescriptor(user, rsnapshotRootDir, rsnapshotConfigDir)
+    
+    }
+    
+    
+    lazy val typeName = "RSnapshotServerDescriptor"
   
   }
   
@@ -328,16 +405,17 @@ object Mxmodel {
           .addField(_.caddyDirectory)
           .addField(_.serverName)
           .addField(_.users)
-          .addField(_.rsnapshot)
+          .addField(_.rsnapshotClient)
           .addField(_.a8VersionsExec)
           .addField(_.supervisorctlExec)
+          .addField(_.rsnapshotServer)
       )
       .build
     
     implicit val catsEq: cats.Eq[ServerDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[ServerDescriptor,parameters.type] =  {
-      val constructors = Constructors[ServerDescriptor](9, unsafe.iterRawConstruct)
+      val constructors = Constructors[ServerDescriptor](10, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
@@ -347,10 +425,11 @@ object Mxmodel {
       lazy val supervisorDirectory: CaseClassParm[ServerDescriptor,SupervisorDirectory] = CaseClassParm[ServerDescriptor,SupervisorDirectory]("supervisorDirectory", _.supervisorDirectory, (d,v) => d.copy(supervisorDirectory = v), None, 2)
       lazy val caddyDirectory: CaseClassParm[ServerDescriptor,CaddyDirectory] = CaseClassParm[ServerDescriptor,CaddyDirectory]("caddyDirectory", _.caddyDirectory, (d,v) => d.copy(caddyDirectory = v), None, 3)
       lazy val serverName: CaseClassParm[ServerDescriptor,DomainName] = CaseClassParm[ServerDescriptor,DomainName]("serverName", _.serverName, (d,v) => d.copy(serverName = v), None, 4)
-      lazy val users: CaseClassParm[ServerDescriptor,Iterable[UserDescriptor]] = CaseClassParm[ServerDescriptor,Iterable[UserDescriptor]]("users", _.users, (d,v) => d.copy(users = v), None, 5)
-      lazy val rsnapshot: CaseClassParm[ServerDescriptor,Option[RSnapshotDescriptor]] = CaseClassParm[ServerDescriptor,Option[RSnapshotDescriptor]]("rsnapshot", _.rsnapshot, (d,v) => d.copy(rsnapshot = v), Some(()=> None), 6)
+      lazy val users: CaseClassParm[ServerDescriptor,Vector[UserDescriptor]] = CaseClassParm[ServerDescriptor,Vector[UserDescriptor]]("users", _.users, (d,v) => d.copy(users = v), None, 5)
+      lazy val rsnapshotClient: CaseClassParm[ServerDescriptor,Option[RSnapshotClientDescriptor]] = CaseClassParm[ServerDescriptor,Option[RSnapshotClientDescriptor]]("rsnapshotClient", _.rsnapshotClient, (d,v) => d.copy(rsnapshotClient = v), Some(()=> None), 6)
       lazy val a8VersionsExec: CaseClassParm[ServerDescriptor,Option[String]] = CaseClassParm[ServerDescriptor,Option[String]]("a8VersionsExec", _.a8VersionsExec, (d,v) => d.copy(a8VersionsExec = v), Some(()=> None), 7)
       lazy val supervisorctlExec: CaseClassParm[ServerDescriptor,Option[String]] = CaseClassParm[ServerDescriptor,Option[String]]("supervisorctlExec", _.supervisorctlExec, (d,v) => d.copy(supervisorctlExec = v), Some(()=> None), 8)
+      lazy val rsnapshotServer: CaseClassParm[ServerDescriptor,Option[RSnapshotServerDescriptor]] = CaseClassParm[ServerDescriptor,Option[RSnapshotServerDescriptor]]("rsnapshotServer", _.rsnapshotServer, (d,v) => d.copy(rsnapshotServer = v), Some(()=> None), 9)
     }
     
     
@@ -363,10 +442,11 @@ object Mxmodel {
           supervisorDirectory = values(2).asInstanceOf[SupervisorDirectory],
           caddyDirectory = values(3).asInstanceOf[CaddyDirectory],
           serverName = values(4).asInstanceOf[DomainName],
-          users = values(5).asInstanceOf[Iterable[UserDescriptor]],
-          rsnapshot = values(6).asInstanceOf[Option[RSnapshotDescriptor]],
+          users = values(5).asInstanceOf[Vector[UserDescriptor]],
+          rsnapshotClient = values(6).asInstanceOf[Option[RSnapshotClientDescriptor]],
           a8VersionsExec = values(7).asInstanceOf[Option[String]],
           supervisorctlExec = values(8).asInstanceOf[Option[String]],
+          rsnapshotServer = values(9).asInstanceOf[Option[RSnapshotServerDescriptor]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): ServerDescriptor = {
@@ -377,17 +457,18 @@ object Mxmodel {
             supervisorDirectory = values.next().asInstanceOf[SupervisorDirectory],
             caddyDirectory = values.next().asInstanceOf[CaddyDirectory],
             serverName = values.next().asInstanceOf[DomainName],
-            users = values.next().asInstanceOf[Iterable[UserDescriptor]],
-            rsnapshot = values.next().asInstanceOf[Option[RSnapshotDescriptor]],
+            users = values.next().asInstanceOf[Vector[UserDescriptor]],
+            rsnapshotClient = values.next().asInstanceOf[Option[RSnapshotClientDescriptor]],
             a8VersionsExec = values.next().asInstanceOf[Option[String]],
             supervisorctlExec = values.next().asInstanceOf[Option[String]],
+            rsnapshotServer = values.next().asInstanceOf[Option[RSnapshotServerDescriptor]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(name: ServerName, appInstallDirectory: AppsRootDirectory, supervisorDirectory: SupervisorDirectory, caddyDirectory: CaddyDirectory, serverName: DomainName, users: Iterable[UserDescriptor], rsnapshot: Option[RSnapshotDescriptor], a8VersionsExec: Option[String], supervisorctlExec: Option[String]): ServerDescriptor =
-        ServerDescriptor(name, appInstallDirectory, supervisorDirectory, caddyDirectory, serverName, users, rsnapshot, a8VersionsExec, supervisorctlExec)
+      def typedConstruct(name: ServerName, appInstallDirectory: AppsRootDirectory, supervisorDirectory: SupervisorDirectory, caddyDirectory: CaddyDirectory, serverName: DomainName, users: Vector[UserDescriptor], rsnapshotClient: Option[RSnapshotClientDescriptor], a8VersionsExec: Option[String], supervisorctlExec: Option[String], rsnapshotServer: Option[RSnapshotServerDescriptor]): ServerDescriptor =
+        ServerDescriptor(name, appInstallDirectory, supervisorDirectory, caddyDirectory, serverName, users, rsnapshotClient, a8VersionsExec, supervisorctlExec, rsnapshotServer)
     
     }
     
@@ -422,7 +503,7 @@ object Mxmodel {
     object parameters {
       lazy val rsnapshotKey: CaseClassParm[RepositoryDescriptor,Option[AuthorizedKey]] = CaseClassParm[RepositoryDescriptor,Option[AuthorizedKey]]("rsnapshotKey", _.rsnapshotKey, (d,v) => d.copy(rsnapshotKey = v), Some(()=> None), 0)
       lazy val personnel: CaseClassParm[RepositoryDescriptor,Iterable[Personnel]] = CaseClassParm[RepositoryDescriptor,Iterable[Personnel]]("personnel", _.personnel, (d,v) => d.copy(personnel = v), Some(()=> Iterable.empty), 1)
-      lazy val servers: CaseClassParm[RepositoryDescriptor,Iterable[ServerDescriptor]] = CaseClassParm[RepositoryDescriptor,Iterable[ServerDescriptor]]("servers", _.servers, (d,v) => d.copy(servers = v), None, 2)
+      lazy val servers: CaseClassParm[RepositoryDescriptor,Vector[ServerDescriptor]] = CaseClassParm[RepositoryDescriptor,Vector[ServerDescriptor]]("servers", _.servers, (d,v) => d.copy(servers = v), None, 2)
     }
     
     
@@ -432,7 +513,7 @@ object Mxmodel {
         RepositoryDescriptor(
           rsnapshotKey = values(0).asInstanceOf[Option[AuthorizedKey]],
           personnel = values(1).asInstanceOf[Iterable[Personnel]],
-          servers = values(2).asInstanceOf[Iterable[ServerDescriptor]],
+          servers = values(2).asInstanceOf[Vector[ServerDescriptor]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): RepositoryDescriptor = {
@@ -440,13 +521,13 @@ object Mxmodel {
           RepositoryDescriptor(
             rsnapshotKey = values.next().asInstanceOf[Option[AuthorizedKey]],
             personnel = values.next().asInstanceOf[Iterable[Personnel]],
-            servers = values.next().asInstanceOf[Iterable[ServerDescriptor]],
+            servers = values.next().asInstanceOf[Vector[ServerDescriptor]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(rsnapshotKey: Option[AuthorizedKey], personnel: Iterable[Personnel], servers: Iterable[ServerDescriptor]): RepositoryDescriptor =
+      def typedConstruct(rsnapshotKey: Option[AuthorizedKey], personnel: Iterable[Personnel], servers: Vector[ServerDescriptor]): RepositoryDescriptor =
         RepositoryDescriptor(rsnapshotKey, personnel, servers)
     
     }

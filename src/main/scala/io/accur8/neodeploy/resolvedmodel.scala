@@ -1,17 +1,18 @@
 package io.accur8.neodeploy
 
 
-import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, ConfigMojoOps, Exec, StringValue}
-import a8.shared.FileSystem.{Directory, dir}
+import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, ConfigMojoOps, Exec, StringValue, ZString}
+import a8.shared.FileSystem.{Directory, File, dir}
 import model._
 import a8.shared.SharedImports._
+import a8.shared.ZString.ZStringer
 import a8.shared.app.LoggingF
 import a8.shared.json.JsonCodec
 import a8.shared.json.ast.{JsDoc, JsObj, JsVal}
 import io.accur8.neodeploy.Mxresolvedmodel.MxStoredSyncState
 import io.accur8.neodeploy.Sync.{ContainerSteps, Phase, ResolvedSteps, Step, SyncName}
-import zio.{Task, ZIO}
-
+import zio.{Chunk, Task, UIO, ZIO}
+import PredefAssist._
 
 object resolvedmodel extends LoggingF {
 
@@ -20,6 +21,36 @@ object resolvedmodel extends LoggingF {
     home: Directory,
     server: ResolvedServer,
   ) {
+
+    def qname = z"${login}@${server.name}"
+
+    def login = descriptor.login
+
+    lazy val repoDir =
+      server
+        .gitServerDirectory
+        .resolvedDirectory
+        .subdir(descriptor.login.value)
+        .resolve
+
+    def repoFile(subPath: String): File =
+      repoDir
+        .file(subPath)
+
+    def tempSshPrivateKeyFileInRepo =
+      repoFile("id_ed25519")
+
+    def sshPrivateKeyFileInRepo =
+      repoFile(z"id_ed25519.priv")
+
+    def sshPublicKeyFileInRepo =
+      repoFile(z"id_ed25519.pub")
+
+    def sshPrivateKeyFileInHome =
+      home.subdir(".ssh").file("id_ed25519")
+
+    def sshPublicKeyFileInHome =
+      home.subdir(".ssh").file("id_ed25519.pub")
 
     def personnel =
       descriptor
@@ -33,6 +64,7 @@ object resolvedmodel extends LoggingF {
     def authorizedKeys =
       descriptor
         .authorizedKeys
+
   }
 
 
@@ -41,6 +73,15 @@ object resolvedmodel extends LoggingF {
     gitServerDirectory: GitServerDirectory,
     repository: ResolvedRepository,
   ) {
+
+    def fetchUser(login: UserLogin): ResolvedUser =
+      resolvedUsers
+        .find(_.login == login)
+        .getOrError(s"cannot find ${login}")
+
+    def fetchUserOpt(login: UserLogin): Option[ResolvedUser] =
+      resolvedUsers
+        .find(_.login == login)
 
     lazy val resolvedUsers =
       descriptor
@@ -79,11 +120,12 @@ object resolvedmodel extends LoggingF {
 
 
     def execCommand(command: Command): Task[Unit] = {
-      ZIO
-        .attemptBlocking(
-          Exec(command.args).execCaptureOutput(false)
-        )
-        .logVoid
+      val logLinesEffect: Chunk[String] => UIO[Unit] = { lines: Chunk[String] =>
+        loggerF.debug(s"command output chunk -- ${lines.mkString("\n    ", "\n    ", "\n    ")}")
+      }
+      command
+        .exec(logLinesEffect = logLinesEffect)
+        .as(())
     }
 
     def name = descriptor.name
@@ -92,13 +134,25 @@ object resolvedmodel extends LoggingF {
       gitServerDirectory
         .unresolvedDirectory
         .subdirs()
-        .flatMap(loadResolvedAppFromDisk)
+        .flatMap { userDir =>
+          fetchUserOpt(UserLogin(userDir.name)) match {
+            case None =>
+              logger.warn(z"no user found for ${userDir}")
+              None
+            case Some(user) =>
+              userDir
+                .subdirs()
+                .flatMap { appDir =>
+                  loadResolvedAppFromDisk(appDir, user)
+                }
+          }
+        }
 
     def appsRootDirectory: AppsRootDirectory = descriptor.appInstallDirectory
     def supervisorDirectory: SupervisorDirectory = descriptor.supervisorDirectory
     def caddyDirectory: CaddyDirectory = descriptor.caddyDirectory
 
-    def loadResolvedAppFromDisk(appConfigDir: Directory): Option[ResolvedApp] = {
+    def loadResolvedAppFromDisk(appConfigDir: Directory, resolvedUser: ResolvedUser): Option[ResolvedApp] = {
       val appDescriptorFile = appConfigDir.file("application.json")
       appDescriptorFile
         .readAsStringOpt()
@@ -108,7 +162,7 @@ object resolvedmodel extends LoggingF {
               logger.error(s"Failed to load application descriptor file: $appDescriptorFile -- ${e.prettyMessage}")
               None
             case Right(v) =>
-              Some(ResolvedApp(v, this, appConfigDir))
+              Some(ResolvedApp(v, this, appConfigDir, resolvedUser))
           }
         }
     }
@@ -121,7 +175,9 @@ object resolvedmodel extends LoggingF {
     descriptor: ApplicationDescriptor,
     server: ResolvedServer,
     gitDirectory: Directory,
+    user: ResolvedUser,
   ) {
+    def name = descriptor.name
   }
 
 
@@ -148,6 +204,11 @@ object resolvedmodel extends LoggingF {
     gitRootDirectory: GitRootDirectory,
   ) {
 
+    def server(serverName: ServerName): ResolvedServer =
+      servers
+        .find(_.name == serverName)
+        .getOrError(z"server ${serverName} not found")
+
     def personnel(id: PersonnelId): Option[Personnel] = {
       val result =
         descriptor
@@ -169,6 +230,20 @@ object resolvedmodel extends LoggingF {
             this,
           )
         }
+
+    lazy val allUsers =
+      servers
+        .flatMap(_.resolvedUsers)
+
+    lazy val rsnapshotClients: Vector[ResolvedRSnapshotClient] =
+      servers
+        .flatMap( server =>
+          server
+            .descriptor
+            .rsnapshotClient
+            .map(d => ResolvedRSnapshotClient(d, server, server.fetchUser(UserLogin("rsnapshot"))))
+        )
+
   }
 
 
@@ -203,5 +278,45 @@ object resolvedmodel extends LoggingF {
           None
       }
   }
+
+  case class ResolvedRSnapshotClient(
+    descriptor: RSnapshotClientDescriptor,
+    server: ResolvedServer,
+    user: ResolvedUser,
+  ) {
+    // this makes sure there is a tab separate the include|exclude keyword and the path
+    lazy val resolvedIncludeExcludeLines =
+      descriptor
+        .includeExcludeLines
+        .map { line =>
+          line
+            .splitList("[ \t]", limit = 2)
+            .mkString("\t")
+        }
+        .mkString("\n")
+
+    lazy val sshUrl: String = z"${user.login}@${server.name}"
+
+    // this makes sure there is a tab separate the include|exclude keyword and the path
+    lazy val resolvedBackupLines = {
+
+      descriptor
+        .directories
+        .map { directory =>
+          val parts = Seq("backup", z"${sshUrl}${directory}", "/")
+          parts
+            .mkString("\t")
+        }
+        .mkString("\n")
+    }
+
+  }
+
+  case class ResolvedRSnapshotServer(
+    clients: Vector[ResolvedRSnapshotClient],
+    descriptor: RSnapshotServerDescriptor,
+    server: ResolvedServer,
+    user: ResolvedUser,
+  )
 
 }

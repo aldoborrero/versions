@@ -1,7 +1,5 @@
 package a8.appinstaller
 
-import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
-
 /**
 
   WARNING THIS IS GENERATED CODE.  DO NOT EDIT.
@@ -13,6 +11,9 @@ import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
 //====
 import AppInstallerConfig.LibDirKind
 //====
+
+import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
+
 
 
 object MxAppInstallerConfig {

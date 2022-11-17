@@ -2,10 +2,11 @@ package io.accur8.neodeploy
 
 
 import a8.shared.FileSystem.{Directory, dir}
-import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, Exec, LongValue, StringValue}
+import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, Exec, LongValue, StringValue, ZString}
 import io.accur8.neodeploy.Mxmodel._
 import a8.shared.SharedImports._
-import a8.shared.app.Logging
+import a8.shared.ZString.ZStringer
+import a8.shared.app.{LoggerF, Logging, LoggingF}
 import a8.shared.json.ast.{JsArr, JsDoc, JsNothing, JsObj, JsStr, JsVal}
 import a8.shared.json.{JsonCodec, JsonTypedCodec, UnionCodecBuilder}
 import a8.versions.RepositoryOps.RepoConfigPrefix
@@ -13,10 +14,13 @@ import com.softwaremill.sttp.Uri
 import io.accur8.neodeploy.Sync.SyncName
 import io.accur8.neodeploy.model.PersonnelId
 import io.accur8.neodeploy.resolvedmodel.ResolvedApp
+import zio.process.CommandError
+import zio.process.CommandError.NonZeroErrorCode
+import zio.{Chunk, ExitCode, UIO, ZIO}
 
 import scala.collection.Iterable
 
-object model extends Logging {
+object model extends LoggingF {
 
   object ListenPort extends LongValue.Companion[ListenPort]
   case class ListenPort(value: Long) extends LongValue
@@ -39,19 +43,13 @@ object model extends Logging {
   object Artifact extends StringValue.Companion[Artifact]
   case class Artifact(value: String) extends StringValue
 
-  object Command {
-
-    implicit val jsonCodec =
-      JsonTypedCodec.JsArr.dimap[Command](
-        arr => Command(arr.values.collect{ case JsStr(s) => s }),
-        cmd => JsArr(cmd.args.map(JsStr.apply).toList)
-      )
-
-    def apply(args: String*): Command =
-      new Command(args)
-
+  object DirectoryValue {
+    implicit def zstringer[A <: DirectoryValue]: ZStringer[A] =
+      new ZStringer[A] {
+        override def toZString(a: A): ZString =
+          a.unresolvedDirectory.asNioPath.toFile.getAbsolutePath
+      }
   }
-  case class Command(args: Iterable[String])
 
   abstract class DirectoryValue extends StringValue {
     lazy val resolvedDirectory: Directory = {
@@ -63,6 +61,12 @@ object model extends Logging {
     }
     lazy val unresolvedDirectory: Directory = dir(value)
   }
+
+  object RSnapshotRootDirectory extends StringValue.Companion[RSnapshotRootDirectory]
+  case class RSnapshotRootDirectory(value: String) extends DirectoryValue
+
+  object RSnapshotConfigDirectory extends StringValue.Companion[RSnapshotConfigDirectory]
+  case class RSnapshotConfigDirectory(value: String) extends DirectoryValue
 
   object SupervisorDirectory extends StringValue.Companion[SupervisorDirectory]
   case class SupervisorDirectory(value: String) extends DirectoryValue
@@ -120,7 +124,6 @@ object model extends Logging {
     autoStart: Option[Boolean] = None,
     appArgs: Iterable[String] = Iterable.empty,
     mainClass: String,
-    user: String = "dev",
     listenPort: Option[ListenPort] = None,
     javaVersion: JavaVersion = JavaVersion(11),
     stopServerCommand: Option[Command] = None,
@@ -133,7 +136,11 @@ object model extends Logging {
     def resolvedDomainNames = domainName ++ domainNames
   }
 
-  object UserLogin extends StringValue.Companion[UserLogin]
+  object UserLogin extends StringValue.Companion[UserLogin] {
+    def thisUser(): UserLogin =
+      UserLogin(System.getProperty("user.name"))
+  }
+
   case class UserLogin(value: String) extends StringValue
 
   object UserDescriptor extends MxUserDescriptor
@@ -143,6 +150,8 @@ object model extends Logging {
     home: Option[String] = None,
     authorizedKeys: Iterable[AuthorizedKey] = Iterable.empty,
     authorizedPersonnel: Iterable[PersonnelId] = Iterable.empty,
+    a8VersionsExec: Option[String] = None,
+    manageSshKeys: Boolean = true,
   )
 
 
@@ -158,11 +167,23 @@ object model extends Logging {
   }
   case class ServerName(value: String) extends StringValue
 
-  object RSnapshotDescriptor extends MxRSnapshotDescriptor
+  object RSnapshotClientDescriptor extends MxRSnapshotClientDescriptor
   @CompanionGen
-  case class RSnapshotDescriptor(
+  case class RSnapshotClientDescriptor(
     directories: Vector[String],
     runAt: String,
+    hourly: Boolean = false,
+    user: UserLogin,
+    includeExcludeLines: Iterable[String] = Iterable.empty,
+  ) {
+  }
+
+  object RSnapshotServerDescriptor extends MxRSnapshotServerDescriptor
+  @CompanionGen
+  case class RSnapshotServerDescriptor(
+    user: UserLogin,
+    rsnapshotRootDir: RSnapshotRootDirectory,
+    rsnapshotConfigDir: RSnapshotConfigDirectory,
   )
 
 
@@ -174,10 +195,11 @@ object model extends Logging {
     supervisorDirectory: SupervisorDirectory,
     caddyDirectory: CaddyDirectory,
     serverName: DomainName,
-    users: Iterable[UserDescriptor],
-    rsnapshot: Option[RSnapshotDescriptor] = None,
+    users: Vector[UserDescriptor],
+    rsnapshotClient: Option[RSnapshotClientDescriptor] = None,
     a8VersionsExec: Option[String] = None,
     supervisorctlExec: Option[String] = None,
+    rsnapshotServer: Option[RSnapshotServerDescriptor] = None,
   )
 
   object AuthorizedKey extends StringValue.Companion[AuthorizedKey]
@@ -188,7 +210,7 @@ object model extends Logging {
   case class RepositoryDescriptor(
     rsnapshotKey: Option[AuthorizedKey] = None,
     personnel: Iterable[Personnel] = Iterable.empty,
-    servers: Iterable[ServerDescriptor],
+    servers: Vector[ServerDescriptor],
   )
 
   object PersonnelId extends StringValue.Companion[PersonnelId]
@@ -203,8 +225,9 @@ object model extends Logging {
     authorizedKeys: Iterable[AuthorizedKey] = None,
   ) {
 
-    def resolvedKeys: Vector[AuthorizedKey] =
-      CodeBits.downloadKeys(authorizedKeysUrl)
+    def resolvedKeys: Vector[AuthorizedKey] = {
+      Vector(AuthorizedKey(s"# from ${authorizedKeysUrl}")) ++ CodeBits.downloadKeys(authorizedKeysUrl)
+    }
 
   }
 

@@ -1,7 +1,5 @@
 package io.accur8.neodeploy
 
-import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
-
 /**
 
   WARNING THIS IS GENERATED CODE.  DO NOT EDIT.
@@ -15,6 +13,9 @@ import a8.shared.json.ast.JsDoc
 import io.accur8.neodeploy.resolvedmodel.StoredSyncState
 
 //====
+
+import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
+
 
 
 object Mxresolvedmodel {

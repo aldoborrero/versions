@@ -3,10 +3,10 @@ package a8.versions
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
 import a8.versions.Version.BuildInfo
-import scala.meta.internal.fastparse.all._
+import a8.versions.model.BranchName
 
+import scala.meta.internal.fastparse.all._
 import scala.util.Try
 import shapeless._
 import shapeless.syntax.std.product._
@@ -28,9 +28,9 @@ object Version {
 
   case class BuildInfo(
     buildTimestamp: BuildTimestamp,
-    branch: String,
+    branch: BranchName,
   ) {
-    override def toString = s"${buildTimestamp}_${branch}"
+    override def toString = s"${buildTimestamp}_${branch.value}"
   }
 
   implicit val orderingByMajorMinorPathBuildTimestamp =

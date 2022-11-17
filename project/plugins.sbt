@@ -4,11 +4,13 @@
 // 
 // This file is generated from modules.conf using `a8-versions build_dot_sbt`
 // 
-// It was generated at 2022-01-31T19:51:33.383822600 by glen on fullfillment
+// It was generated at 2022-11-13T08:14:58.722780 by glen on stella.local
 // 
 // a8-versions build/versioning info follows
 // 
-// 
+//        build_date : Sun Nov 06 21:23:56 EST 2022
+//        build_machine : stella.local
+//        build_user : glen
 // 
 //      
 
@@ -20,8 +22,6 @@ addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.0.0")
 //addSbtPlugin("io.get-coursier" % "sbt-coursier" % "2.0.0-RC6")
 //addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.9.0")
 
-resolvers += "a8-sbt-plugins" at readRepoUrl()
-credentials += readRepoCredentials()
 
 
 //libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"

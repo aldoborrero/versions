@@ -1,12 +1,13 @@
 package a8.versions
 
 import a8.shared.FileSystem.File
+import a8.shared.app.Logging
 import a8.versions.Build.BuildType
 
 import java.util.Properties
 import scala.jdk.CollectionConverters._
 
-object UpgradeVersions {
+object UpgradeVersions extends Logging {
 
   def runUpgrade(versionDotPropsFile: File, repositoryOps: RepositoryOps)(implicit buildType: BuildType): Unit = {
 
@@ -49,9 +50,7 @@ object UpgradeVersions {
         }
         .mkString("\n\n", "\n\n", "\n\n")
 
-
-    println("====================== " + versionDotPropsFile.canonicalPath)
-    println(propsFileContents)
+    logger.debug("====================== " + versionDotPropsFile.canonicalPath + "\n" + propsFileContents)
 
     versionDotPropsFile.write(propsFileContents)
   }
