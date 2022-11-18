@@ -28,7 +28,6 @@ object Command {
     outputLines: Chunk[String],
   )
 
-
   case class CommandException(cause: CommandError, command: Command) extends Exception
 
 }
@@ -54,7 +53,13 @@ case class Command(args: Iterable[String], workingDirectory: Option[Directory] =
     exec()
 
   def execLogOutput(implicit loggerF: LoggerF): ZIO[Any, CommandException, Command.Result] =
-    exec(logLinesEffect = { lines => loggerF.debug(lines.mkString("\n   ", "\n   ", "\n    ")) })
+    exec(logLinesEffect = { lines =>
+      if (lines.isEmpty) {
+        zunit
+      } else {
+        loggerF.debug(lines.mkString("\n   ", "\n   ", "\n    "))
+      }
+    })
 
   def exec(
     failOnNonZeroExitCode: Boolean = true,
@@ -94,6 +99,5 @@ case class Command(args: Iterable[String], workingDirectory: Option[Directory] =
       }
 
   }
-
 
 }

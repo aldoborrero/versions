@@ -11,7 +11,7 @@ object Overrides {
 
   lazy val systemCtlCommand: Command =
     if ( isLinux ) {
-      Command("systemctl")
+      Command("sudo", "systemctl")
     } else {
       Command("echo")
     }

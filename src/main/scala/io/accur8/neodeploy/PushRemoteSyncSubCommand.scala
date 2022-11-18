@@ -104,7 +104,7 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
 
     val sshEffect =
       Command("ssh", z"${resolvedUser.login}@${resolvedUser.server.name}", "--")
-        .appendArgs("~/.nix-profile/bin/a8-versions", "blob")
+        .appendArgs("~/.nix-profile/bin/a8-versions", "local_user_sync")
         .appendArgsSeq(filteredAppArgs)
         .execLogOutput
 
