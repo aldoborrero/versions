@@ -15,7 +15,7 @@ import io.accur8.neodeploy.model.Install.FromRepo
 import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, Install, Version}
 import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedServer}
 import zio.{Task, ZIO}
-
+import a8.versions.RepositoryOps
 import java.nio.file.Paths
 
 object ApplicationInstallSync extends Logging with LoggingF {
@@ -50,7 +50,28 @@ object ApplicationInstallSync extends Logging with LoggingF {
 
       }
 
-    def runInstallFromRepo(repo: FromRepo): Task[Unit] = {
+    def runInstallFromRepo(repo: FromRepo): Task[Unit] = (
+      loggerF.debug(s"runInstallFromRepo(${repo})") *>
+      ZIO.attemptBlocking {
+        import a8.appinstaller._
+        val repositoryOps = RepositoryOps(applicationDescriptor.repository.getOrElse(RepoConfigPrefix.default))
+        val config = AppInstallerConfig(
+          organization = repo.organization.value,
+          artifact = repo.artifact.value,
+          branch = None,
+          version = repo.version.value,
+          installDir = appDir.asNioPath.toFile().getAbsolutePath().some,
+          libDirKind = LibDirKind.Copy.some,
+          webappExplode = repo.webappExplode.some,
+          backup = true,
+        )
+        AppInstaller(config, repositoryOps)
+          .execute()
+      }
+    )
+
+
+    def runInstallFromRepoExcternalProc(repo: FromRepo): Task[Unit] = {
       ZIO.attemptBlocking {
         val a8VersionsExec = server.descriptor.a8VersionsExec.getOrElse("a8-versions")
         val repoConfig = applicationDescriptor.repository.getOrElse(RepoConfigPrefix.default)

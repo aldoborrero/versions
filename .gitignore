@@ -31,3 +31,6 @@ target
 .envrc
 .direnv
 /temp
+.vscode/
+project/.bloop
+project/project
