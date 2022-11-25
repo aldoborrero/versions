@@ -19,7 +19,7 @@ case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[Applicat
   lazy val resolvedServer = resolvedUser.server
 
   lazy val stateDirectory: Directory =
-    resolvedServer
+    resolvedUser
       .appsRootDirectory
       .unresolvedDirectory
       .subdir(".state")
@@ -61,7 +61,7 @@ case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[Applicat
       Vector(
         CaddySync(resolvedServer.caddyDirectory),
         SupervisorSync(resolvedServer.supervisorDirectory),
-        ApplicationInstallSync(resolvedServer.appsRootDirectory),
+        ApplicationInstallSync(resolvedUser.appsRootDirectory),
       )
 
     override def additionalSteps(name: ApplicationName, newResolvedOpt: Option[ResolvedApp], currentStateOpt: Option[ApplicationDescriptor], containerSteps: Sync.ContainerSteps): Seq[Sync.Step] = {

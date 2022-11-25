@@ -6,9 +6,10 @@ import java.nio.file.Paths
 import java.nio.file.Files
 import a8.shared.SharedImports._
 import zio.ZIO
-import a8.shared.app.Logging
+import a8.shared.app.LoggingF
+import PredefAssist._
 
-object FileSystemAssist extends Logging {
+object FileSystemAssist extends LoggingF {
 
   case class FileSet(root: FileSystem.Directory, paths: Vector[FileSystem.Path] = Vector.empty) {
     private val rootPathStr = root.asNioPath.toFile().getAbsolutePath()
@@ -46,13 +47,17 @@ object FileSystemAssist extends Logging {
             case f: FileSystem.File =>
               val targetFile = target.file(f.relativeTo(root))
               targetFile.parent.resolve
+              logger.debug(z"copying file ${f} --> ${targetFile}") 
               f.copyTo(targetFile)
             case d: FileSystem.Directory =>
-              val targetDir = target.subdir(d.relativeTo(root))
-              targetDir.makeDirectories()
+              val targetDir = target.subdir(d.relativeTo(root)).parentOpt.get
+              if ( !targetDir.exists() )
+                targetDir.makeDirectories()
+              logger.debug(z"copying directory ${d} --> ${targetDir}")
               d.copyTo(targetDir)
           }
-    }
+      }
+
   }
 
 }

@@ -28,7 +28,7 @@ case class ValidateRepo(resolvedRepository: ResolvedRepository) extends LoggingF
       .allUsers
 
   def run =
-    (setupSshKeys *> updatePublicKeysEffect) zipPar addGitattributesFile
+    setupSshKeys zipPar addGitattributesFile
 
   def setupSshKeys: Task[Unit] = {
     allUsers
@@ -65,24 +65,5 @@ case class ValidateRepo(resolvedRepository: ResolvedRepository) extends LoggingF
     }
 
 
-  lazy val updatePublicKeysEffect =
-    ZIO.attemptBlocking {
-      val publicKeysDir =
-        resolvedRepository
-          .gitRootDirectory
-          .unresolvedDirectory
-          .subdir("public-keys")
-          .resolve
-      publicKeysDir.deleteChildren()
-      for {
-        user <- resolvedRepository.allUsers
-        publicKey <- user.publicKey
-      } yield {
-        publicKeysDir
-          .file(user.qualifiedUserName.value)
-          .write(publicKey.value)
-      }
-      ()
-    }
 
 }

@@ -150,6 +150,7 @@ object model extends LoggingF {
     authorizedKeys: Vector[QualifiedUserName] = Vector.empty,
     a8VersionsExec: Option[String] = None,
     manageSshKeys: Boolean = true,
+    appInstallDirectory: Option[AppsRootDirectory] = None,
   )
 
 
@@ -189,7 +190,6 @@ object model extends LoggingF {
   @CompanionGen
   case class ServerDescriptor(
     name: ServerName,
-    appInstallDirectory: AppsRootDirectory,
     supervisorDirectory: SupervisorDirectory,
     caddyDirectory: CaddyDirectory,
     serverName: DomainName,
@@ -221,21 +221,7 @@ object model extends LoggingF {
     description: String,
     authorizedKeysUrl: Option[String] = None,
     authorizedKeys: Iterable[AuthorizedKey] = None,
-  ) {
-
-    lazy val resolvedKeys: Vector[AuthorizedKey] = {
-      val keysFromUrl =
-        authorizedKeysUrl
-          .toVector
-          .flatMap { url =>
-            Vector(AuthorizedKey(s"# from ${url}")) ++ CodeBits.downloadKeys(url)
-          }
-
-      Vector(AuthorizedKey(s"# from ${id.value}")) ++ authorizedKeys ++ keysFromUrl
-
-    }
-
-
-  }
+    members: Iterable[QualifiedUserName] = Iterable.empty,
+  )
 
 }

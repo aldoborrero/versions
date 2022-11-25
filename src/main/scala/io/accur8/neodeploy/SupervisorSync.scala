@@ -34,7 +34,7 @@ case class SupervisorSync(supervisorDir: SupervisorDirectory) extends ConfigFile
 
     import app.descriptor._
     val resolvedAutoStart = app.descriptor.autoStart.getOrElse(true)
-    val appsRoot = app.server.appsRootDirectory.unresolvedDirectory
+    val appsRoot = app.user.appsRootDirectory.unresolvedDirectory
     val bin = appsRoot.subdir("bin").file(app.descriptor.name.value)
     val logsDir = appsRoot.subdir("logs")
     val appDir = appsRoot.subdir(app.descriptor.name.value)

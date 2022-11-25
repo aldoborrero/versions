@@ -13,6 +13,7 @@ import io.accur8.neodeploy.Mxresolvedmodel.MxStoredSyncState
 import io.accur8.neodeploy.Sync.{ContainerSteps, Phase, ResolvedSteps, Step, SyncName}
 import zio.{Chunk, Task, UIO, ZIO}
 import PredefAssist._
+import a8.versions.model.ResolvedPersonnel
 
 object resolvedmodel extends LoggingF {
 
@@ -21,6 +22,11 @@ object resolvedmodel extends LoggingF {
     home: Directory,
     server: ResolvedServer,
   ) {
+
+    lazy val appsRootDirectory: AppsRootDirectory =
+      descriptor
+        .appInstallDirectory
+        .getOrElse(AppsRootDirectory(home.subdir("apps").absolutePath))
 
     lazy val qualifiedUserName = QualifiedUserName(qname)
 
@@ -144,7 +150,6 @@ object resolvedmodel extends LoggingF {
           }
         }
 
-    def appsRootDirectory: AppsRootDirectory = descriptor.appInstallDirectory
     def supervisorDirectory: SupervisorDirectory = descriptor.supervisorDirectory
     def caddyDirectory: CaddyDirectory = descriptor.caddyDirectory
 
@@ -206,7 +211,7 @@ object resolvedmodel extends LoggingF {
         .getOrError(z"server ${serverName} not found")
 
     def authorizedKeys(id: QualifiedUserName): Vector[AuthorizedKey] = {
-      descriptor.publicKeys.find(_.id === id) match {
+      personnel.find(_.id === id) match {
         case None =>
           val contentsOpt =
             gitRootDirectory
@@ -225,6 +230,16 @@ object resolvedmodel extends LoggingF {
           personnel.resolvedKeys
       }
     }
+
+    lazy val personnel =
+      descriptor
+        .publicKeys
+        .map { p =>
+          ResolvedPersonnel(
+            this,
+            p,
+          )
+        }
 
     lazy val servers =
       descriptor

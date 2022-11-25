@@ -8,6 +8,9 @@ import a8.shared.SharedImports._
 import a8.shared.HoconOps._
 import a8.versions.Mxmodel._
 import a8.versions.RepositoryOps.RepoConfigPrefix
+import io.accur8.neodeploy.CodeBits
+import io.accur8.neodeploy.model.{AuthorizedKey, Personnel}
+import io.accur8.neodeploy.resolvedmodel.ResolvedRepository
 
 object model {
 
@@ -314,6 +317,35 @@ object model {
   ) {
     lazy val coursierModule =
       coursier.Module(coursier.Organization(organization), coursier.ModuleName(artifact))
+  }
+
+  case class ResolvedPersonnel(
+    repository: ResolvedRepository,
+    descriptor: Personnel,
+  ) {
+
+    val id = descriptor.id
+
+    lazy val resolvedKeys: Vector[AuthorizedKey] = {
+
+      val keysFromUrl =
+        descriptor
+          .authorizedKeysUrl
+          .toVector
+          .flatMap { url =>
+            Vector(AuthorizedKey(s"# from ${url}")) ++ CodeBits.downloadKeys(url)
+          }
+
+      val keysFromMembers =
+        descriptor
+          .members
+          .flatMap(member =>
+            repository.authorizedKeys(member)
+          )
+
+      Vector(AuthorizedKey(s"# from ${descriptor.id.value}")) ++ descriptor.authorizedKeys ++ keysFromUrl ++ keysFromMembers
+
+    }
   }
 
 }

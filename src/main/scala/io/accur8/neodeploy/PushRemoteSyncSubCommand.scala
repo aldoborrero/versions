@@ -12,7 +12,7 @@ import zio.process.CommandError
 import scala.util.Try
 import a8.shared.FileSystem
 
-case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterUsers: Iterable[UserLogin], filterApps: Iterable[ApplicationName]) extends BootstrappedIOApp {
+case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterUsers: Iterable[UserLogin], filterApps: Iterable[ApplicationName], remoteVerbose: Boolean) extends BootstrappedIOApp {
 
   lazy val resolvedRepository = LocalUserSyncSubCommand(Vector.empty).resolvedRepository
 
@@ -47,6 +47,23 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
     )
   }
 
+  def copyManagedPublicKeysToStagingEffect(stagingDir: FileSystem.Directory): Task[Unit] =
+    ZIO.attemptBlocking {
+      val publicKeysDir =
+        stagingDir
+          .subdir("public-keys")
+          .resolve
+      for {
+        user <- resolvedRepository.allUsers
+        publicKey <- user.publicKey
+      } yield {
+        publicKeysDir
+          .file(user.qualifiedUserName.value)
+          .write(publicKey.value)
+      }
+      ()
+    }
+
   def pushRemoteUserSync(resolvedUser: ResolvedUser): UIO[Either[Throwable,Command.Result]] = {
 
     val filteredAppArgs: Seq[String] =
@@ -77,11 +94,13 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
 
     val sshEffect =
       Command("ssh", z"${resolvedUser.login}@${resolvedUser.server.name}", "--")
-        .appendArgs("~/.nix-profile/bin/a8-versions", "local_user_sync")
+        .appendArgs("~/.nix-profile/bin/a8-versions")
+        .appendArgsSeq(remoteVerbose.toOption("--verbose"))
+        .appendArgs("local_user_sync")
         .appendArgsSeq(filteredAppArgs)
         .execLogOutput
 
-    (setupStagingDataEffect *> rsyncEffect *> sshEffect)
+    (copyManagedPublicKeysToStagingEffect(stagingDir) *> setupStagingDataEffect *> rsyncEffect *> sshEffect)
       .either
       .tap {
         case Left(ce) =>

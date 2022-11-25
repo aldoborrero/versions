@@ -39,7 +39,7 @@ case class Command(args: Iterable[String], workingDirectory: Option[Directory] =
   def appendArgs(args: String*): Command =
     Command(args = this.args ++ args)
 
-  def appendArgsSeq(args: Seq[String]): Command =
+  def appendArgsSeq(args: Iterable[String]): Command =
     Command(args = this.args ++ args)
 
   def asZioCommand: zio.process.Command =
@@ -66,7 +66,7 @@ case class Command(args: Iterable[String], workingDirectory: Option[Directory] =
     logLinesEffect: Chunk[String]=>UIO[Unit] = _ => zunit
   ): ZIO[Any, CommandException, Command.Result] = {
     val wd = workingDirectory.map(_.asNioPath.toFile).getOrElse(new java.io.File(".")).getAbsoluteFile
-    loggerF.debug(s"running in ${wd} -- ${args.mkString(" ")}") *>
+    loggerF.info(s"running in ${wd} -- ${args.mkString(" ")}") *>
     asZioCommand
       .workingDirectory(workingDirectory.map(_.asNioPath.toFile).getOrElse(new java.io.File(".")))
       .redirectErrorStream(true)

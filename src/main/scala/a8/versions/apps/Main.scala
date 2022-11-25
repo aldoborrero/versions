@@ -42,6 +42,30 @@ object Main extends Logging {
          |""".stripMargin
     )
 
+    val verbose = opt[Boolean]()
+
+    def setupVerbosity(): Unit = {
+
+      val categories =
+        Seq(
+          "io.accur8.neodeploy",
+          "a8.versions",
+        )
+      val level =
+        verbose.toOption match {
+          case Some(true) =>
+            LogLevel.TRACE
+          case None | Some(false) =>
+            LogLevel.INFO
+        }
+
+      categories
+        .foreach(c =>
+          wvlet.log.Logger(c).setLogLevel(level)
+        )
+
+    }
+
     def repositoryOps(repo: ScallopOption[String]): RepositoryOps =
       repo
         .map(v => RepositoryOps.apply(RepoConfigPrefix(v)))
@@ -127,6 +151,7 @@ object Main extends Logging {
             filterServers = resolveArgs[ServerName](server, servers),
             filterUsers = resolveArgs[UserLogin](user, users),
             filterApps = resolveArgs[ApplicationName](app, apps),
+            verbose.toOption.getOrElse(false),
           )
 
         pushRemoteSync.main(Array.empty)
@@ -300,6 +325,7 @@ class Main(args: Seq[String]) {
   lazy val conf = Conf(args)
 
   def run(): Unit = {
+    conf.setupVerbosity()
     conf.subcommand match {
       case Some(r: Runner) =>
         r.run(this)
