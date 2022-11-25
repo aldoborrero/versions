@@ -26,6 +26,8 @@ object resolvedmodel extends LoggingF {
 
     def qname = z"${login}@${server.name}"
 
+    def sshName = z"${login}@${server.name}"
+
     def login = descriptor.login
 
     lazy val repoDir =
@@ -100,20 +102,15 @@ object resolvedmodel extends LoggingF {
         applicationName.value
       ))
 
-    def appCommandStep(phase: Phase, supervisorAction: String, currentApplicationOpt: Option[ApplicationDescriptor]): Seq[Step] = {
+    def appCommandStep(phase: Phase, supervisorAction: String, commandGetter: ApplicationDescriptor=>Option[Command], currentApplicationOpt: Option[ApplicationDescriptor]): Seq[Step] = {
       currentApplicationOpt match {
         case None =>
           Seq.empty
         case Some(currentApplication) =>
           val command =
-            currentApplication
-              .stopServerCommand
+            commandGetter(currentApplication)
               .getOrElse(supervisorCommand(supervisorAction, currentApplication.name))
-          Seq(Step(
-            phase = phase,
-            description = s"run command -- ${command.args.mkString(" ")}",
-            action = execCommand(command),
-          ))
+          Seq(Step.runCommand(phase, command, failOnNonZeroExitCode = false))
       }
     }
 

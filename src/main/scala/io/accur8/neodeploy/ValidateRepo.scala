@@ -8,6 +8,17 @@ import a8.shared.SharedImports._
 import io.accur8.neodeploy.resolvedmodel.ResolvedRepository
 import PredefAssist._
 
+object ValidateRepo extends BootstrappedIOApp {
+
+  lazy val resolvedRepository = LocalUserSyncSubCommand(Vector.empty).resolvedRepository
+
+  lazy val validateRepo = ValidateRepo(resolvedRepository)
+
+  override def runT: ZIO[BootstrapEnv, Throwable, Unit] =
+    validateRepo.run
+  
+}
+
 case class ValidateRepo(resolvedRepository: ResolvedRepository) extends LoggingF {
 
   lazy val gitRootDirectory = resolvedRepository.gitRootDirectory.resolvedDirectory
@@ -17,7 +28,7 @@ case class ValidateRepo(resolvedRepository: ResolvedRepository) extends LoggingF
       .allUsers
 
   def run =
-    setupSshKeys zipPar addGitattributesFile
+    (setupSshKeys *> updatePublicKeysEffect) zipPar addGitattributesFile
 
   def setupSshKeys: Task[Unit] = {
     allUsers
@@ -51,6 +62,27 @@ case class ValidateRepo(resolvedRepository: ResolvedRepository) extends LoggingF
           )
         gitAttributesFile.write(lines.mkString("", "\n", "\n"))
       }
+    }
+
+
+  lazy val updatePublicKeysEffect =
+    ZIO.attemptBlocking {
+      val publicKeysDir =
+        resolvedRepository
+          .gitRootDirectory
+          .unresolvedDirectory
+          .subdir("public-keys")
+          .resolve
+      publicKeysDir.deleteChildren()
+      for {
+        user <- resolvedRepository.allUsers
+        publicKey <- user.publicKey
+      } yield {
+        publicKeysDir
+          .file(user.qualifiedUserName.value)
+          .write(publicKey.value)
+      }
+      ()
     }
 
 }

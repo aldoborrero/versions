@@ -68,13 +68,13 @@ case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[Applicat
 
       val stopAppSteps =
         if ( containerSteps.nonEmpty)
-          resolvedServer.appCommandStep(Phase.Pre, "stop", currentStateOpt)
+          resolvedServer.appCommandStep(Phase.Pre, "stop", _.stopServerCommand, currentStateOpt)
         else
           Seq.empty
 
       val startAppSteps =
         if (containerSteps.nonEmpty)
-          resolvedServer.appCommandStep(Phase.Post, "start", newResolvedOpt.map(_.descriptor))
+          resolvedServer.appCommandStep(Phase.Post, "start", _.startServerCommand, newResolvedOpt.map(_.descriptor))
         else
           Seq.empty
 

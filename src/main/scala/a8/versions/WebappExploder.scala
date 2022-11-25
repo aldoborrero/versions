@@ -67,7 +67,7 @@ object WebappExploder extends Logging {
         val o = Option(jarFile.getEntry(WebappPrefix))
         Option(jarFile.getEntry(WebappPrefix)) match {
           case None =>
-            logger.debug(s"no ${WebappPrefix} folder in ${jarFilename}")
+            // logger.trace(s"no ${WebappPrefix} folder in ${jarFilename}")
           case Some(_) =>
             WebappExploder.explodeSingleJar(jarFile, target, tracking)
         }

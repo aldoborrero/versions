@@ -18,6 +18,7 @@ import io.accur8.neodeploy.model.{ApplicationName, ServerName, UserLogin}
 import wvlet.log.{LogLevel, Logger}
 
 import scala.annotation.tailrec
+import io.accur8.neodeploy.ValidateRepo
 
 object Main extends Logging {
 
@@ -134,6 +135,15 @@ object Main extends Logging {
 
     }
 
+    val validateServerAppConfigs = new Subcommand("validate_server_app_configs") with Runner {
+
+      descr("will validate the server app config repo, for example creating any missing ssh keys")
+
+      override def run(main: Main) = 
+        ValidateRepo.main(Array.empty)
+
+    }
+
     def resolveArgs[A: FromString](singleArg: ScallopOption[String], csvArg: ScallopOption[String]): Vector[A] = {
       val values: Iterable[String] = singleArg.toOption ++ csvArg.toOption.toVector.flatMap(_.split(","))
       val fromString = implicitly[FromString[A]].fromString _
@@ -183,6 +193,7 @@ object Main extends Logging {
     addSubcommand(version_bump)
     addSubcommand(pushRemoteSync)
     addSubcommand(localUserSync)
+    addSubcommand(validateServerAppConfigs)
 
     verify()
 

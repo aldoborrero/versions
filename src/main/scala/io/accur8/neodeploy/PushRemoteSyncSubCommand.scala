@@ -10,6 +10,7 @@ import a8.shared.SharedImports._
 import zio.process.CommandError
 
 import scala.util.Try
+import a8.shared.FileSystem
 
 case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterUsers: Iterable[UserLogin], filterApps: Iterable[ApplicationName]) extends BootstrappedIOApp {
 
@@ -22,25 +23,6 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
       .servers
       .filter(serverMatches)
 
-  lazy val updatePublicKeysEffect =
-    ZIO.attemptBlocking {
-      val publicKeysDir =
-        resolvedRepository
-          .gitRootDirectory
-          .unresolvedDirectory
-          .subdir("public-keys")
-          .resolve
-      publicKeysDir.deleteChildren()
-      for {
-        user <- resolvedRepository.allUsers
-        publicKey <- user.publicKey
-      } yield {
-        publicKeysDir
-          .file(user.qualifiedUserName.value)
-          .write(publicKey.value)
-      }
-    }
-
   def serverMatches(resolvedServer: ResolvedServer): Boolean =
     filterServers.isEmpty || filterServers.exists(_ === resolvedServer.name)
 
@@ -49,7 +31,6 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
 
   override def runT: ZIO[BootstrapEnv, Throwable, Unit] =
     for {
-      _ <- updatePublicKeysEffect
       _ <- validateRepo.run
       _ <-
         ZIO.collectAllPar(
@@ -78,28 +59,20 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
 
     val remoteServer = resolvedUser.server.name
 
-    val validateRepoEffect =
-      ValidateRepo(resolvedRepository).run
+    val stagingDir = resolvedRepository.gitRootDirectory.resolvedDirectory.subdir(".staging").resolve
+
+    stagingDir.deleteChildren()
+
+    val setupStagingDataEffect =  
+      FileSystemAssist.FileSet(resolvedRepository.gitRootDirectory.resolvedDirectory)
+        .addPath("config.hocon")
+        .addPath("public-keys")
+        .addPath(z"${remoteServer}/${resolvedUser.login}")
+        .copyTo(stagingDir)
 
     val rsyncEffect =
-      Command(
-        "rsync",
-        "--delete",
-        "--archive",
-        "--partial",
-//        "--progress",
-        "--verbose",
-        "--stats",
-        "--exclude=\".*\"",
-        z"--include=${remoteServer}/",
-        z"--include=pubkeys/",
-        z"--include=\"${remoteServer}/${resolvedUser.login}/**\"",
-        "--include=config.hocon",
-        "--exclude=\"*\"",
-        ".",
-        z"${resolvedUser.qname}:server-app-configs"
-      )
-        .workingDirectory(resolvedRepository.gitRootDirectory.unresolvedDirectory)
+      Command("rsync", "--delete", "--archive", "--verbose", "--recursive", ".", z"${resolvedUser.sshName}:server-app-configs/")
+        .workingDirectory(stagingDir)
         .execLogOutput
 
     val sshEffect =
@@ -108,7 +81,7 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
         .appendArgsSeq(filteredAppArgs)
         .execLogOutput
 
-    (rsyncEffect *> sshEffect)
+    (setupStagingDataEffect *> rsyncEffect *> sshEffect)
       .either
       .tap {
         case Left(ce) =>
