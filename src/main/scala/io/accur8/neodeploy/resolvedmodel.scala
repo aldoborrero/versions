@@ -28,7 +28,8 @@ object resolvedmodel extends LoggingF {
         .appInstallDirectory
         .getOrElse(AppsRootDirectory(home.subdir("apps").absolutePath))
 
-    lazy val qualifiedUserName = QualifiedUserName(qname)
+    lazy val qualifiedUserNames: Seq[QualifiedUserName] =
+      Vector(QualifiedUserName(qname)) ++ descriptor.aliases
 
     def qname = z"${login}@${server.name}"
 
@@ -252,7 +253,7 @@ object resolvedmodel extends LoggingF {
           )
         }
 
-    lazy val allUsers =
+    lazy val allUsers: Seq[ResolvedUser] =
       servers
         .flatMap(_.resolvedUsers)
 

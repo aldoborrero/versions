@@ -55,10 +55,11 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
           .resolve
       for {
         user <- resolvedRepository.allUsers
-        publicKey <- user.publicKey
+        publicKey <- user.publicKey.toSeq
+        qualifiedUserName <- user.qualifiedUserNames
       } yield {
         publicKeysDir
-          .file(user.qualifiedUserName.value)
+          .file(qualifiedUserName.value)
           .write(publicKey.value)
       }
       ()

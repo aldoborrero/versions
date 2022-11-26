@@ -200,6 +200,7 @@ object Mxmodel {
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.login)
+          .addField(_.aliases)
           .addField(_.home)
           .addField(_.authorizedKeys)
           .addField(_.a8VersionsExec)
@@ -211,17 +212,18 @@ object Mxmodel {
     implicit val catsEq: cats.Eq[UserDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[UserDescriptor,parameters.type] =  {
-      val constructors = Constructors[UserDescriptor](6, unsafe.iterRawConstruct)
+      val constructors = Constructors[UserDescriptor](7, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
       lazy val login: CaseClassParm[UserDescriptor,UserLogin] = CaseClassParm[UserDescriptor,UserLogin]("login", _.login, (d,v) => d.copy(login = v), None, 0)
-      lazy val home: CaseClassParm[UserDescriptor,Option[String]] = CaseClassParm[UserDescriptor,Option[String]]("home", _.home, (d,v) => d.copy(home = v), Some(()=> None), 1)
-      lazy val authorizedKeys: CaseClassParm[UserDescriptor,Vector[QualifiedUserName]] = CaseClassParm[UserDescriptor,Vector[QualifiedUserName]]("authorizedKeys", _.authorizedKeys, (d,v) => d.copy(authorizedKeys = v), Some(()=> Vector.empty), 2)
-      lazy val a8VersionsExec: CaseClassParm[UserDescriptor,Option[String]] = CaseClassParm[UserDescriptor,Option[String]]("a8VersionsExec", _.a8VersionsExec, (d,v) => d.copy(a8VersionsExec = v), Some(()=> None), 3)
-      lazy val manageSshKeys: CaseClassParm[UserDescriptor,Boolean] = CaseClassParm[UserDescriptor,Boolean]("manageSshKeys", _.manageSshKeys, (d,v) => d.copy(manageSshKeys = v), Some(()=> true), 4)
-      lazy val appInstallDirectory: CaseClassParm[UserDescriptor,Option[AppsRootDirectory]] = CaseClassParm[UserDescriptor,Option[AppsRootDirectory]]("appInstallDirectory", _.appInstallDirectory, (d,v) => d.copy(appInstallDirectory = v), Some(()=> None), 5)
+      lazy val aliases: CaseClassParm[UserDescriptor,Vector[QualifiedUserName]] = CaseClassParm[UserDescriptor,Vector[QualifiedUserName]]("aliases", _.aliases, (d,v) => d.copy(aliases = v), Some(()=> Vector.empty), 1)
+      lazy val home: CaseClassParm[UserDescriptor,Option[String]] = CaseClassParm[UserDescriptor,Option[String]]("home", _.home, (d,v) => d.copy(home = v), Some(()=> None), 2)
+      lazy val authorizedKeys: CaseClassParm[UserDescriptor,Vector[QualifiedUserName]] = CaseClassParm[UserDescriptor,Vector[QualifiedUserName]]("authorizedKeys", _.authorizedKeys, (d,v) => d.copy(authorizedKeys = v), Some(()=> Vector.empty), 3)
+      lazy val a8VersionsExec: CaseClassParm[UserDescriptor,Option[String]] = CaseClassParm[UserDescriptor,Option[String]]("a8VersionsExec", _.a8VersionsExec, (d,v) => d.copy(a8VersionsExec = v), Some(()=> None), 4)
+      lazy val manageSshKeys: CaseClassParm[UserDescriptor,Boolean] = CaseClassParm[UserDescriptor,Boolean]("manageSshKeys", _.manageSshKeys, (d,v) => d.copy(manageSshKeys = v), Some(()=> true), 5)
+      lazy val appInstallDirectory: CaseClassParm[UserDescriptor,Option[AppsRootDirectory]] = CaseClassParm[UserDescriptor,Option[AppsRootDirectory]]("appInstallDirectory", _.appInstallDirectory, (d,v) => d.copy(appInstallDirectory = v), Some(()=> None), 6)
     }
     
     
@@ -230,17 +232,19 @@ object Mxmodel {
       def rawConstruct(values: IndexedSeq[Any]): UserDescriptor = {
         UserDescriptor(
           login = values(0).asInstanceOf[UserLogin],
-          home = values(1).asInstanceOf[Option[String]],
-          authorizedKeys = values(2).asInstanceOf[Vector[QualifiedUserName]],
-          a8VersionsExec = values(3).asInstanceOf[Option[String]],
-          manageSshKeys = values(4).asInstanceOf[Boolean],
-          appInstallDirectory = values(5).asInstanceOf[Option[AppsRootDirectory]],
+          aliases = values(1).asInstanceOf[Vector[QualifiedUserName]],
+          home = values(2).asInstanceOf[Option[String]],
+          authorizedKeys = values(3).asInstanceOf[Vector[QualifiedUserName]],
+          a8VersionsExec = values(4).asInstanceOf[Option[String]],
+          manageSshKeys = values(5).asInstanceOf[Boolean],
+          appInstallDirectory = values(6).asInstanceOf[Option[AppsRootDirectory]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): UserDescriptor = {
         val value =
           UserDescriptor(
             login = values.next().asInstanceOf[UserLogin],
+            aliases = values.next().asInstanceOf[Vector[QualifiedUserName]],
             home = values.next().asInstanceOf[Option[String]],
             authorizedKeys = values.next().asInstanceOf[Vector[QualifiedUserName]],
             a8VersionsExec = values.next().asInstanceOf[Option[String]],
@@ -251,8 +255,8 @@ object Mxmodel {
            sys.error("")
         value
       }
-      def typedConstruct(login: UserLogin, home: Option[String], authorizedKeys: Vector[QualifiedUserName], a8VersionsExec: Option[String], manageSshKeys: Boolean, appInstallDirectory: Option[AppsRootDirectory]): UserDescriptor =
-        UserDescriptor(login, home, authorizedKeys, a8VersionsExec, manageSshKeys, appInstallDirectory)
+      def typedConstruct(login: UserLogin, aliases: Vector[QualifiedUserName], home: Option[String], authorizedKeys: Vector[QualifiedUserName], a8VersionsExec: Option[String], manageSshKeys: Boolean, appInstallDirectory: Option[AppsRootDirectory]): UserDescriptor =
+        UserDescriptor(login, aliases, home, authorizedKeys, a8VersionsExec, manageSshKeys, appInstallDirectory)
     
     }
     

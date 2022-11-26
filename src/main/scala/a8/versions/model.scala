@@ -343,7 +343,13 @@ object model {
             repository.authorizedKeys(member)
           )
 
-      Vector(AuthorizedKey(s"# from ${descriptor.id.value}")) ++ descriptor.authorizedKeys ++ keysFromUrl ++ keysFromMembers
+      (
+        Vector(AuthorizedKey(s"# start for ${descriptor.id.value}"))
+        ++ descriptor.authorizedKeys
+        ++ keysFromUrl
+        ++ keysFromMembers
+        ++ Vector(AuthorizedKey(s"# end for ${descriptor.id.value}"))
+      )
 
     }
   }

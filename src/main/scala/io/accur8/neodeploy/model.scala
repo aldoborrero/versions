@@ -92,7 +92,7 @@ object model extends LoggingF {
         .typeFieldName("kind")
         .addSingleton("manual", Manual)
         .defaultType[FromRepo]
-        .addType[FromRepo]("repoe")
+        .addType[FromRepo]("repo")
         .build
 
 
@@ -146,6 +146,7 @@ object model extends LoggingF {
   @CompanionGen
   case class UserDescriptor(
     login: UserLogin,
+    aliases: Vector[QualifiedUserName] = Vector.empty,
     home: Option[String] = None,
     authorizedKeys: Vector[QualifiedUserName] = Vector.empty,
     a8VersionsExec: Option[String] = None,
