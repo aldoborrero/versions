@@ -152,6 +152,7 @@ object model extends LoggingF {
     a8VersionsExec: Option[String] = None,
     manageSshKeys: Boolean = true,
     appInstallDirectory: Option[AppsRootDirectory] = None,
+    plugins: JsDoc = JsDoc.empty,
   )
 
 
@@ -170,6 +171,7 @@ object model extends LoggingF {
   object RSnapshotClientDescriptor extends MxRSnapshotClientDescriptor
   @CompanionGen
   case class RSnapshotClientDescriptor(
+    name: String,
     directories: Vector[String],
     runAt: String,
     hourly: Boolean = false,
@@ -181,9 +183,25 @@ object model extends LoggingF {
   object RSnapshotServerDescriptor extends MxRSnapshotServerDescriptor
   @CompanionGen
   case class RSnapshotServerDescriptor(
+    name: String,
     user: UserLogin,
     rsnapshotRootDir: RSnapshotRootDirectory,
     rsnapshotConfigDir: RSnapshotConfigDirectory,
+  )
+
+  object PgbackrestClientDescriptor extends MxPgbackrestClientDescriptor
+  @CompanionGen
+  case class PgbackrestClientDescriptor(
+    name: String,
+    pgdata: String,
+  ) {
+  }
+
+  object PgbackrestServerDescriptor extends MxPgbackrestServerDescriptor
+  @CompanionGen
+  case class PgbackrestServerDescriptor(
+    name: String,
+    configHeader: String,
   )
 
 
@@ -195,10 +213,8 @@ object model extends LoggingF {
     caddyDirectory: CaddyDirectory,
     serverName: DomainName,
     users: Vector[UserDescriptor],
-    rsnapshotClient: Option[RSnapshotClientDescriptor] = None,
     a8VersionsExec: Option[String] = None,
     supervisorctlExec: Option[String] = None,
-    rsnapshotServer: Option[RSnapshotServerDescriptor] = None,
   )
 
   object AuthorizedKey extends StringValue.Companion[AuthorizedKey]
@@ -207,9 +223,9 @@ object model extends LoggingF {
   object RepositoryDescriptor extends MxRepositoryDescriptor
   @CompanionGen
   case class RepositoryDescriptor(
-    rsnapshotKey: Option[AuthorizedKey] = None,
     publicKeys: Iterable[Personnel] = Iterable.empty,
     servers: Vector[ServerDescriptor],
+    healthchecksApiToken: HealthchecksDotIo.ApiAuthToken,
   )
 
   object QualifiedUserName extends StringValue.Companion[QualifiedUserName]

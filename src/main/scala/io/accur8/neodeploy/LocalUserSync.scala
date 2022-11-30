@@ -40,7 +40,11 @@ case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[Applicat
       descriptor.login
 
     override val syncs: Seq[Sync[_, ResolvedUser]] =
-      Seq(AuthorizedKeys2Sync, new ManagedSshKeysSync)
+      Seq(
+        AuthorizedKeys2Sync,
+        new ManagedSshKeysSync,
+        PGBackrestServerSync(resolvedServer.repository.descriptor.healthchecksApiToken),
+      )
 
   }
 

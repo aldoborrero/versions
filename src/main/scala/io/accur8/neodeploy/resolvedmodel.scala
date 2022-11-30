@@ -2,7 +2,7 @@ package io.accur8.neodeploy
 
 
 import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, ConfigMojoOps, Exec, StringValue, ZString}
-import a8.shared.FileSystem.{Directory, File, dir}
+import a8.shared.FileSystem.{Directory, File, dir, userHome}
 import model._
 import a8.shared.SharedImports._
 import a8.shared.ZString.ZStringer
@@ -23,13 +23,24 @@ object resolvedmodel extends LoggingF {
     server: ResolvedServer,
   ) {
 
+    lazy val plugins = UserPlugin.UserPlugins(descriptor.plugins, this)
+
+    lazy val a8VersionsExec =
+      descriptor
+        .a8VersionsExec
+        .orElse(server.descriptor.a8VersionsExec)
+        .getOrElse("a8-versions")
+
     lazy val appsRootDirectory: AppsRootDirectory =
       descriptor
         .appInstallDirectory
         .getOrElse(AppsRootDirectory(home.subdir("apps").absolutePath))
 
     lazy val qualifiedUserNames: Seq[QualifiedUserName] =
-      Vector(QualifiedUserName(qname)) ++ descriptor.aliases
+      Vector(qualifiedUserName) ++ descriptor.aliases
+
+    lazy val qualifiedUserName: QualifiedUserName =
+      QualifiedUserName(qname)
 
     def qname = z"${login}@${server.name}"
 
@@ -206,6 +217,19 @@ object resolvedmodel extends LoggingF {
     gitRootDirectory: GitRootDirectory,
   ) {
 
+    def fetchUser(qname: QualifiedUserName): ResolvedUser =
+      users
+        .find(_.qualifiedUserName === qname)
+        .getOrError(s"user ${qname} not found")
+
+
+    lazy val userPlugins: Vector[UserPlugin] =
+      for {
+        server <- servers
+        user <- server.resolvedUsers
+        plugin <- user.plugins.pluginInstances
+      } yield plugin
+
     def server(serverName: ServerName): ResolvedServer =
       servers
         .find(_.name == serverName)
@@ -242,6 +266,9 @@ object resolvedmodel extends LoggingF {
           )
         }
 
+    lazy val users =
+      servers.flatMap(_.resolvedUsers)
+
     lazy val servers =
       descriptor
         .servers
@@ -256,15 +283,6 @@ object resolvedmodel extends LoggingF {
     lazy val allUsers: Seq[ResolvedUser] =
       servers
         .flatMap(_.resolvedUsers)
-
-    lazy val rsnapshotClients: Vector[ResolvedRSnapshotClient] =
-      servers
-        .flatMap( server =>
-          server
-            .descriptor
-            .rsnapshotClient
-            .map(d => ResolvedRSnapshotClient(d, server, server.fetchUser(UserLogin("rsnapshot"))))
-        )
 
   }
 
@@ -301,11 +319,15 @@ object resolvedmodel extends LoggingF {
       }
   }
 
+  object ResolvedRSnapshotClient extends UserPlugin.Factory.AbstractFactory[RSnapshotClientDescriptor]("rsnapshotClient")
+
   case class ResolvedRSnapshotClient(
     descriptor: RSnapshotClientDescriptor,
-    server: ResolvedServer,
     user: ResolvedUser,
-  ) {
+  ) extends UserPlugin {
+
+    lazy val server: ResolvedServer = user.server
+
     // this makes sure there is a tab separate the include|exclude keyword and the path
     lazy val resolvedIncludeExcludeLines =
       descriptor
@@ -332,13 +354,108 @@ object resolvedmodel extends LoggingF {
         .mkString("\n")
     }
 
+    override def authorizedKeys: Vector[AuthorizedKey] =
+      user
+        .server
+        .repository
+        .userPlugins
+        .flatMap {
+          case rss: ResolvedRSnapshotServer =>
+            rss.user.authorizedKeys
+          case _ =>
+            Vector.empty
+        }
+
   }
 
+  object ResolvedRSnapshotServer extends UserPlugin.Factory.AbstractFactory[RSnapshotServerDescriptor]("rsnapshotServer")
+
   case class ResolvedRSnapshotServer(
-    clients: Vector[ResolvedRSnapshotClient],
     descriptor: RSnapshotServerDescriptor,
-    server: ResolvedServer,
     user: ResolvedUser,
-  )
+  ) extends UserPlugin {
+
+    override def authorizedKeys: Vector[AuthorizedKey] =
+      user
+        .server
+        .repository
+        .userPlugins
+        .flatMap {
+          case rsc: ResolvedRSnapshotClient =>
+            rsc.user.authorizedKeys
+          case _ =>
+            Vector.empty
+        }
+
+    lazy val server: ResolvedServer = user.server
+
+    lazy val clients =
+      user
+        .server
+        .repository
+        .userPlugins
+        .collect {
+          case rc: ResolvedRSnapshotClient =>
+            rc
+        }
+  }
+
+
+  object ResolvedPgbackrestClient extends UserPlugin.Factory.AbstractFactory[PgbackrestClientDescriptor]("pgbackrestClient")
+
+  case class ResolvedPgbackrestClient(
+    descriptor: PgbackrestClientDescriptor,
+    user: ResolvedUser,
+  ) extends UserPlugin {
+
+    override def authorizedKeys: Vector[AuthorizedKey] =
+      user
+        .server
+        .repository
+        .userPlugins
+        .flatMap {
+          case rps: ResolvedPgbackrestServer =>
+            rps.user.authorizedKeys
+          case _ =>
+            Vector.empty
+        }
+
+    lazy val server: ResolvedServer = user.server
+
+  }
+
+
+  object ResolvedPgbackrestServer extends UserPlugin.Factory.AbstractFactory[PgbackrestServerDescriptor]("pgbackrestServer")
+
+  case class ResolvedPgbackrestServer(
+    descriptor: PgbackrestServerDescriptor,
+    user: ResolvedUser,
+  ) extends UserPlugin {
+
+    override def authorizedKeys: Vector[AuthorizedKey] =
+      user
+        .server
+        .repository
+        .userPlugins
+        .flatMap {
+          case rpc: ResolvedPgbackrestClient =>
+            rpc.user.authorizedKeys
+          case _ =>
+            Vector.empty
+        }
+
+    lazy val server: ResolvedServer = user.server
+
+    lazy val clients =
+      user
+        .server
+        .repository
+        .userPlugins
+        .collect {
+          case rc: ResolvedPgbackrestClient =>
+            rc
+        }
+
+  }
 
 }

@@ -3,7 +3,7 @@ package io.accur8.neodeploy
 
 import a8.shared.json.JsonTypedCodec
 import a8.shared.json.ast.{JsArr, JsStr}
-import zio.{Chunk, ExitCode, UIO, ZIO}
+import zio.{Chunk, ExitCode, Trace, UIO, ZIO}
 import a8.shared.SharedImports._
 import PredefAssist._
 import a8.shared.FileSystem.Directory
@@ -52,7 +52,7 @@ case class Command(args: Iterable[String], workingDirectory: Option[Directory] =
   def execCaptureOutput: ZIO[Any, CommandException, Command.Result] =
     exec()
 
-  def execLogOutput(implicit loggerF: LoggerF): ZIO[Any, CommandException, Command.Result] =
+  def execLogOutput(implicit trace: Trace, loggerF: LoggerF): ZIO[Any, CommandException, Command.Result] =
     exec(logLinesEffect = { lines =>
       if (lines.isEmpty) {
         zunit
@@ -64,7 +64,7 @@ case class Command(args: Iterable[String], workingDirectory: Option[Directory] =
   def exec(
     failOnNonZeroExitCode: Boolean = true,
     logLinesEffect: Chunk[String]=>UIO[Unit] = _ => zunit
-  ): ZIO[Any, CommandException, Command.Result] = {
+  )(implicit trace: Trace): ZIO[Any, CommandException, Command.Result] = {
     val wd = workingDirectory.map(_.asNioPath.toFile).getOrElse(new java.io.File(".")).getAbsoluteFile
     loggerF.info(s"running in ${wd} -- ${args.mkString(" ")}") *>
     asZioCommand
@@ -92,7 +92,8 @@ case class Command(args: Iterable[String], workingDirectory: Option[Directory] =
           ZIO.fail(CommandException(ce, this))
         case Right((exitCode, lines)) =>
           if (failOnNonZeroExitCode && exitCode.code > 0) {
-            loggerF.debug(s"command failed with exit code ${exitCode.code} -- ${args.mkString(" ")}") *>
+            val output = lines.map("    " + _).mkString("\n")
+            loggerF.warn(s"command failed with exit code ${exitCode.code} -- ${args.mkString(" ")} -- \n${output}") *>
               ZIO.fail(CommandException(NonZeroErrorCode(exitCode), this))
           } else
             zsucceed(Command.Result(exitCode, lines))

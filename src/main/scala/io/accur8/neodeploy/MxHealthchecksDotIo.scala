@@ -176,7 +176,6 @@ object MxHealthchecksDotIo {
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[CheckUpsertRequest,a8.shared.json.ast.JsObj] =
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
-          .addField(_.api_key)
           .addField(_.name)
           .addField(_.tags)
           .addField(_.desc)
@@ -191,20 +190,19 @@ object MxHealthchecksDotIo {
     implicit val catsEq: cats.Eq[CheckUpsertRequest] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[CheckUpsertRequest,parameters.type] =  {
-      val constructors = Constructors[CheckUpsertRequest](9, unsafe.iterRawConstruct)
+      val constructors = Constructors[CheckUpsertRequest](8, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
-      lazy val api_key: CaseClassParm[CheckUpsertRequest,ApiAuthToken] = CaseClassParm[CheckUpsertRequest,ApiAuthToken]("api_key", _.api_key, (d,v) => d.copy(api_key = v), None, 0)
-      lazy val name: CaseClassParm[CheckUpsertRequest,String] = CaseClassParm[CheckUpsertRequest,String]("name", _.name, (d,v) => d.copy(name = v), None, 1)
-      lazy val tags: CaseClassParm[CheckUpsertRequest,Option[String]] = CaseClassParm[CheckUpsertRequest,Option[String]]("tags", _.tags, (d,v) => d.copy(tags = v), Some(()=> None), 2)
-      lazy val desc: CaseClassParm[CheckUpsertRequest,Option[String]] = CaseClassParm[CheckUpsertRequest,Option[String]]("desc", _.desc, (d,v) => d.copy(desc = v), Some(()=> None), 3)
-      lazy val timeout: CaseClassParm[CheckUpsertRequest,Option[Long]] = CaseClassParm[CheckUpsertRequest,Option[Long]]("timeout", _.timeout, (d,v) => d.copy(timeout = v), Some(()=> None), 4)
-      lazy val grace: CaseClassParm[CheckUpsertRequest,Option[Long]] = CaseClassParm[CheckUpsertRequest,Option[Long]]("grace", _.grace, (d,v) => d.copy(grace = v), Some(()=> None), 5)
-      lazy val schedule: CaseClassParm[CheckUpsertRequest,Option[String]] = CaseClassParm[CheckUpsertRequest,Option[String]]("schedule", _.schedule, (d,v) => d.copy(schedule = v), Some(()=> None), 6)
-      lazy val tz: CaseClassParm[CheckUpsertRequest,Option[String]] = CaseClassParm[CheckUpsertRequest,Option[String]]("tz", _.tz, (d,v) => d.copy(tz = v), Some(()=> None), 7)
-      lazy val unique: CaseClassParm[CheckUpsertRequest,Iterable[String]] = CaseClassParm[CheckUpsertRequest,Iterable[String]]("unique", _.unique, (d,v) => d.copy(unique = v), Some(()=> Iterable.empty), 8)
+      lazy val name: CaseClassParm[CheckUpsertRequest,String] = CaseClassParm[CheckUpsertRequest,String]("name", _.name, (d,v) => d.copy(name = v), None, 0)
+      lazy val tags: CaseClassParm[CheckUpsertRequest,Option[String]] = CaseClassParm[CheckUpsertRequest,Option[String]]("tags", _.tags, (d,v) => d.copy(tags = v), Some(()=> None), 1)
+      lazy val desc: CaseClassParm[CheckUpsertRequest,Option[String]] = CaseClassParm[CheckUpsertRequest,Option[String]]("desc", _.desc, (d,v) => d.copy(desc = v), Some(()=> None), 2)
+      lazy val timeout: CaseClassParm[CheckUpsertRequest,Option[Long]] = CaseClassParm[CheckUpsertRequest,Option[Long]]("timeout", _.timeout, (d,v) => d.copy(timeout = v), Some(()=> None), 3)
+      lazy val grace: CaseClassParm[CheckUpsertRequest,Option[Long]] = CaseClassParm[CheckUpsertRequest,Option[Long]]("grace", _.grace, (d,v) => d.copy(grace = v), Some(()=> None), 4)
+      lazy val schedule: CaseClassParm[CheckUpsertRequest,Option[String]] = CaseClassParm[CheckUpsertRequest,Option[String]]("schedule", _.schedule, (d,v) => d.copy(schedule = v), Some(()=> None), 5)
+      lazy val tz: CaseClassParm[CheckUpsertRequest,Option[String]] = CaseClassParm[CheckUpsertRequest,Option[String]]("tz", _.tz, (d,v) => d.copy(tz = v), Some(()=> None), 6)
+      lazy val unique: CaseClassParm[CheckUpsertRequest,Iterable[String]] = CaseClassParm[CheckUpsertRequest,Iterable[String]]("unique", _.unique, (d,v) => d.copy(unique = v), Some(()=> Iterable.empty), 7)
     }
     
     
@@ -212,21 +210,19 @@ object MxHealthchecksDotIo {
     
       def rawConstruct(values: IndexedSeq[Any]): CheckUpsertRequest = {
         CheckUpsertRequest(
-          api_key = values(0).asInstanceOf[ApiAuthToken],
-          name = values(1).asInstanceOf[String],
-          tags = values(2).asInstanceOf[Option[String]],
-          desc = values(3).asInstanceOf[Option[String]],
-          timeout = values(4).asInstanceOf[Option[Long]],
-          grace = values(5).asInstanceOf[Option[Long]],
-          schedule = values(6).asInstanceOf[Option[String]],
-          tz = values(7).asInstanceOf[Option[String]],
-          unique = values(8).asInstanceOf[Iterable[String]],
+          name = values(0).asInstanceOf[String],
+          tags = values(1).asInstanceOf[Option[String]],
+          desc = values(2).asInstanceOf[Option[String]],
+          timeout = values(3).asInstanceOf[Option[Long]],
+          grace = values(4).asInstanceOf[Option[Long]],
+          schedule = values(5).asInstanceOf[Option[String]],
+          tz = values(6).asInstanceOf[Option[String]],
+          unique = values(7).asInstanceOf[Iterable[String]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): CheckUpsertRequest = {
         val value =
           CheckUpsertRequest(
-            api_key = values.next().asInstanceOf[ApiAuthToken],
             name = values.next().asInstanceOf[String],
             tags = values.next().asInstanceOf[Option[String]],
             desc = values.next().asInstanceOf[Option[String]],
@@ -240,8 +236,8 @@ object MxHealthchecksDotIo {
            sys.error("")
         value
       }
-      def typedConstruct(api_key: ApiAuthToken, name: String, tags: Option[String], desc: Option[String], timeout: Option[Long], grace: Option[Long], schedule: Option[String], tz: Option[String], unique: Iterable[String]): CheckUpsertRequest =
-        CheckUpsertRequest(api_key, name, tags, desc, timeout, grace, schedule, tz, unique)
+      def typedConstruct(name: String, tags: Option[String], desc: Option[String], timeout: Option[Long], grace: Option[Long], schedule: Option[String], tz: Option[String], unique: Iterable[String]): CheckUpsertRequest =
+        CheckUpsertRequest(name, tags, desc, timeout, grace, schedule, tz, unique)
     
     }
     

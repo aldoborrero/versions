@@ -2,6 +2,7 @@ package io.accur8.neodeploy
 
 import a8.shared.{CompanionGen, StringValue}
 import a8.shared.SharedImports._
+import io.accur8.neodeploy.HealthchecksDotIo.{ApiAuthToken, CheckReadOnly, CheckUpsertRequest, impl}
 import io.accur8.neodeploy.MxHealthchecksDotIo._
 import io.accur8.neodeploy.dsl.Step
 import zio.ZIO
@@ -19,6 +20,10 @@ object HealthchecksDotIo {
         .followRedirects(HttpClient.Redirect.NORMAL)
         .connectTimeout(Duration.ofSeconds(20))
         .build();
+
+    def send(request: HttpRequest): HttpResponse[String] =
+      httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+
   }
 
 
@@ -59,7 +64,6 @@ object HealthchecksDotIo {
   object CheckUpsertRequest extends MxCheckUpsertRequest
   @CompanionGen
   case class CheckUpsertRequest(
-    api_key: ApiAuthToken,
     name: String,
     tags: Option[String] = None,
     desc: Option[String] = None,
@@ -74,17 +78,23 @@ object HealthchecksDotIo {
 
   object ApiAuthToken extends StringValue.Companion[ApiAuthToken]
   case class ApiAuthToken(value: String) extends StringValue
+}
 
-  def listChecks(apiAuthToken: ApiAuthToken): Iterable[CheckReadOnly] = {
+case class HealthchecksDotIo(apiAuthToken: ApiAuthToken) {
+
+  def baseRequest =
+    HttpRequest
+      .newBuilder()
+      .header("X-Api-Key", apiAuthToken.value)
+
+  def listChecks(): Iterable[CheckReadOnly] = {
     val request =
-      HttpRequest
-        .newBuilder()
+      baseRequest
         .GET()
-        .header("X-Api-Key", apiAuthToken.value)
         .uri(java.net.URI.create("https://healthchecks.io/api/v1/checks/"))
         .build()
 
-    val response = impl.httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+    val response = impl.send(request)
 
     if (response.statusCode() / 100 == 2) {
       val responseJsv = json.unsafeParse(response.body())
@@ -95,22 +105,26 @@ object HealthchecksDotIo {
   }
 
 
-  def doesCheckExist(name: String, apiAuthToken: ApiAuthToken): Boolean =
-    listChecks(apiAuthToken)
+  def fetchCheck(name: String): Option[CheckReadOnly] =
+    listChecks()
+      .find(_.name == name)
+
+
+  def doesCheckExist(name: String): Boolean =
+    listChecks()
       .exists(_.name == name)
 
   def insertCheckIfItDoesNotExist(check: CheckUpsertRequest): CheckReadOnly = {
     val jsonRequestBody: HttpRequest.BodyPublisher =
       HttpRequest.BodyPublishers.ofString(check.prettyJson)
     val request =
-      HttpRequest
-        .newBuilder()
+      baseRequest
         .POST(jsonRequestBody)
         .uri(java.net.URI.create("https://healthchecks.io/api/v1/checks/"))
         .header("Content-Type", "application/json")
         .build()
 
-    val response = impl.httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+    val response = impl.send(request)
 
     if ( response.statusCode() / 100 == 2 ) {
       json.unsafeRead[CheckReadOnly](response.body())
@@ -120,11 +134,44 @@ object HealthchecksDotIo {
 
   }
 
-  def step(check: CheckUpsertRequest): Step =
-    Step.rawEffect(
-      s"insert healthchecks.io ${check.name} check",
-      ZIO.attemptBlocking(!doesCheckExist(check.name, check.api_key)),
-      ZIO.attemptBlocking(insertCheckIfItDoesNotExist(check))
-    )
+  def pause(name: String): Unit = {
+    fetchCheck(name) match {
+      case Some(check) =>
+        val request =
+          baseRequest
+            .POST(HttpRequest.BodyPublishers.ofString(""))
+            .uri(java.net.URI.create(check.pause_url))
+            .build()
+
+        val response = impl.send(request)
+        if (response.statusCode() / 100 == 2) {
+          json.unsafeRead[CheckReadOnly](response.body())
+        } else {
+          throw new RuntimeException(s"Unexpected response from healthchecks.io: ${response.statusCode()} ${response.body()}")
+        }
+
+      case None =>
+        ()
+    }
+  }
+
+  object step {
+
+    def pause(name: String): Step = {
+      Step.rawEffect(
+        s"disable healthchecks.io ${name} check",
+        ZIO.attemptBlocking(!doesCheckExist(name)),
+        ZIO.attemptBlocking(pause(name)),
+      )
+    }
+
+    def upsert(check: CheckUpsertRequest): Step =
+      Step.rawEffect(
+        s"insert healthchecks.io ${check.name} check",
+        ZIO.attemptBlocking(!doesCheckExist(check.name)),
+        ZIO.attemptBlocking(insertCheckIfItDoesNotExist(check))
+      )
+
+  }
 
 }

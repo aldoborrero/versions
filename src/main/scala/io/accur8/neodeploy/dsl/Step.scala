@@ -3,13 +3,19 @@ package io.accur8.neodeploy.dsl
 
 import a8.shared.SharedImports._
 import a8.shared.FileSystem
+import a8.shared.FileSystem.Path
 import a8.shared.app.LoggingF
+import a8.versions.Exec
 import io.accur8.neodeploy.dsl.Step.impl
 import zio.{Task, Trace, UIO, ZIO, ZLayer}
 import io.accur8.neodeploy.PredefAssist._
-import io.accur8.neodeploy.dsl
+import io.accur8.neodeploy.Sync.Phase
+import io.accur8.neodeploy.{Sync, dsl}
+
+import java.nio.file.Paths
 
 object Step extends LoggingF {
+
 
   import impl._
 
@@ -82,6 +88,20 @@ object Step extends LoggingF {
 
   }
 
+  def delete(path: Path): Step =
+    Step.rawBlockingEffect(
+      s"delete ${path}",
+      path.exists(),
+      path.delete(),
+    )
+
+  def runCommand(args: String*): Step =
+    rawBlockingEffect(
+      s"running command -- ${args.mkString(" ")}",
+      true,
+      Exec(args: _*).execCaptureOutput(),
+    )
+
   def fileStep(
     fileEffect: M[FileSystem.File],
     contentEffect: M[String],
@@ -96,6 +116,14 @@ object Step extends LoggingF {
       ZIO.attemptBlocking(file),
       ZIO.attemptBlocking(content),
     )
+
+
+  def rawBlockingEffect(
+    description: String,
+    actionRequired: =>Boolean,
+    actionEffect: =>Unit,
+  ): Step =
+    RawStep(description, ZIO.attemptBlocking(actionRequired), ZIO.attemptBlocking(actionEffect))
 
   def rawEffect(
     description: String,
@@ -328,5 +356,12 @@ sealed trait Step {
 
   def span(description: String): Step =
     SpanStep(description, this)
+
+  def asSyncStep(description: String): Sync.Step =
+    Sync.Step(
+      Phase.Apply,
+      description,
+      Step.performAction(this).provideLayer(StepLogger.simpleLayer),
+    )
 
 }

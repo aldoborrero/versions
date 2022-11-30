@@ -31,22 +31,31 @@ case class ValidateRepo(resolvedRepository: ResolvedRepository) extends LoggingF
     setupSshKeys zipPar addGitattributesFile
 
   def setupSshKeys: Task[Unit] = {
-    allUsers
-      .filter(user => user.descriptor.manageSshKeys && !user.sshPrivateKeyFileInRepo.exists())
-      .map { user =>
-        val tempFile = user.tempSshPrivateKeyFileInRepo
-        Command(
-          "ssh-keygen", "-t", "ed25519", "-a", "100", "-f", z"$tempFile", "-q", "-N", "", "-C", user.qname
-        )
-          .workingDirectory(user.repoDir)
-          .execLogOutput
-          .asZIO(
-            ZIO.attemptBlocking(
-              tempFile.asNioPath.toFile.renameTo(user.sshPrivateKeyFileInRepo.asNioPath.toFile)
+    val setupEffects =
+      allUsers
+        .filter { user =>
+          val pkf = user.sshPrivateKeyFileInRepo
+          val pkfExists = pkf.exists()
+          user.descriptor.manageSshKeys && !pkfExists
+        }
+        .map { user =>
+          val tempFile = user.tempSshPrivateKeyFileInRepo
+          val makeDirectoriesEffect = ZIO.attemptBlocking(user.repoDir.makeDirectories())
+          val sshKeygenEffect =
+            Command(
+              "ssh-keygen", "-t", "ed25519", "-a", "100", "-f", z"$tempFile", "-q", "-N", "", "-C", user.qname
             )
-          )
-      }
-      .sequencePar
+              .workingDirectory(user.repoDir)
+              .execLogOutput
+              .asZIO(
+                ZIO.attemptBlocking(
+                  tempFile.asNioPath.toFile.renameTo(user.sshPrivateKeyFileInRepo.asNioPath.toFile)
+                )
+              )
+          (makeDirectoriesEffect *> sshKeygenEffect)
+            .correlateWith0(s"setup ssh keys for ${user.qname}")
+        }
+    ZIO.collectAllPar(setupEffects)
       .as(())
   }
 

@@ -77,7 +77,7 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
 
     val remoteServer = resolvedUser.server.name
 
-    val stagingDir = resolvedRepository.gitRootDirectory.resolvedDirectory.subdir(".staging").resolve
+    val stagingDir = resolvedRepository.gitRootDirectory.resolvedDirectory.subdir(s".staging/${resolvedUser.qname}").resolve
 
     stagingDir.deleteChildren()
 
@@ -95,7 +95,7 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
 
     val sshEffect =
       Command("ssh", z"${resolvedUser.login}@${resolvedUser.server.name}", "--")
-        .appendArgs("~/.nix-profile/bin/a8-versions")
+        .appendArgs(resolvedUser.a8VersionsExec)
         .appendArgsSeq(remoteVerbose.toOption("--verbose"))
         .appendArgs("local_user_sync")
         .appendArgsSeq(filteredAppArgs)
