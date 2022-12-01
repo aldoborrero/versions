@@ -174,62 +174,67 @@ object Step extends LoggingF {
       case ActionAfterStep(_, step, _) =>
         actionRequired(step)
       case ParallelSteps(steps) =>
-        ZIO.foreachPar(steps)(actionRequired).map(_.exists(identity))
+        ZIO
+          .foreachPar(steps)(actionRequired)
+          .map(_.exists(identity))
       case SequentialSteps(steps) =>
         ZIO.foreachPar(steps)(actionRequired).map(_.exists(identity))
     }
 
+  def directPerform(directStep: Step): M[Unit] = {
+    directStep match {
+      case EmptyStep =>
+        zsucceed(())
+      case SpanStep(_, step) =>
+        directPerform(step)
+      case RawStep(_, _, actionEffect) =>
+        actionEffect
+      case FileStep(fileEffect, contentEffect) =>
+        for {
+          file <- fileEffect
+          content <- contentEffect
+          _ <-
+            ZIO.attemptBlocking {
+              file.parent.resolve
+              file.write(content)
+            }
+        } yield ()
+      case EffectStep(_, effect) =>
+        effect
+      case ActionAfterStep(description, step, afterEffect) =>
+        for {
+          _ <- directPerform(step)
+          _ <- afterEffect
+        } yield ()
+      case ActionBeforeStep(description, step, beforeEffect) =>
+        for {
+          _ <- beforeEffect
+          _ <- directPerform(step)
+        } yield ()
+      case ParallelSteps(steps) =>
+        ZIO.foreachPar(steps)(directPerform)
+          .as(())
+      case SequentialSteps(steps) =>
+        ZIO.foreach(steps)(directPerform)
+          .as(())
+    }
+  }
 
-  def performAction(step: Step): M[Unit] = {
-    val performActionEffect =
-      step match {
-        case EmptyStep =>
-          zsucceed(())
-        case SpanStep(_, step) =>
-          performAction(step)
-        case RawStep(_, _, actionEffect) =>
-          actionEffect
-        case FileStep(fileEffect, contentEffect) =>
-          for {
-            file <- fileEffect
-            content <- contentEffect
-            _ <-
-              ZIO.attemptBlocking {
-                file.parent.resolve
-                file.write(content)
-              }
-          } yield ()
-        case EffectStep(_, effect) =>
-          effect
-        case ActionAfterStep(description, step, afterEffect) =>
-          for {
-            _ <- performAction(step)
-            _ <- afterEffect
-          } yield ()
-        case ActionBeforeStep(description, step, beforeEffect) =>
-          for {
-            _ <- beforeEffect
-            _ <- performAction(step)
-          } yield ()
-        case ParallelSteps(steps) =>
-          ZIO.foreachPar(steps)(performAction)
-            .as(())
-        case SequentialSteps(steps) =>
-          ZIO.foreach(steps)(performAction)
-            .as(())
-      }
+
+  def performAction(actionStep: Step): M[Unit] = {
+
     for {
-      actionRequired <- actionRequired(step)
+      actionRequired <- actionRequired(actionStep)
       _ <-
         if (actionRequired) {
           for {
-            logMessages <- dryRun(step, checkIfActionIsRequired = false, recurse = false)
+            logMessages <- dryRun(actionStep, checkIfActionIsRequired = false, recurse = false)
             _ <-
               ZIO.collectAll(
                 logMessages
                   .map(m => loggerF.debug(s"running -- ${m}"))
               )
-            _ <- performActionEffect
+            _ <- directPerform(actionStep)
           } yield ()
         } else
           zunit

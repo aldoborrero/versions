@@ -105,10 +105,13 @@ object Systemd {
         )
       }
 
-    def enableUnitEffect: M[Unit] =
-      Command("systemctl", "--user", "enable", z"${unitName}.service")
+    def enableUnitEffect: M[Unit] = {
+      Overrides
+        .userSystemCtlCommand
+        .appendArgs("--user", "enable", z"${unitName}.service")
         .exec()
         .as(())
+    }
 
     val ensureUserLingerIsEnabled = {
       val doesLingerNeedToBeEnabledEffect =
@@ -119,7 +122,8 @@ object Systemd {
       Step.rawEffect(
         z"enable linger for ${user.login}",
         doesLingerNeedToBeEnabledEffect,
-        Command("loginctl", "enable-linger")
+        Overrides.userLoginCtlCommand
+          .appendArgs("enable-linger")
           .execDropOutput
       )
     }

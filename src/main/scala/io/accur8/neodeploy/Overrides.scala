@@ -9,14 +9,28 @@ object Overrides {
     osName.toLowerCase().contains("nux")
   }
 
-  lazy val systemCtlCommand: Command =
-    if ( isLinux ) {
+  lazy val sudoSystemCtlCommand: Command =
+    if (isLinux) {
       Command("sudo", "systemctl")
     } else {
-      Command("echo")
+      Command("echo", "sudo", "systemctl")
     }
 
-  lazy val suopervisorCtlCommand: Command =
+  lazy val userSystemCtlCommand: Command =
+    if ( isLinux ) {
+      Command("systemctl")
+    } else {
+      Command("echo", "systemctl")
+    }
+
+  lazy val userLoginCtlCommand: Command =
+    if (isLinux) {
+      Command("loginctl")
+    } else {
+      Command("echo", "loginctl")
+    }
+
+  lazy val supervisorCtlCommand: Command =
     if ( isLinux ) {
       Command("supervisorctl")
     } else {

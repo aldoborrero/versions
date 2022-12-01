@@ -13,7 +13,7 @@ object CaddySync extends LoggingF {
   val reloadCaddyStep =
     Sync.Step.runCommand(
       phase = Sync.Phase.Post,
-      command = Overrides.systemCtlCommand.appendArgs("reload", "caddy"),
+      command = Overrides.sudoSystemCtlCommand.appendArgs("reload", "caddy"),
     ).some
 
 }

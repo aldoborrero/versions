@@ -14,6 +14,7 @@ import io.accur8.neodeploy.Sync.{ContainerSteps, Phase, ResolvedSteps, Step, Syn
 import zio.{Chunk, Task, UIO, ZIO}
 import PredefAssist._
 import a8.versions.model.ResolvedPersonnel
+import io.accur8.neodeploy.resolvedmodel.ResolvedPgbackrestServer
 
 object resolvedmodel extends LoggingF {
 
@@ -236,25 +237,46 @@ object resolvedmodel extends LoggingF {
         .getOrError(z"server ${serverName} not found")
 
     def authorizedKeys(id: QualifiedUserName): Vector[AuthorizedKey] = {
-      personnel.find(_.id === id) match {
-        case None =>
-          val contentsOpt =
-            gitRootDirectory
-              .resolvedDirectory
-              .subdir("public-keys")
-              .file(id.value)
-              .readAsStringOpt()
-          contentsOpt match {
-            case None =>
-              logger.warn(s"no public key found for ${id}")
-              Vector.empty
-            case Some(contents) =>
-              Vector(AuthorizedKey(s"# from ${id}"), AuthorizedKey(contents))
+
+      def personnelFinder =
+        personnel
+          .find(_.id === id)
+          .map(_.resolvedKeys)
+
+      def publicKeysFinder =
+        gitRootDirectory
+          .resolvedDirectory
+          .subdir("public-keys")
+          .file(id.value)
+          .readAsStringOpt()
+          .map { contents =>
+            Vector(AuthorizedKey(s"# from ${id}"), AuthorizedKey(contents))
           }
-        case Some(personnel) =>
-          personnel.resolvedKeys
+
+      def usersFinder =
+        users
+          .find(_.qualifiedUserName === id)
+          .map(_.authorizedKeys)
+
+      val result = personnelFinder orElse publicKeysFinder orElse usersFinder
+
+      result match {
+        case Some(v) =>
+          v
+        case None =>
+          logger.warn(s"unable to find keys for ${id}")
+          Vector.empty
       }
+
     }
+
+    lazy val resolvedPgbackrestServerOpt =
+      userPlugins
+        .collect {
+          case rps: ResolvedPgbackrestServer =>
+            rps
+        }
+        .headOption
 
     lazy val personnel =
       descriptor
@@ -342,17 +364,15 @@ object resolvedmodel extends LoggingF {
     lazy val sshUrl: String = z"${user.login}@${server.name}"
 
     // this makes sure there is a tab separate the include|exclude keyword and the path
-    lazy val resolvedBackupLines = {
-
+    lazy val resolvedBackupLines =
       descriptor
         .directories
         .map { directory =>
-          val parts = Seq("backup", z"${sshUrl}${directory}", "/")
+          val parts = Seq("backup", z"${sshUrl}:${directory}", z"${user.server.name}/")
           parts
             .mkString("\t")
         }
         .mkString("\n")
-    }
 
     override def authorizedKeys: Vector[AuthorizedKey] =
       user
@@ -407,6 +427,13 @@ object resolvedmodel extends LoggingF {
     descriptor: PgbackrestClientDescriptor,
     user: ResolvedUser,
   ) extends UserPlugin {
+
+    def resolvedServer: ResolvedPgbackrestServer =
+      user
+        .server
+        .repository
+        .resolvedPgbackrestServerOpt
+        .getOrError("must have a pgbackrest server configured")
 
     override def authorizedKeys: Vector[AuthorizedKey] =
       user

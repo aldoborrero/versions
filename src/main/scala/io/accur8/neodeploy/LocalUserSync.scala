@@ -20,11 +20,11 @@ case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[Applicat
 
   lazy val stateDirectory: Directory =
     resolvedUser
-      .appsRootDirectory
-      .unresolvedDirectory
-      .subdir(".state")
-      .subdir(resolvedUser.login.value)
+      .home
+      .subdir(".neodeploy-state")
       .resolve
+
+  lazy val healthchecksDotIo = HealthchecksDotIo(resolvedServer.repository.descriptor.healthchecksApiToken)
 
   case object userSync extends SyncContainer[ResolvedUser, UserDescriptor, UserLogin](SyncContainer.Prefix("user"), this, stateDirectory) {
 
@@ -43,7 +43,8 @@ case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[Applicat
       Seq(
         AuthorizedKeys2Sync,
         new ManagedSshKeysSync,
-        PGBackrestServerSync(resolvedServer.repository.descriptor.healthchecksApiToken),
+        PGBackrestSync(resolvedServer.repository.descriptor.healthchecksApiToken),
+        RSnapshotServerSync(healthchecksDotIo),
       )
 
   }
@@ -89,6 +90,7 @@ case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[Applicat
   }
 
   def run: UIO[Vector[(StringValue, Either[Throwable, Unit])]] = {
+    loggerF.info(z"running for ${resolvedUser.qualifiedUserName}") *>
     // we only sync 1 user
     userSync
       .run

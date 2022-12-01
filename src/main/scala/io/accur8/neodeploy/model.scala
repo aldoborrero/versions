@@ -175,7 +175,6 @@ object model extends LoggingF {
     directories: Vector[String],
     runAt: String,
     hourly: Boolean = false,
-    user: UserLogin,
     includeExcludeLines: Iterable[String] = Iterable.empty,
   ) {
   }
@@ -184,9 +183,10 @@ object model extends LoggingF {
   @CompanionGen
   case class RSnapshotServerDescriptor(
     name: String,
-    user: UserLogin,
-    rsnapshotRootDir: RSnapshotRootDirectory,
-    rsnapshotConfigDir: RSnapshotConfigDirectory,
+    snapshotRootDir: RSnapshotRootDirectory,
+    configDir: RSnapshotConfigDirectory,
+    logDir: String = "/var/log",
+    runDir: String = "/var/run",
   )
 
   object PgbackrestClientDescriptor extends MxPgbackrestClientDescriptor
@@ -211,7 +211,8 @@ object model extends LoggingF {
     name: ServerName,
     supervisorDirectory: SupervisorDirectory,
     caddyDirectory: CaddyDirectory,
-    serverName: DomainName,
+    publicDomainName: Option[DomainName] = None,
+    vpnDomainName: DomainName,
     users: Vector[UserDescriptor],
     a8VersionsExec: Option[String] = None,
     supervisorctlExec: Option[String] = None,

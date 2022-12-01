@@ -7,6 +7,11 @@ import PredefAssist._
 
 object RSnapshotConfig {
 
+  private val tab = "\t"
+
+  def tabs(args: String*): String =
+    args.mkString(tab)
+
   def serverConfigForClient(serverConfig: ResolvedRSnapshotServer, client: ResolvedRSnapshotClient): String = {
 
     z"""
@@ -32,7 +37,7 @@ config_version	1.2
 
 # All snapshots will be stored under this root directory.
 #
-snapshot_root	${serverConfig.descriptor.rsnapshotRootDir.unresolvedDirectory.subdir(client.server.name.value)}
+snapshot_root	${serverConfig.descriptor.snapshotRootDir.unresolvedDirectory.subdir(client.server.name.value)}
 
 # If no_create_root is enabled, rsnapshot will not automatically create the
 # snapshot_root directory. This is particularly useful if you are backing
@@ -66,7 +71,7 @@ cmd_ssh	/usr/bin/ssh
 
 # Comment this out to disable syslog support.
 #
-cmd_logger	/usr/bin/logger
+#cmd_logger	/usr/bin/logger
 
 # Uncomment this to specify the path to "du" for disk usage checks.
 # If you have an older version of "du", you may also want to check the
@@ -113,14 +118,14 @@ loglevel	3
 # If you enable this, data will be written to the file you specify. The
 # amount of data written is controlled by the "loglevel" parameter.
 #
-logfile	/var/log/rsnapshot-${client.server.name}.log
+logfile${tab}${serverConfig.descriptor.logDir}/rsnapshot-${client.server.name}.log
 
 # If enabled, rsnapshot will write a lockfile to prevent two instances
 # from running simultaneously (and messing up the snapshot_root).
 # If you enable this, make sure the lockfile directory is not world
 # writable. Otherwise anyone can prevent the program from running.
 #
-lockfile	/var/run/rsnapshot-${client.server.name}.pid
+lockfile${tab}${serverConfig.descriptor.runDir}/rsnapshot-${client.server.name}.pid
 
 # By default, rsnapshot check lockfile, check if PID is running
 # and if not, consider lockfile as stale, then start
@@ -177,7 +182,7 @@ link_dest	1
 # and all interval calls simply rotate files. See the man page for more
 # details. The default is 0 (off).
 #
-sync_first	1
+sync_first	0
 
 # If enabled, rsnapshot will move the oldest directory for each interval
 # to [interval_name].delete, then it will remove the lockfile and delete
@@ -190,7 +195,7 @@ sync_first	1
 # "Corrupted MAC on input", for example, set this to a non-zero value
 # to have the rsync operation re-tried.
 #
-rsync_numtries 3
+${tabs("rsync_numtries","3")}
 
 
 ###############################

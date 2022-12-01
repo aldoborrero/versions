@@ -58,8 +58,10 @@ case class RSnapshotServerSync(healthchecksDotIo: HealthchecksDotIo) extends Syn
 
   override def resolveStepsFromModification(modification: Sync.Modification[State, ResolvedUser]): Vector[Sync.Step] = {
 
-    def delete(client: QualifiedClient): Vector[Sync.Step] =
-      ???
+    def delete(client: QualifiedClient): Vector[Sync.Step] = {
+      // ??? TODO implement me
+      Vector.empty
+    }
 
     def insert(client: QualifiedClient, resolvedUser: ResolvedUser): Vector[Sync.Step] = {
       val resolvedRSnapshotClient =
@@ -72,12 +74,12 @@ case class RSnapshotServerSync(healthchecksDotIo: HealthchecksDotIo) extends Syn
           .get
       Vector(
         setupClientStep(resolvedUser.plugins.resolvedRSnapshotServerOpt.get, resolvedRSnapshotClient)
-          .asSyncStep(s"setup rsnapshot client for ${client}")
+          .asSyncStep(s"setup rsnapshot client for ${client._1}")
       )
     }
 
     def sync(before: Vector[QualifiedClient], after: Vector[QualifiedClient], resolvedUser: ResolvedUser): Vector[Sync.Step] =
-      Synchronize[QualifiedClient, QualifiedUserName](before, after, _._1)
+      Synchronize[QualifiedClient, QualifiedUserName](source = after, target = before, _._1)
         .flatMap {
           case Synchronize.Action.Noop(_, _) =>
             Vector.empty
@@ -89,16 +91,19 @@ case class RSnapshotServerSync(healthchecksDotIo: HealthchecksDotIo) extends Syn
             delete(v)
         }
 
-    modification match {
-      case Sync.Delete(state) =>
-        state
-          .clients
-          .flatMap(delete)
-      case Sync.Update(b, a, ru) =>
-        sync(b.clients, a.clients, ru)
-      case Sync.Insert(a, ru) =>
-        sync(Vector.empty, a.clients, ru)
-    }
+    val result =
+      modification match {
+        case Sync.Delete(state) =>
+          state
+            .clients
+            .flatMap(delete)
+        case Sync.Update(b, a, ru) =>
+          sync(b.clients, a.clients, ru)
+        case Sync.Insert(a, ru) =>
+          sync(Vector.empty, a.clients, ru)
+      }
+
+    result
 
   }
 
@@ -130,7 +135,7 @@ case class RSnapshotServerSync(healthchecksDotIo: HealthchecksDotIo) extends Syn
     lazy val rsnapshotConfigFile =
       resolvedServer
         .descriptor
-        .rsnapshotConfigDir
+        .configDir
         .resolvedDirectory
         .file(z"rsnapshot-${client.server.name}.conf")
 
