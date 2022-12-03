@@ -30,7 +30,7 @@ object resolvedmodel extends LoggingF {
       descriptor
         .a8VersionsExec
         .orElse(server.descriptor.a8VersionsExec)
-        .getOrElse("a8-versions")
+        .getOrElse("/usr/bin/a8-versions")
 
     lazy val appsRootDirectory: AppsRootDirectory =
       descriptor
@@ -45,7 +45,7 @@ object resolvedmodel extends LoggingF {
 
     def qname = z"${login}@${server.name}"
 
-    def sshName = z"${login}@${server.name}"
+    def sshName = z"${login}@${server.descriptor.vpnDomainName}"
 
     def login = descriptor.login
 
@@ -75,12 +75,16 @@ object resolvedmodel extends LoggingF {
     def sshPublicKeyFileInHome =
       home.subdir(".ssh").file("id_ed25519.pub")
 
-    def publicKey: Option[AuthorizedKey] =
+    def publicKeys: Vector[AuthorizedKey] =
       sshPublicKeyFileInRepo
         .readAsStringOpt()
-        .map(AuthorizedKey.apply)
+        .map(line => Vector(AuthorizedKey(line)))
+        .getOrElse(server.repository.authorizedKeys(qualifiedUserName))
 
-    def authorizedKeys =
+    def resolvedAuthorizedKeys =
+      descriptorAuthorizedKeys ++ plugins.authorizedKeys
+
+    def descriptorAuthorizedKeys: Vector[AuthorizedKey] =
       descriptor
         .authorizedKeys
         .flatMap(n => server.repository.authorizedKeys(n))
@@ -256,7 +260,7 @@ object resolvedmodel extends LoggingF {
       def usersFinder =
         users
           .find(_.qualifiedUserName === id)
-          .map(_.authorizedKeys)
+          .map(_.publicKeys)
 
       val result = personnelFinder orElse publicKeysFinder orElse usersFinder
 
@@ -348,6 +352,10 @@ object resolvedmodel extends LoggingF {
     user: ResolvedUser,
   ) extends UserPlugin {
 
+    def descriptorJson = descriptor.toJsVal
+
+    def name = "rsnapshotClient"
+
     lazy val server: ResolvedServer = user.server
 
     // this makes sure there is a tab separate the include|exclude keyword and the path
@@ -381,7 +389,7 @@ object resolvedmodel extends LoggingF {
         .userPlugins
         .flatMap {
           case rss: ResolvedRSnapshotServer =>
-            rss.user.authorizedKeys
+            rss.user.publicKeys
           case _ =>
             Vector.empty
         }
@@ -395,17 +403,12 @@ object resolvedmodel extends LoggingF {
     user: ResolvedUser,
   ) extends UserPlugin {
 
+    def descriptorJson = descriptor.toJsVal
+
+    def name = "rsnapshotServer"
+
     override def authorizedKeys: Vector[AuthorizedKey] =
-      user
-        .server
-        .repository
-        .userPlugins
-        .flatMap {
-          case rsc: ResolvedRSnapshotClient =>
-            rsc.user.authorizedKeys
-          case _ =>
-            Vector.empty
-        }
+      Vector.empty
 
     lazy val server: ResolvedServer = user.server
 
@@ -428,6 +431,10 @@ object resolvedmodel extends LoggingF {
     user: ResolvedUser,
   ) extends UserPlugin {
 
+    def descriptorJson = descriptor.toJsVal
+
+    override def name: String = "pgbackrestClient"
+
     def resolvedServer: ResolvedPgbackrestServer =
       user
         .server
@@ -442,7 +449,7 @@ object resolvedmodel extends LoggingF {
         .userPlugins
         .flatMap {
           case rps: ResolvedPgbackrestServer =>
-            rps.user.authorizedKeys
+            rps.user.publicKeys
           case _ =>
             Vector.empty
         }
@@ -459,6 +466,10 @@ object resolvedmodel extends LoggingF {
     user: ResolvedUser,
   ) extends UserPlugin {
 
+    def descriptorJson = descriptor.toJsVal
+
+    override def name: String = "pgbackrestServer"
+
     override def authorizedKeys: Vector[AuthorizedKey] =
       user
         .server
@@ -466,7 +477,7 @@ object resolvedmodel extends LoggingF {
         .userPlugins
         .flatMap {
           case rpc: ResolvedPgbackrestClient =>
-            rpc.user.authorizedKeys
+            rpc.user.publicKeys
           case _ =>
             Vector.empty
         }

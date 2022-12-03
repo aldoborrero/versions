@@ -2,6 +2,7 @@ package io.accur8.neodeploy
 
 import a8.shared.FileSystem.{Directory, File, file}
 import a8.shared.SharedImports._
+import a8.shared.app.LoggingF
 import a8.shared.{CompanionGen, FileSystem, StringValue, ZString}
 import io.accur8.neodeploy.ConfigFileSync.State
 import io.accur8.neodeploy.MxConfigFileSync._
@@ -21,13 +22,16 @@ object ConfigFileSync {
 
 }
 
-abstract class ConfigFileSync[B] extends Sync[State,B] {
+abstract class ConfigFileSync[B] extends Sync[State,B] with LoggingF {
 
   val perms: Option[String] = None
 
   def configFile(input: B): File
 
   def configFileContents(input: B): Task[Option[String]]
+
+
+
 
   override def state(input: B): Task[Option[State]] = {
     val file = configFile(input)

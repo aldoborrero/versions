@@ -11,6 +11,7 @@ import a8.shared.json.ast.{JsDoc, JsVal}
 import a8.versions.Exec
 import io.accur8.neodeploy.Sync.{Step, SyncName}
 import PredefAssist._
+import io.accur8.neodeploy.ConfigFileSync.State
 
 object Sync extends LoggingF {
 
@@ -148,7 +149,6 @@ abstract class Sync[A : JsonCodec, B] {
   }
 
   def resolveStepsFromModification(modification: Modification[A,B]): Vector[Step]
-
 
   def resolveSteps(currentStateJsv: Option[JsVal], newInput: Option[B]): Task[ResolvedSteps] = {
     val currentStateOpt = currentStateJsv.map(_.unsafeAs[A])

@@ -22,7 +22,7 @@ object AuthorizedKeys2Sync extends ConfigFileSync[ResolvedUser] with Logging {
   override def configFileContents(input: ResolvedUser): Task[Option[String]] =
     zsucceed(
       input
-        .authorizedKeys
+        .resolvedAuthorizedKeys
         .map(_.value)
         .mkString("\n")
         .some

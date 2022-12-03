@@ -2,7 +2,7 @@ package io.accur8.neodeploy
 
 
 import a8.shared.json.{JsonCodec, ast}
-import a8.shared.json.ast.{JsDoc, JsNothing, JsStr, JsVal}
+import a8.shared.json.ast.{JsArr, JsDoc, JsNothing, JsStr, JsVal}
 import io.accur8.neodeploy.resolvedmodel.{ResolvedPgbackrestClient, ResolvedPgbackrestServer, ResolvedRSnapshotClient, ResolvedRSnapshotServer, ResolvedUser}
 import org.typelevel.ci.CIString
 import a8.shared.SharedImports._
@@ -43,7 +43,25 @@ object UserPlugin extends Logging {
 
   case class UserPlugins(jsd: JsDoc, user: ResolvedUser) {
 
-    lazy val pluginInstances = {
+    def descriptorJson =
+      JsArr(
+        pluginInstances
+          .map(_.descriptorJson)
+          .toList
+      )
+
+    def authorizedKeys: Vector[AuthorizedKey] =
+      pluginInstances
+        .flatMap { p =>
+          p.authorizedKeys match {
+            case v if v.isEmpty =>
+              v
+            case v =>
+              Vector(AuthorizedKey(s"# start from ${p.name}")) ++ v ++ Vector(AuthorizedKey(s"# end from ${p.name}"))
+          }
+        }
+
+    lazy val pluginInstances: Vector[UserPlugin] = {
       val errors = rawPluginInstances.flatMap(_.left.toOption)
       if ( errors.nonEmpty ) {
         logger.warn(z"plugin errors for user ${user.qualifiedUserName}${"\n"}${errors.mkString("\n").indent("        ")}")
@@ -52,7 +70,7 @@ object UserPlugin extends Logging {
         .flatMap(_.toOption)
     }
 
-    lazy val rawPluginInstances: Seq[Either[String, UserPlugin]] = {
+    lazy val rawPluginInstances: Vector[Either[String, UserPlugin]] = {
 
       def createPlugin(name: String, pluginJsv: JsVal): Either[String,UserPlugin] = {
         val nameCi = CIString(name)
@@ -108,6 +126,13 @@ object UserPlugin extends Logging {
         }
         .headOption
 
+    lazy val pgbackrestClientOpt =
+      pluginInstances
+        .collect {
+          case pbc: ResolvedPgbackrestClient =>
+            pbc
+        }
+        .headOption
 
   }
 
@@ -115,6 +140,8 @@ object UserPlugin extends Logging {
 
 
 trait UserPlugin {
+  def name: String
+  def descriptorJson: JsVal
   def authorizedKeys: Vector[AuthorizedKey] = Vector.empty
 }
 

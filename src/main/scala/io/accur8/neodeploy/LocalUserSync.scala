@@ -89,15 +89,19 @@ case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[Applicat
 
   }
 
-  def run: UIO[Vector[(StringValue, Either[Throwable, Unit])]] = {
-    loggerF.info(z"running for ${resolvedUser.qualifiedUserName}") *>
-    // we only sync 1 user
-    userSync
-      .run
-      .zipPar(appSync.run)
-      .map { case (u, a) =>
-        u ++ a
-      }
-  }
+  def run: UIO[Vector[(StringValue, Either[Throwable, Unit])]] =
+    for {
+      _ <-loggerF.info(z"running for ${resolvedUser.qualifiedUserName}")
+      _ <- loggerF.debug(z"resolved user ${resolvedUser.qualifiedUserName} -- ${resolvedUser.descriptor.prettyJson.indent("    ")}")
+      _ <- loggerF.debug(z"resolved user plugins ${resolvedUser.qualifiedUserName} -- ${resolvedUser.plugins.descriptorJson.prettyJson.indent("    ")}")
+      result <-
+        // we only sync 1 user
+        userSync
+          .run
+          .zipPar(appSync.run)
+          .map { case (u, a) =>
+            u ++ a
+          }
+    } yield result
 
 }

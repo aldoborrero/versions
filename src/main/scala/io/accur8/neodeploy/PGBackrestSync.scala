@@ -14,7 +14,7 @@ case class PGBackrestSync(healthchecksApiAuthToken: HealthchecksDotIo.ApiAuthTok
   import Step._
 
   override def configFile(input: ResolvedUser): FileSystem.File =
-    FileSystem.file("/etc/pgbackrest/pgbackrest.conf")
+    FileSystem.file(input.plugins.pgbackrestClientOpt.flatMap(_.descriptor.configFile).getOrElse("/etc/pgbackrest/pgbackrest.conf"))
 
   override def configFileContents(input: ResolvedUser): Task[Option[String]] = {
     zsucceed(
@@ -34,7 +34,7 @@ case class PGBackrestSync(healthchecksApiAuthToken: HealthchecksDotIo.ApiAuthTok
   def clientConfig(resolvedClient: ResolvedPgbackrestClient): String = {
 z"""
 [global]
-repo1-host=${resolvedClient.resolvedServer.server.name}
+repo1-host=${resolvedClient.resolvedServer.user.server.descriptor.vpnDomainName}
 repo1-host-user=${resolvedClient.resolvedServer.user.login}
 log-level-console=detail
 log-level-file=debug

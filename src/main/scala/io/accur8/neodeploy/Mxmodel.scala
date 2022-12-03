@@ -417,19 +417,21 @@ object Mxmodel {
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.name)
           .addField(_.pgdata)
+          .addField(_.configFile)
       )
       .build
     
     implicit val catsEq: cats.Eq[PgbackrestClientDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[PgbackrestClientDescriptor,parameters.type] =  {
-      val constructors = Constructors[PgbackrestClientDescriptor](2, unsafe.iterRawConstruct)
+      val constructors = Constructors[PgbackrestClientDescriptor](3, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
       lazy val name: CaseClassParm[PgbackrestClientDescriptor,String] = CaseClassParm[PgbackrestClientDescriptor,String]("name", _.name, (d,v) => d.copy(name = v), None, 0)
       lazy val pgdata: CaseClassParm[PgbackrestClientDescriptor,String] = CaseClassParm[PgbackrestClientDescriptor,String]("pgdata", _.pgdata, (d,v) => d.copy(pgdata = v), None, 1)
+      lazy val configFile: CaseClassParm[PgbackrestClientDescriptor,Option[String]] = CaseClassParm[PgbackrestClientDescriptor,Option[String]]("configFile", _.configFile, (d,v) => d.copy(configFile = v), Some(()=> None), 2)
     }
     
     
@@ -439,6 +441,7 @@ object Mxmodel {
         PgbackrestClientDescriptor(
           name = values(0).asInstanceOf[String],
           pgdata = values(1).asInstanceOf[String],
+          configFile = values(2).asInstanceOf[Option[String]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): PgbackrestClientDescriptor = {
@@ -446,13 +449,14 @@ object Mxmodel {
           PgbackrestClientDescriptor(
             name = values.next().asInstanceOf[String],
             pgdata = values.next().asInstanceOf[String],
+            configFile = values.next().asInstanceOf[Option[String]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(name: String, pgdata: String): PgbackrestClientDescriptor =
-        PgbackrestClientDescriptor(name, pgdata)
+      def typedConstruct(name: String, pgdata: String, configFile: Option[String]): PgbackrestClientDescriptor =
+        PgbackrestClientDescriptor(name, pgdata, configFile)
     
     }
     

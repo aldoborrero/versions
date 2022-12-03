@@ -55,7 +55,7 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
           .resolve
       for {
         user <- resolvedRepository.allUsers
-        publicKey <- user.publicKey.toSeq
+        publicKey <- user.publicKeys
         qualifiedUserName <- user.qualifiedUserNames
       } yield {
         publicKeysDir
@@ -94,7 +94,7 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
         .execLogOutput
 
     val sshEffect =
-      Command("ssh", z"${resolvedUser.login}@${resolvedUser.server.name}", "--")
+      Command("ssh", z"${resolvedUser.sshName}", "--")
         .appendArgs(resolvedUser.a8VersionsExec)
         .appendArgsSeq(remoteVerbose.toOption("--verbose"))
         .appendArgs("local_user_sync")
