@@ -203,6 +203,7 @@ object model extends LoggingF {
   case class PgbackrestServerDescriptor(
     name: String,
     configHeader: String,
+    configFile: Option[String] = None,
   )
 
 

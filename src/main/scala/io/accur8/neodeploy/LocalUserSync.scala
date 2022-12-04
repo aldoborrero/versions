@@ -43,7 +43,8 @@ case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[Applicat
       Seq(
         AuthorizedKeys2Sync,
         new ManagedSshKeysSync,
-        PGBackrestSync(resolvedServer.repository.descriptor.healthchecksApiToken),
+        PgbackrestConfgSync,
+        PgbackrestServerSync(healthchecksDotIo),
         RSnapshotServerSync(healthchecksDotIo),
       )
 

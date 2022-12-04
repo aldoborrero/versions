@@ -134,6 +134,14 @@ object UserPlugin extends Logging {
         }
         .headOption
 
+    lazy val pgbackrestServerOpt =
+      pluginInstances
+        .collect {
+          case pbs: ResolvedPgbackrestServer =>
+            pbs
+        }
+        .headOption
+
   }
 
 }

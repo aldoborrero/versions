@@ -9,12 +9,19 @@ import io.accur8.neodeploy.resolvedmodel.{ResolvedPgbackrestClient, ResolvedPgba
 import zio.Task
 
 
-case class PGBackrestSync(healthchecksApiAuthToken: HealthchecksDotIo.ApiAuthToken) extends ConfigFileSync[ResolvedUser] {
+object PgbackrestConfgSync extends ConfigFileSync[ResolvedUser] {
 
   import Step._
 
   override def configFile(input: ResolvedUser): FileSystem.File =
-    FileSystem.file(input.plugins.pgbackrestClientOpt.flatMap(_.descriptor.configFile).getOrElse("/etc/pgbackrest/pgbackrest.conf"))
+    FileSystem.file(
+      input
+        .plugins
+        .pgbackrestClientOpt
+        .map(_.descriptor.configFile)
+        .orElse(input.plugins.pgbackrestServerOpt.map(_.descriptor.configFile))
+        .flatten
+        .getOrElse("/etc/pgbackrest/pgbackrest.conf"))
 
   override def configFileContents(input: ResolvedUser): Task[Option[String]] = {
     zsucceed(

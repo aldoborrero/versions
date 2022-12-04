@@ -477,19 +477,21 @@ object Mxmodel {
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.name)
           .addField(_.configHeader)
+          .addField(_.configFile)
       )
       .build
     
     implicit val catsEq: cats.Eq[PgbackrestServerDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[PgbackrestServerDescriptor,parameters.type] =  {
-      val constructors = Constructors[PgbackrestServerDescriptor](2, unsafe.iterRawConstruct)
+      val constructors = Constructors[PgbackrestServerDescriptor](3, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
       lazy val name: CaseClassParm[PgbackrestServerDescriptor,String] = CaseClassParm[PgbackrestServerDescriptor,String]("name", _.name, (d,v) => d.copy(name = v), None, 0)
       lazy val configHeader: CaseClassParm[PgbackrestServerDescriptor,String] = CaseClassParm[PgbackrestServerDescriptor,String]("configHeader", _.configHeader, (d,v) => d.copy(configHeader = v), None, 1)
+      lazy val configFile: CaseClassParm[PgbackrestServerDescriptor,Option[String]] = CaseClassParm[PgbackrestServerDescriptor,Option[String]]("configFile", _.configFile, (d,v) => d.copy(configFile = v), Some(()=> None), 2)
     }
     
     
@@ -499,6 +501,7 @@ object Mxmodel {
         PgbackrestServerDescriptor(
           name = values(0).asInstanceOf[String],
           configHeader = values(1).asInstanceOf[String],
+          configFile = values(2).asInstanceOf[Option[String]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): PgbackrestServerDescriptor = {
@@ -506,13 +509,14 @@ object Mxmodel {
           PgbackrestServerDescriptor(
             name = values.next().asInstanceOf[String],
             configHeader = values.next().asInstanceOf[String],
+            configFile = values.next().asInstanceOf[Option[String]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(name: String, configHeader: String): PgbackrestServerDescriptor =
-        PgbackrestServerDescriptor(name, configHeader)
+      def typedConstruct(name: String, configHeader: String, configFile: Option[String]): PgbackrestServerDescriptor =
+        PgbackrestServerDescriptor(name, configHeader, configFile)
     
     }
     

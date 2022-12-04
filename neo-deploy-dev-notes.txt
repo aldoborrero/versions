@@ -1,6 +1,6 @@
 
 
-== neo-depoy ==
+== neo-deploy ==
 
 * rsnapshot setup
     * rsnapshot server setup
@@ -99,3 +99,4 @@
     * lock down backups
         * root access is read only
         * snapshot is locked down (use btrfs)
+    * pgbackrest secret in server-app-configs/config.hocon
