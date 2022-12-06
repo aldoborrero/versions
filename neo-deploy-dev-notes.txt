@@ -1,52 +1,36 @@
 
 
-== neo-deploy ==
 
-* rsnapshot setup
-    * rsnapshot server setup
-    * client setup of authorized keys
+* easy way to bootstrap
+    * getting bootstrap onto system
+    * keeping bootstrap up to date
 
-* drop supervisor and user systemd and launchy
 
-* secure it
-    * dev user no longer needs sudo
-        * reload caddy
-        * move from supervisor to user level systemd and launchy
+
+
+================  ================
+
+
+* hermes go live
+    * rsnapshot
+        * replace crontab
+    * pgbackrest
+        * replace crontab
 
 * possibly re-structure configs a bit
     * per user
-        * apps folder
         * caddy folder
         * supervisor folder
-        * location of a8-versions folder
 
 * detecting and handling of drift
         various config file based syncs could load the existing file
 
 * read exisitng config for state (instead of storing separately)
 
-* user level systemd service and timers
-        https://gist.github.com/oprypin/0f0c3479ab53e00988b52919e5d7c144
-        https://opensource.com/article/20/7/systemd-timers
-
 * launchy
-
-* configure rsnapshot on server
-        rsnapshot client properly secured
-                https://www.backupcentral.com/forum/18/52693
-
-* configure pgbackrest
-        on client
-        on pgbackrest server
-
-
 
 * validate repo warnings
     * list any user plugin errors
-
-
-
-
 
 * add a dns sync
 
@@ -57,6 +41,7 @@
 * properly tickle supervisor to pickup changes
 
 * parse application descriptor from git using hocon
+
 * log writing the state to disk
 
 * provide an action summary
@@ -65,14 +50,11 @@
 
 * ApplicationInstallSync - load currently installed application version from disk
 
-
-
 * marigold ssh
 
 * pubkey server
 
 * *.accur8.net cert
-
 
 * switch to Step's
 
@@ -81,22 +63,38 @@
     * details
     * show details on failure
 
-
-
-
 * sudo scripts
     * caddy reload
     * supervisor reload
 
-* scripts
-    * pgbackrest
-        * Sun - full
-        * Mon to Sat - incremental
-    * rsnapshot
-        * sync w/daily/hourly
+* deploy plan
+    * superbee to marigold
+        * vault
+        * cloudbeaver
+    * superbee to tulip
+        * gitea
+    * hermes
+        * dev
+            * loom
+            * hermes
+        * root
+            * rsnapshot setup
+    * getty
+        * glen
+            * getty-prod
+            * getty-public
+        * root
+        * postgres
 
 * Hardening
     * lock down backups
         * root access is read only
         * snapshot is locked down (use btrfs)
     * pgbackrest secret in server-app-configs/config.hocon
+    * rsnapshot client properly secured
+        * https://www.backupcentral.com/forum/18/52693
+    * drop supervisor and use user systemd and launchy
+    * dev user no longer needs sudo
+        * reload caddy
+        * move from supervisor to user level systemd and launchy
+

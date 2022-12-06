@@ -10,6 +10,11 @@ import zio.ZIO
 import PredefAssist._
 import a8.shared.FileSystem
 
+/**
+ * user level systemd service and timers
+ *        https://gist.github.com/oprypin/0f0c3479ab53e00988b52919e5d7c144
+ *        https://opensource.com/article/20/7/systemd-timers
+ */
 object Systemd {
 
   import Step._

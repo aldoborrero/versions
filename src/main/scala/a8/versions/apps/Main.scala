@@ -14,6 +14,7 @@ import a8.shared.SharedImports._
 import a8.shared.app.A8LogFormatter
 import a8.versions.RepositoryOps.RepoConfigPrefix
 import a8.versions.model.BranchName
+import io.accur8.neodeploy.Sync.SyncName
 import io.accur8.neodeploy.model.{ApplicationName, ServerName, UserLogin}
 import wvlet.log.{LogLevel, Logger}
 
@@ -131,6 +132,8 @@ object Main extends Logging {
 
     }
 
+    val syncsDescription = "comma separated list of syncs to run [ authorized_keys2 | caddy | supervisor | installer | pgbackrestClient | pgbackrestServer | rsnapshotClient | rsnapshotServer ]"
+
     val pushRemoteSync = new Subcommand("push_remote_sync") with Runner {
 
       descr("pushes a sync to a remote server")
@@ -144,6 +147,9 @@ object Main extends Logging {
       val app = opt[String](descr = "app to push", required = false)
       val apps = opt[String](descr = "comma separated list of apps to push", required = false)
 
+      val sync = opt[String](descr = "sync to run", required = false)
+      val syncs = opt[String](descr = syncsDescription, required = false)
+
       override def run(main: Main) = {
 
         val pushRemoteSync =
@@ -151,6 +157,7 @@ object Main extends Logging {
             filterServers = resolveArgs[ServerName](server, servers),
             filterUsers = resolveArgs[UserLogin](user, users),
             filterApps = resolveArgs[ApplicationName](app, apps),
+            filterSyncs = resolveArgs[SyncName](sync, syncs),
             verbose.toOption.getOrElse(false),
           )
 
@@ -184,8 +191,15 @@ object Main extends Logging {
       val app = opt[String](descr = "sync this app only", required = false)
       val apps = opt[String](descr = "sync the comma separated list of apps", required = false)
 
+      val sync = opt[String](descr = "sync to run", required = false)
+      val syncs = opt[String](descr = syncsDescription, required = false)
+
       override def run(main: Main) = {
-        val runLocalServer = io.accur8.neodeploy.LocalUserSyncSubCommand(resolveArgs[ApplicationName](app, apps))
+        val runLocalServer =
+          io.accur8.neodeploy.LocalUserSyncSubCommand(
+            resolveArgs[ApplicationName](app, apps),
+            resolveArgs[SyncName](sync, syncs),
+          )
         runLocalServer.main(Array.empty)
       }
 

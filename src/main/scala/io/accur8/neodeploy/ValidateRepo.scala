@@ -10,7 +10,7 @@ import PredefAssist._
 
 object ValidateRepo extends BootstrappedIOApp {
 
-  lazy val resolvedRepository = LocalUserSyncSubCommand(Vector.empty).resolvedRepository
+  lazy val resolvedRepository = LocalUserSyncSubCommand(Vector.empty, Vector.empty).resolvedRepository
 
   lazy val validateRepo = ValidateRepo(resolvedRepository)
 

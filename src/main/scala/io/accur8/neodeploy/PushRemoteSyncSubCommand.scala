@@ -11,10 +11,24 @@ import zio.process.CommandError
 
 import scala.util.Try
 import a8.shared.FileSystem
+import io.accur8.neodeploy.Sync.SyncName
 
-case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterUsers: Iterable[UserLogin], filterApps: Iterable[ApplicationName], remoteVerbose: Boolean) extends BootstrappedIOApp {
+case class PushRemoteSyncSubCommand(
+  filterServers: Iterable[ServerName],
+  filterUsers: Iterable[UserLogin],
+  filterApps: Iterable[ApplicationName],
+  filterSyncs: Iterable[SyncName],
+  remoteVerbose: Boolean,
+) extends BootstrappedIOApp {
 
-  lazy val resolvedRepository = LocalUserSyncSubCommand(Vector.empty).resolvedRepository
+  lazy val validateParameters =
+    if ( filterServers.isEmpty && filterUsers.isEmpty && filterApps.isEmpty ) {
+      ZIO.fail(new RuntimeException("must supply servers, users or apps"))
+    } else {
+      ZIO.unit
+    }
+
+  lazy val resolvedRepository = LocalUserSyncSubCommand(Vector.empty, Vector.empty).resolvedRepository
 
   lazy val validateRepo = ValidateRepo(resolvedRepository)
 
@@ -31,6 +45,7 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
 
   override def runT: ZIO[BootstrapEnv, Throwable, Unit] =
     for {
+      _ <- validateParameters
       _ <- validateRepo.run
       _ <-
         ZIO.collectAllPar(
@@ -75,6 +90,14 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
           List(z"--apps", l.map(a => z"${a}").mkString(","))
       }
 
+    val filteredSyncArgs: Seq[String] =
+      filterSyncs match {
+        case l if l.isEmpty =>
+          Nil
+        case l =>
+          List(z"--syncs", l.map(a => z"${a}").mkString(","))
+      }
+
     val remoteServer = resolvedUser.server.name
 
     val stagingDir = resolvedRepository.gitRootDirectory.resolvedDirectory.subdir(s".staging/${resolvedUser.qname}").resolve
@@ -99,6 +122,7 @@ case class PushRemoteSyncSubCommand(filterServers: Iterable[ServerName], filterU
         .appendArgsSeq(remoteVerbose.toOption("--verbose"))
         .appendArgs("local_user_sync")
         .appendArgsSeq(filteredAppArgs)
+        .appendArgsSeq(filteredSyncArgs)
         .execLogOutput
 
     (copyManagedPublicKeysToStagingEffect(stagingDir) *> setupStagingDataEffect *> rsyncEffect *> sshEffect)

@@ -9,12 +9,12 @@ import a8.shared.SharedImports._
 import a8.shared.app.{Logging, LoggingF}
 import a8.shared.json.ast
 import a8.shared.json.ast.{JsDoc, JsObj, JsVal}
-import io.accur8.neodeploy.Sync.Phase
+import io.accur8.neodeploy.Sync.{Phase, SyncName}
 import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedRSnapshotServer, ResolvedServer, ResolvedUser, StoredSyncState}
 
 
 
-case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[ApplicationName]) extends LoggingF {
+case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[ApplicationName], filteredSyncs: Vector[SyncName]) extends LoggingF {
 
   lazy val resolvedServer = resolvedUser.server
 
@@ -25,6 +25,13 @@ case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[Applicat
       .resolve
 
   lazy val healthchecksDotIo = HealthchecksDotIo(resolvedServer.repository.descriptor.healthchecksApiToken)
+
+  def includeSync(syncName: SyncName): Boolean =
+    if ( filteredSyncs.nonEmpty ) {
+      filteredSyncs.contains(syncName)
+    } else {
+      true
+    }
 
   case object userSync extends SyncContainer[ResolvedUser, UserDescriptor, UserLogin](SyncContainer.Prefix("user"), this, stateDirectory) {
 
@@ -46,7 +53,8 @@ case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[Applicat
         PgbackrestConfgSync,
         PgbackrestServerSync(healthchecksDotIo),
         RSnapshotServerSync(healthchecksDotIo),
-      )
+      ).filter(s => includeSync(s.name))
+
 
   }
 
@@ -68,7 +76,7 @@ case class LocalUserSync(resolvedUser: ResolvedUser, filterApps: Vector[Applicat
         CaddySync(resolvedServer.caddyDirectory),
         SupervisorSync(resolvedServer.supervisorDirectory),
         ApplicationInstallSync(resolvedUser.appsRootDirectory),
-      )
+      ).filter(s => includeSync(s.name))
 
     override def additionalSteps(name: ApplicationName, newResolvedOpt: Option[ResolvedApp], currentStateOpt: Option[ApplicationDescriptor], containerSteps: Sync.ContainerSteps): Seq[Sync.Step] = {
 
