@@ -10,6 +10,7 @@ import a8.shared.ZString.ZStringer
 import a8.shared.app.{Logging, LoggingF}
 import a8.shared.jdbcf.ISeriesDialect.logger
 import a8.shared.json.ast.{JsDoc, JsVal}
+import io.accur8.neodeploy.PushRemoteSyncSubCommand.Filter
 import io.accur8.neodeploy.Sync.{ContainerSteps, ResolvedSteps, Step}
 import io.accur8.neodeploy.SyncContainer.{Prefix, loadState}
 import io.accur8.neodeploy.model.ApplicationName
@@ -42,13 +43,10 @@ abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringVal
   prefix: Prefix,
   syncServer: LocalUserSync,
   stateDirectory: Directory,
-  filter: Vector[Name] = Vector.empty,
+  filter: Filter[Name],
 )
   extends LoggingF
 {
-
-  def matches(name: Name): Boolean =
-    filter.isEmpty || filter.contains(name)
 
   lazy val currentApplicationStates: Vector[StoredSyncState] =
     loadState(stateDirectory, prefix)
@@ -83,7 +81,7 @@ abstract class SyncContainer[Resolved, Descriptor : JsonCodec, Name <: StringVal
   lazy val allNames: Vector[Name] =
     (currentApplicationStatesByName.keySet ++ newResolvedsByName.keySet)
       .toVector
-      .filter(matches)
+      .filter(filter.matches)
       .distinct
 
   val syncs: Seq[Sync[_, Resolved]]

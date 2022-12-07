@@ -55,6 +55,7 @@ object HealthchecksDotIo {
     subject: Option[String] = None,
     subject_fail: Option[String] = None,
     timeout: Option[Long] = None,
+    last_duration: Option[Long] = None,
   )
 
 
@@ -80,7 +81,7 @@ object HealthchecksDotIo {
   case class ApiAuthToken(value: String) extends StringValue
 }
 
-case class HealthchecksDotIo(apiAuthToken: ApiAuthToken) {
+case class HealthchecksDotIo(apiAuthToken: ApiAuthToken) { self =>
 
   def baseRequest =
     HttpRequest
@@ -161,7 +162,7 @@ case class HealthchecksDotIo(apiAuthToken: ApiAuthToken) {
       Step.rawEffect(
         s"disable healthchecks.io ${name} check",
         ZIO.attemptBlocking(!doesCheckExist(name)),
-        ZIO.attemptBlocking(pause(name)),
+        ZIO.attemptBlocking(self.pause(name)),
       )
     }
 

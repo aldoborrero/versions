@@ -11,9 +11,11 @@ import org.rogach.scallop.{ScallopConf, ScallopOption, Subcommand}
 import a8.versions.predef._
 import coursier.core.{ModuleName, Organization}
 import a8.shared.SharedImports._
+import a8.shared.ZString.ZStringer
 import a8.shared.app.A8LogFormatter
 import a8.versions.RepositoryOps.RepoConfigPrefix
 import a8.versions.model.BranchName
+import io.accur8.neodeploy.PushRemoteSyncSubCommand.Filter
 import io.accur8.neodeploy.Sync.SyncName
 import io.accur8.neodeploy.model.{ApplicationName, ServerName, UserLogin}
 import wvlet.log.{LogLevel, Logger}
@@ -154,10 +156,10 @@ object Main extends Logging {
 
         val pushRemoteSync =
           io.accur8.neodeploy.PushRemoteSyncSubCommand(
-            filterServers = resolveArgs[ServerName](server, servers),
-            filterUsers = resolveArgs[UserLogin](user, users),
-            filterApps = resolveArgs[ApplicationName](app, apps),
-            filterSyncs = resolveArgs[SyncName](sync, syncs),
+            serversFilter = resolveArgs[ServerName](server, servers),
+            usersFilter = resolveArgs[UserLogin](user, users),
+            appsFilter = resolveArgs[ApplicationName](app, apps),
+            syncsFilter = resolveArgs[SyncName](sync, syncs),
             verbose.toOption.getOrElse(false),
           )
 
@@ -176,12 +178,15 @@ object Main extends Logging {
 
     }
 
-    def resolveArgs[A: FromString](singleArg: ScallopOption[String], csvArg: ScallopOption[String]): Vector[A] = {
+    def resolveArgs[A: FromString: ZStringer](singleArg: ScallopOption[String], csvArg: ScallopOption[String]): Filter[A] = {
       val values: Iterable[String] = singleArg.toOption ++ csvArg.toOption.toVector.flatMap(_.split(","))
       val fromString = implicitly[FromString[A]].fromString _
-      values
-        .flatMap(fromString)
-        .toVector
+      Filter(
+        singleArg.name,
+        values
+          .flatMap(fromString)
+          .toVector
+      )
     }
 
     val localUserSync = new Subcommand("local_user_sync") with Runner {

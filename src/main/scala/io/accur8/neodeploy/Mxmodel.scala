@@ -417,6 +417,8 @@ object Mxmodel {
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.name)
           .addField(_.pgdata)
+          .addField(_.stanzaNameOverride)
+          .addField(_.onCalendar)
           .addField(_.configFile)
       )
       .build
@@ -424,14 +426,16 @@ object Mxmodel {
     implicit val catsEq: cats.Eq[PgbackrestClientDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[PgbackrestClientDescriptor,parameters.type] =  {
-      val constructors = Constructors[PgbackrestClientDescriptor](3, unsafe.iterRawConstruct)
+      val constructors = Constructors[PgbackrestClientDescriptor](5, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
       lazy val name: CaseClassParm[PgbackrestClientDescriptor,String] = CaseClassParm[PgbackrestClientDescriptor,String]("name", _.name, (d,v) => d.copy(name = v), None, 0)
       lazy val pgdata: CaseClassParm[PgbackrestClientDescriptor,String] = CaseClassParm[PgbackrestClientDescriptor,String]("pgdata", _.pgdata, (d,v) => d.copy(pgdata = v), None, 1)
-      lazy val configFile: CaseClassParm[PgbackrestClientDescriptor,Option[String]] = CaseClassParm[PgbackrestClientDescriptor,Option[String]]("configFile", _.configFile, (d,v) => d.copy(configFile = v), Some(()=> None), 2)
+      lazy val stanzaNameOverride: CaseClassParm[PgbackrestClientDescriptor,Option[String]] = CaseClassParm[PgbackrestClientDescriptor,Option[String]]("stanzaNameOverride", _.stanzaNameOverride, (d,v) => d.copy(stanzaNameOverride = v), Some(()=> None), 2)
+      lazy val onCalendar: CaseClassParm[PgbackrestClientDescriptor,Option[String]] = CaseClassParm[PgbackrestClientDescriptor,Option[String]]("onCalendar", _.onCalendar, (d,v) => d.copy(onCalendar = v), Some(()=> None), 3)
+      lazy val configFile: CaseClassParm[PgbackrestClientDescriptor,Option[String]] = CaseClassParm[PgbackrestClientDescriptor,Option[String]]("configFile", _.configFile, (d,v) => d.copy(configFile = v), Some(()=> None), 4)
     }
     
     
@@ -441,7 +445,9 @@ object Mxmodel {
         PgbackrestClientDescriptor(
           name = values(0).asInstanceOf[String],
           pgdata = values(1).asInstanceOf[String],
-          configFile = values(2).asInstanceOf[Option[String]],
+          stanzaNameOverride = values(2).asInstanceOf[Option[String]],
+          onCalendar = values(3).asInstanceOf[Option[String]],
+          configFile = values(4).asInstanceOf[Option[String]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): PgbackrestClientDescriptor = {
@@ -449,14 +455,16 @@ object Mxmodel {
           PgbackrestClientDescriptor(
             name = values.next().asInstanceOf[String],
             pgdata = values.next().asInstanceOf[String],
+            stanzaNameOverride = values.next().asInstanceOf[Option[String]],
+            onCalendar = values.next().asInstanceOf[Option[String]],
             configFile = values.next().asInstanceOf[Option[String]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(name: String, pgdata: String, configFile: Option[String]): PgbackrestClientDescriptor =
-        PgbackrestClientDescriptor(name, pgdata, configFile)
+      def typedConstruct(name: String, pgdata: String, stanzaNameOverride: Option[String], onCalendar: Option[String], configFile: Option[String]): PgbackrestClientDescriptor =
+        PgbackrestClientDescriptor(name, pgdata, stanzaNameOverride, onCalendar, configFile)
     
     }
     
@@ -536,6 +544,7 @@ object Mxmodel {
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.name)
+          .addField(_.aliases)
           .addField(_.supervisorDirectory)
           .addField(_.caddyDirectory)
           .addField(_.publicDomainName)
@@ -549,19 +558,20 @@ object Mxmodel {
     implicit val catsEq: cats.Eq[ServerDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[ServerDescriptor,parameters.type] =  {
-      val constructors = Constructors[ServerDescriptor](8, unsafe.iterRawConstruct)
+      val constructors = Constructors[ServerDescriptor](9, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
       lazy val name: CaseClassParm[ServerDescriptor,ServerName] = CaseClassParm[ServerDescriptor,ServerName]("name", _.name, (d,v) => d.copy(name = v), None, 0)
-      lazy val supervisorDirectory: CaseClassParm[ServerDescriptor,SupervisorDirectory] = CaseClassParm[ServerDescriptor,SupervisorDirectory]("supervisorDirectory", _.supervisorDirectory, (d,v) => d.copy(supervisorDirectory = v), None, 1)
-      lazy val caddyDirectory: CaseClassParm[ServerDescriptor,CaddyDirectory] = CaseClassParm[ServerDescriptor,CaddyDirectory]("caddyDirectory", _.caddyDirectory, (d,v) => d.copy(caddyDirectory = v), None, 2)
-      lazy val publicDomainName: CaseClassParm[ServerDescriptor,Option[DomainName]] = CaseClassParm[ServerDescriptor,Option[DomainName]]("publicDomainName", _.publicDomainName, (d,v) => d.copy(publicDomainName = v), Some(()=> None), 3)
-      lazy val vpnDomainName: CaseClassParm[ServerDescriptor,DomainName] = CaseClassParm[ServerDescriptor,DomainName]("vpnDomainName", _.vpnDomainName, (d,v) => d.copy(vpnDomainName = v), None, 4)
-      lazy val users: CaseClassParm[ServerDescriptor,Vector[UserDescriptor]] = CaseClassParm[ServerDescriptor,Vector[UserDescriptor]]("users", _.users, (d,v) => d.copy(users = v), None, 5)
-      lazy val a8VersionsExec: CaseClassParm[ServerDescriptor,Option[String]] = CaseClassParm[ServerDescriptor,Option[String]]("a8VersionsExec", _.a8VersionsExec, (d,v) => d.copy(a8VersionsExec = v), Some(()=> None), 6)
-      lazy val supervisorctlExec: CaseClassParm[ServerDescriptor,Option[String]] = CaseClassParm[ServerDescriptor,Option[String]]("supervisorctlExec", _.supervisorctlExec, (d,v) => d.copy(supervisorctlExec = v), Some(()=> None), 7)
+      lazy val aliases: CaseClassParm[ServerDescriptor,Iterable[ServerName]] = CaseClassParm[ServerDescriptor,Iterable[ServerName]]("aliases", _.aliases, (d,v) => d.copy(aliases = v), Some(()=> Iterable.empty), 1)
+      lazy val supervisorDirectory: CaseClassParm[ServerDescriptor,SupervisorDirectory] = CaseClassParm[ServerDescriptor,SupervisorDirectory]("supervisorDirectory", _.supervisorDirectory, (d,v) => d.copy(supervisorDirectory = v), None, 2)
+      lazy val caddyDirectory: CaseClassParm[ServerDescriptor,CaddyDirectory] = CaseClassParm[ServerDescriptor,CaddyDirectory]("caddyDirectory", _.caddyDirectory, (d,v) => d.copy(caddyDirectory = v), None, 3)
+      lazy val publicDomainName: CaseClassParm[ServerDescriptor,Option[DomainName]] = CaseClassParm[ServerDescriptor,Option[DomainName]]("publicDomainName", _.publicDomainName, (d,v) => d.copy(publicDomainName = v), Some(()=> None), 4)
+      lazy val vpnDomainName: CaseClassParm[ServerDescriptor,DomainName] = CaseClassParm[ServerDescriptor,DomainName]("vpnDomainName", _.vpnDomainName, (d,v) => d.copy(vpnDomainName = v), None, 5)
+      lazy val users: CaseClassParm[ServerDescriptor,Vector[UserDescriptor]] = CaseClassParm[ServerDescriptor,Vector[UserDescriptor]]("users", _.users, (d,v) => d.copy(users = v), None, 6)
+      lazy val a8VersionsExec: CaseClassParm[ServerDescriptor,Option[String]] = CaseClassParm[ServerDescriptor,Option[String]]("a8VersionsExec", _.a8VersionsExec, (d,v) => d.copy(a8VersionsExec = v), Some(()=> None), 7)
+      lazy val supervisorctlExec: CaseClassParm[ServerDescriptor,Option[String]] = CaseClassParm[ServerDescriptor,Option[String]]("supervisorctlExec", _.supervisorctlExec, (d,v) => d.copy(supervisorctlExec = v), Some(()=> None), 8)
     }
     
     
@@ -570,19 +580,21 @@ object Mxmodel {
       def rawConstruct(values: IndexedSeq[Any]): ServerDescriptor = {
         ServerDescriptor(
           name = values(0).asInstanceOf[ServerName],
-          supervisorDirectory = values(1).asInstanceOf[SupervisorDirectory],
-          caddyDirectory = values(2).asInstanceOf[CaddyDirectory],
-          publicDomainName = values(3).asInstanceOf[Option[DomainName]],
-          vpnDomainName = values(4).asInstanceOf[DomainName],
-          users = values(5).asInstanceOf[Vector[UserDescriptor]],
-          a8VersionsExec = values(6).asInstanceOf[Option[String]],
-          supervisorctlExec = values(7).asInstanceOf[Option[String]],
+          aliases = values(1).asInstanceOf[Iterable[ServerName]],
+          supervisorDirectory = values(2).asInstanceOf[SupervisorDirectory],
+          caddyDirectory = values(3).asInstanceOf[CaddyDirectory],
+          publicDomainName = values(4).asInstanceOf[Option[DomainName]],
+          vpnDomainName = values(5).asInstanceOf[DomainName],
+          users = values(6).asInstanceOf[Vector[UserDescriptor]],
+          a8VersionsExec = values(7).asInstanceOf[Option[String]],
+          supervisorctlExec = values(8).asInstanceOf[Option[String]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): ServerDescriptor = {
         val value =
           ServerDescriptor(
             name = values.next().asInstanceOf[ServerName],
+            aliases = values.next().asInstanceOf[Iterable[ServerName]],
             supervisorDirectory = values.next().asInstanceOf[SupervisorDirectory],
             caddyDirectory = values.next().asInstanceOf[CaddyDirectory],
             publicDomainName = values.next().asInstanceOf[Option[DomainName]],
@@ -595,8 +607,8 @@ object Mxmodel {
            sys.error("")
         value
       }
-      def typedConstruct(name: ServerName, supervisorDirectory: SupervisorDirectory, caddyDirectory: CaddyDirectory, publicDomainName: Option[DomainName], vpnDomainName: DomainName, users: Vector[UserDescriptor], a8VersionsExec: Option[String], supervisorctlExec: Option[String]): ServerDescriptor =
-        ServerDescriptor(name, supervisorDirectory, caddyDirectory, publicDomainName, vpnDomainName, users, a8VersionsExec, supervisorctlExec)
+      def typedConstruct(name: ServerName, aliases: Iterable[ServerName], supervisorDirectory: SupervisorDirectory, caddyDirectory: CaddyDirectory, publicDomainName: Option[DomainName], vpnDomainName: DomainName, users: Vector[UserDescriptor], a8VersionsExec: Option[String], supervisorctlExec: Option[String]): ServerDescriptor =
+        ServerDescriptor(name, aliases, supervisorDirectory, caddyDirectory, publicDomainName, vpnDomainName, users, a8VersionsExec, supervisorctlExec)
     
     }
     

@@ -107,7 +107,7 @@ case class PgbackrestServerSync(healthchecksDotIo: HealthchecksDotIo) extends Sy
       healthchecksDotIo.step.upsert(
         HealthchecksDotIo.CheckUpsertRequest(
           name = z"pgbackrest-${client.server.name}",
-          tags = z"pgbackrest managed ${client.server.name}".some,
+          tags = z"pgbackrest managed ${client.server.name} active".some,
           timeout = 1.day.toSeconds.some,
           grace = 1.hours.toSeconds.some,
           unique = Iterable("name")
@@ -122,10 +122,10 @@ case class PgbackrestServerSync(healthchecksDotIo: HealthchecksDotIo) extends Sy
         UnitFile(
           Type = "oneshot",
           workingDirectory = resolvedServer.user.home,
-          execStart = z"/bootstrap/bin/run-pgbackrest ${client.server.name}",
+          execStart = z"/bootstrap/bin/run-pgbackrest ${client.stanzaName} ${client.server.name}",
         ),
         TimerFile(
-          onCalendar = "daily",
+          onCalendar = client.descriptor.onCalendar.getOrElse("daily"),
           persistent = true.some,
         ).some
       )

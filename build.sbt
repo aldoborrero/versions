@@ -27,6 +27,7 @@ credentials in Global += Common.readRepoCredentials()
 //publishTo in Global := sonatypePublishToBundle.value
 //credentials in Global += Credentials(Path.userHome / ".sbt" / "sonatype.credentials")
 
+
 scalaVersion in Global := scalaLibVersion
 
 organization in Global := "io.accur8"

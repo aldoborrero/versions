@@ -7,10 +7,11 @@ import zio.{Task, ZIO}
 import a8.shared.SharedImports._
 import io.accur8.neodeploy.resolvedmodel.ResolvedRepository
 import PredefAssist._
+import io.accur8.neodeploy.PushRemoteSyncSubCommand.Filter
 
 object ValidateRepo extends BootstrappedIOApp {
 
-  lazy val resolvedRepository = LocalUserSyncSubCommand(Vector.empty, Vector.empty).resolvedRepository
+  lazy val resolvedRepository = LocalUserSyncSubCommand(Filter.allowAll, Filter.allowAll).resolvedRepository
 
   lazy val validateRepo = ValidateRepo(resolvedRepository)
 

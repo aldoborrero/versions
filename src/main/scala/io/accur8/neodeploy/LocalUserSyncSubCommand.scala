@@ -7,6 +7,7 @@ import a8.shared.app.BootstrappedIOApp
 import a8.shared.app.BootstrappedIOApp.BootstrapEnv
 import io.accur8.neodeploy.MxLocalUserSyncSubCommand._
 import io.accur8.neodeploy.LocalUserSyncSubCommand.Config
+import io.accur8.neodeploy.PushRemoteSyncSubCommand.Filter
 import io.accur8.neodeploy.Sync.SyncName
 import io.accur8.neodeploy.model.{ApplicationName, AppsRootDirectory, CaddyDirectory, DomainName, GitRootDirectory, GitServerDirectory, ServerName, SupervisorDirectory, UserLogin}
 import io.accur8.neodeploy.resolvedmodel.ResolvedRepository
@@ -34,7 +35,7 @@ object LocalUserSyncSubCommand {
 
 }
 
-case class LocalUserSyncSubCommand(filterApps: Vector[ApplicationName], filterSyncs: Vector[SyncName]) extends BootstrappedIOApp {
+case class LocalUserSyncSubCommand(appsFilter: Filter[ApplicationName], syncsFilter: Filter[SyncName]) extends BootstrappedIOApp {
 
   lazy val configFile =
     FileSystem
@@ -70,11 +71,11 @@ case class LocalUserSyncSubCommand(filterApps: Vector[ApplicationName], filterSy
   lazy val resolvedServer =
     resolvedRepository
       .servers
-      .find(_.name == config.serverName)
+      .find(s => s.name == config.serverName || s.descriptor.aliases.contains(config.serverName))
       .getOrError(s"server ${config.serverName} not found")
 
   override def runT: ZIO[BootstrapEnv, Throwable, Unit] =
-    LocalUserSync(resolvedServer.fetchUser(config.userLogin), filterApps, filterSyncs)
+    LocalUserSync(resolvedServer.fetchUser(config.userLogin), appsFilter, syncsFilter)
       .run
       .logVoid
 

@@ -149,7 +149,7 @@ case class RSnapshotServerSync(healthchecksDotIo: HealthchecksDotIo) extends Syn
       healthchecksDotIo.step.upsert(
         HealthchecksDotIo.CheckUpsertRequest(
           name = z"rsnapshot-${client.server.name}",
-          tags = z"rsnapshot managed ${client.server.name}".some,
+          tags = z"rsnapshot managed ${client.server.name} active".some,
           timeout = 1.day.toSeconds.some,
           grace = 1.hours.toSeconds.some,
           unique = Iterable("name")

@@ -194,6 +194,8 @@ object model extends LoggingF {
   case class PgbackrestClientDescriptor(
     name: String,
     pgdata: String,
+    stanzaNameOverride: Option[String] = None,
+    onCalendar: Option[String] = None,
     configFile: Option[String] = None,
   ) {
   }
@@ -211,6 +213,7 @@ object model extends LoggingF {
   @CompanionGen
   case class ServerDescriptor(
     name: ServerName,
+    aliases: Iterable[ServerName] = Iterable.empty,
     supervisorDirectory: SupervisorDirectory,
     caddyDirectory: CaddyDirectory,
     publicDomainName: Option[DomainName] = None,

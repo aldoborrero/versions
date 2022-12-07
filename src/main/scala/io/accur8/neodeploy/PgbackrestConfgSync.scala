@@ -57,7 +57,7 @@ process-max=4
 process-max=4
 compress-level=3
 
-[${resolvedClient.server.name}]
+[${resolvedClient.stanzaName}]
 pg1-path=${resolvedClient.descriptor.pgdata}
 """.ltrim
     }
@@ -68,7 +68,7 @@ pg1-path=${resolvedClient.descriptor.pgdata}
         .clients
         .map { pgc =>
           z"""
-             |[${pgc.server.name}]
+             |[${pgc.stanzaName}]
              |pg1-host=${pgc.server.descriptor.vpnDomainName}
              |pg1-path=${pgc.descriptor.pgdata}
           """.stripMargin
@@ -78,6 +78,6 @@ pg1-path=${resolvedClient.descriptor.pgdata}
     s"${resolvedServer.descriptor.configHeader}\n\n${clientConfigs}"
   }
 
-  override val name: Sync.SyncName = Sync.SyncName("pgbackrestserver")
+  override val name: Sync.SyncName = Sync.SyncName("pgbackrestServer")
 
 }

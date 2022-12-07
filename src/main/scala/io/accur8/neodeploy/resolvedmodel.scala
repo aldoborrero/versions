@@ -431,6 +431,8 @@ object resolvedmodel extends LoggingF {
     user: ResolvedUser,
   ) extends UserPlugin {
 
+    def stanzaName = descriptor.stanzaNameOverride.getOrElse(user.server.name.value)
+
     def descriptorJson = descriptor.toJsVal
 
     override def name: String = "pgbackrestClient"

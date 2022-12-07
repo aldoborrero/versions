@@ -53,13 +53,14 @@ object MxHealthchecksDotIo {
           .addField(_.subject)
           .addField(_.subject_fail)
           .addField(_.timeout)
+          .addField(_.last_duration)
       )
       .build
     
     implicit val catsEq: cats.Eq[CheckReadOnly] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[CheckReadOnly,parameters.type] =  {
-      val constructors = Constructors[CheckReadOnly](25, unsafe.iterRawConstruct)
+      val constructors = Constructors[CheckReadOnly](26, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
@@ -89,6 +90,7 @@ object MxHealthchecksDotIo {
       lazy val subject: CaseClassParm[CheckReadOnly,Option[String]] = CaseClassParm[CheckReadOnly,Option[String]]("subject", _.subject, (d,v) => d.copy(subject = v), Some(()=> None), 22)
       lazy val subject_fail: CaseClassParm[CheckReadOnly,Option[String]] = CaseClassParm[CheckReadOnly,Option[String]]("subject_fail", _.subject_fail, (d,v) => d.copy(subject_fail = v), Some(()=> None), 23)
       lazy val timeout: CaseClassParm[CheckReadOnly,Option[Long]] = CaseClassParm[CheckReadOnly,Option[Long]]("timeout", _.timeout, (d,v) => d.copy(timeout = v), Some(()=> None), 24)
+      lazy val last_duration: CaseClassParm[CheckReadOnly,Option[Long]] = CaseClassParm[CheckReadOnly,Option[Long]]("last_duration", _.last_duration, (d,v) => d.copy(last_duration = v), Some(()=> None), 25)
     }
     
     
@@ -121,6 +123,7 @@ object MxHealthchecksDotIo {
           subject = values(22).asInstanceOf[Option[String]],
           subject_fail = values(23).asInstanceOf[Option[String]],
           timeout = values(24).asInstanceOf[Option[Long]],
+          last_duration = values(25).asInstanceOf[Option[Long]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): CheckReadOnly = {
@@ -151,13 +154,14 @@ object MxHealthchecksDotIo {
             subject = values.next().asInstanceOf[Option[String]],
             subject_fail = values.next().asInstanceOf[Option[String]],
             timeout = values.next().asInstanceOf[Option[Long]],
+            last_duration = values.next().asInstanceOf[Option[Long]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(name: String, slug: String, tags: String, desc: String, grace: Long, n_pings: Long, status: String, last_ping: Option[String], next_ping: Option[String], manual_resume: Boolean, methods: String, success_kw: String, failure_kw: String, filter_subject: Boolean, filter_body: Boolean, ping_url: String, update_url: String, pause_url: String, resume_url: String, channels: String, schedule: Option[String], tz: Option[String], subject: Option[String], subject_fail: Option[String], timeout: Option[Long]): CheckReadOnly =
-        CheckReadOnly(name, slug, tags, desc, grace, n_pings, status, last_ping, next_ping, manual_resume, methods, success_kw, failure_kw, filter_subject, filter_body, ping_url, update_url, pause_url, resume_url, channels, schedule, tz, subject, subject_fail, timeout)
+      def typedConstruct(name: String, slug: String, tags: String, desc: String, grace: Long, n_pings: Long, status: String, last_ping: Option[String], next_ping: Option[String], manual_resume: Boolean, methods: String, success_kw: String, failure_kw: String, filter_subject: Boolean, filter_body: Boolean, ping_url: String, update_url: String, pause_url: String, resume_url: String, channels: String, schedule: Option[String], tz: Option[String], subject: Option[String], subject_fail: Option[String], timeout: Option[Long], last_duration: Option[Long]): CheckReadOnly =
+        CheckReadOnly(name, slug, tags, desc, grace, n_pings, status, last_ping, next_ping, manual_resume, methods, success_kw, failure_kw, filter_subject, filter_body, ping_url, update_url, pause_url, resume_url, channels, schedule, tz, subject, subject_fail, timeout, last_duration)
     
     }
     

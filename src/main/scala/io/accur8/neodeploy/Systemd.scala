@@ -110,10 +110,10 @@ object Systemd {
         )
       }
 
-    def enableUnitEffect: M[Unit] = {
+    def enableTimerEffect: M[Unit] = {
       Overrides
         .userSystemCtlCommand
-        .appendArgs("--user", "enable", z"${unitName}.service")
+        .appendArgs("--user", "enable", "--now", z"${unitName}.timer")
         .exec()
         .as(())
     }
@@ -134,7 +134,7 @@ object Systemd {
     }
 
     ParallelSteps((unitFileStep.some ++ timerFileStepOpt).toVector)
-      .onActionRunAfter(s"enable systemd unit ${unitName}", enableUnitEffect)
+      .onActionRunAfter(s"enable systemd unit ${unitName}", enableTimerEffect)
       .andThen(ensureUserLingerIsEnabled)
       .span("systemd setup for " + unitName)
 
