@@ -88,6 +88,122 @@ object Mxmodel {
   
   
   
+  trait MxSupervisorDescriptor {
+  
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[SupervisorDescriptor,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[SupervisorDescriptor,parameters.type] = builder
+    
+    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[SupervisorDescriptor,a8.shared.json.ast.JsObj] =
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.autoStart)
+          .addField(_.autoRestart)
+          .addField(_.startRetries)
+          .addField(_.startSecs)
+      )
+      .build
+    
+    implicit val catsEq: cats.Eq[SupervisorDescriptor] = cats.Eq.fromUniversalEquals
+    
+    lazy val generator: Generator[SupervisorDescriptor,parameters.type] =  {
+      val constructors = Constructors[SupervisorDescriptor](4, unsafe.iterRawConstruct)
+      Generator(constructors, parameters)
+    }
+    
+    object parameters {
+      lazy val autoStart: CaseClassParm[SupervisorDescriptor,Option[Boolean]] = CaseClassParm[SupervisorDescriptor,Option[Boolean]]("autoStart", _.autoStart, (d,v) => d.copy(autoStart = v), Some(()=> None), 0)
+      lazy val autoRestart: CaseClassParm[SupervisorDescriptor,Option[Boolean]] = CaseClassParm[SupervisorDescriptor,Option[Boolean]]("autoRestart", _.autoRestart, (d,v) => d.copy(autoRestart = v), Some(()=> None), 1)
+      lazy val startRetries: CaseClassParm[SupervisorDescriptor,Option[Int]] = CaseClassParm[SupervisorDescriptor,Option[Int]]("startRetries", _.startRetries, (d,v) => d.copy(startRetries = v), Some(()=> None), 2)
+      lazy val startSecs: CaseClassParm[SupervisorDescriptor,Option[Int]] = CaseClassParm[SupervisorDescriptor,Option[Int]]("startSecs", _.startSecs, (d,v) => d.copy(startSecs = v), Some(()=> None), 3)
+    }
+    
+    
+    object unsafe {
+    
+      def rawConstruct(values: IndexedSeq[Any]): SupervisorDescriptor = {
+        SupervisorDescriptor(
+          autoStart = values(0).asInstanceOf[Option[Boolean]],
+          autoRestart = values(1).asInstanceOf[Option[Boolean]],
+          startRetries = values(2).asInstanceOf[Option[Int]],
+          startSecs = values(3).asInstanceOf[Option[Int]],
+        )
+      }
+      def iterRawConstruct(values: Iterator[Any]): SupervisorDescriptor = {
+        val value =
+          SupervisorDescriptor(
+            autoStart = values.next().asInstanceOf[Option[Boolean]],
+            autoRestart = values.next().asInstanceOf[Option[Boolean]],
+            startRetries = values.next().asInstanceOf[Option[Int]],
+            startSecs = values.next().asInstanceOf[Option[Int]],
+          )
+        if ( values.hasNext )
+           sys.error("")
+        value
+      }
+      def typedConstruct(autoStart: Option[Boolean], autoRestart: Option[Boolean], startRetries: Option[Int], startSecs: Option[Int]): SupervisorDescriptor =
+        SupervisorDescriptor(autoStart, autoRestart, startRetries, startSecs)
+    
+    }
+    
+    
+    lazy val typeName = "SupervisorDescriptor"
+  
+  }
+  
+  
+  
+  
+  trait MxSystemdDescriptor {
+  
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[SystemdDescriptor,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[SystemdDescriptor,parameters.type] = builder
+    
+    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[SystemdDescriptor,a8.shared.json.ast.JsObj] =
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.description)
+      )
+      .build
+    
+    implicit val catsEq: cats.Eq[SystemdDescriptor] = cats.Eq.fromUniversalEquals
+    
+    lazy val generator: Generator[SystemdDescriptor,parameters.type] =  {
+      val constructors = Constructors[SystemdDescriptor](1, unsafe.iterRawConstruct)
+      Generator(constructors, parameters)
+    }
+    
+    object parameters {
+      lazy val description: CaseClassParm[SystemdDescriptor,Option[String]] = CaseClassParm[SystemdDescriptor,Option[String]]("description", _.description, (d,v) => d.copy(description = v), Some(()=> None), 0)
+    }
+    
+    
+    object unsafe {
+    
+      def rawConstruct(values: IndexedSeq[Any]): SystemdDescriptor = {
+        SystemdDescriptor(
+          description = values(0).asInstanceOf[Option[String]],
+        )
+      }
+      def iterRawConstruct(values: Iterator[Any]): SystemdDescriptor = {
+        val value =
+          SystemdDescriptor(
+            description = values.next().asInstanceOf[Option[String]],
+          )
+        if ( values.hasNext )
+           sys.error("")
+        value
+      }
+      def typedConstruct(description: Option[String]): SystemdDescriptor =
+        SystemdDescriptor(description)
+    
+    }
+    
+    
+    lazy val typeName = "SystemdDescriptor"
+  
+  }
+  
+  
+  
+  
   trait MxApplicationDescriptor {
   
     protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[ApplicationDescriptor,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[ApplicationDescriptor,parameters.type] = builder
@@ -98,7 +214,6 @@ object Mxmodel {
           .addField(_.name)
           .addField(_.install)
           .addField(_.jvmArgs)
-          .addField(_.autoStart)
           .addField(_.appArgs)
           .addField(_.mainClass)
           .addField(_.listenPort)
@@ -107,15 +222,17 @@ object Mxmodel {
           .addField(_.startServerCommand)
           .addField(_.domainName)
           .addField(_.domainNames)
-          .addField(_.trigger)
           .addField(_.repository)
+          .addField(_.restartOnCalendar)
+          .addField(_.startOnCalendar)
+          .addField(_.launcher)
       )
       .build
     
     implicit val catsEq: cats.Eq[ApplicationDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[ApplicationDescriptor,parameters.type] =  {
-      val constructors = Constructors[ApplicationDescriptor](14, unsafe.iterRawConstruct)
+      val constructors = Constructors[ApplicationDescriptor](15, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
@@ -123,17 +240,18 @@ object Mxmodel {
       lazy val name: CaseClassParm[ApplicationDescriptor,ApplicationName] = CaseClassParm[ApplicationDescriptor,ApplicationName]("name", _.name, (d,v) => d.copy(name = v), None, 0)
       lazy val install: CaseClassParm[ApplicationDescriptor,Install] = CaseClassParm[ApplicationDescriptor,Install]("install", _.install, (d,v) => d.copy(install = v), None, 1)
       lazy val jvmArgs: CaseClassParm[ApplicationDescriptor,Iterable[String]] = CaseClassParm[ApplicationDescriptor,Iterable[String]]("jvmArgs", _.jvmArgs, (d,v) => d.copy(jvmArgs = v), Some(()=> None), 2)
-      lazy val autoStart: CaseClassParm[ApplicationDescriptor,Option[Boolean]] = CaseClassParm[ApplicationDescriptor,Option[Boolean]]("autoStart", _.autoStart, (d,v) => d.copy(autoStart = v), Some(()=> None), 3)
-      lazy val appArgs: CaseClassParm[ApplicationDescriptor,Iterable[String]] = CaseClassParm[ApplicationDescriptor,Iterable[String]]("appArgs", _.appArgs, (d,v) => d.copy(appArgs = v), Some(()=> Iterable.empty), 4)
-      lazy val mainClass: CaseClassParm[ApplicationDescriptor,String] = CaseClassParm[ApplicationDescriptor,String]("mainClass", _.mainClass, (d,v) => d.copy(mainClass = v), None, 5)
-      lazy val listenPort: CaseClassParm[ApplicationDescriptor,Option[ListenPort]] = CaseClassParm[ApplicationDescriptor,Option[ListenPort]]("listenPort", _.listenPort, (d,v) => d.copy(listenPort = v), Some(()=> None), 6)
-      lazy val javaVersion: CaseClassParm[ApplicationDescriptor,JavaVersion] = CaseClassParm[ApplicationDescriptor,JavaVersion]("javaVersion", _.javaVersion, (d,v) => d.copy(javaVersion = v), Some(()=> JavaVersion(11)), 7)
-      lazy val stopServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("stopServerCommand", _.stopServerCommand, (d,v) => d.copy(stopServerCommand = v), Some(()=> None), 8)
-      lazy val startServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("startServerCommand", _.startServerCommand, (d,v) => d.copy(startServerCommand = v), Some(()=> None), 9)
-      lazy val domainName: CaseClassParm[ApplicationDescriptor,Option[DomainName]] = CaseClassParm[ApplicationDescriptor,Option[DomainName]]("domainName", _.domainName, (d,v) => d.copy(domainName = v), Some(()=> None), 10)
-      lazy val domainNames: CaseClassParm[ApplicationDescriptor,Iterable[DomainName]] = CaseClassParm[ApplicationDescriptor,Iterable[DomainName]]("domainNames", _.domainNames, (d,v) => d.copy(domainNames = v), Some(()=> Iterable.empty), 11)
-      lazy val trigger: CaseClassParm[ApplicationDescriptor,JsDoc] = CaseClassParm[ApplicationDescriptor,JsDoc]("trigger", _.trigger, (d,v) => d.copy(trigger = v), Some(()=> JsDoc.empty), 12)
-      lazy val repository: CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]] = CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]]("repository", _.repository, (d,v) => d.copy(repository = v), Some(()=> None), 13)
+      lazy val appArgs: CaseClassParm[ApplicationDescriptor,Iterable[String]] = CaseClassParm[ApplicationDescriptor,Iterable[String]]("appArgs", _.appArgs, (d,v) => d.copy(appArgs = v), Some(()=> Iterable.empty), 3)
+      lazy val mainClass: CaseClassParm[ApplicationDescriptor,String] = CaseClassParm[ApplicationDescriptor,String]("mainClass", _.mainClass, (d,v) => d.copy(mainClass = v), None, 4)
+      lazy val listenPort: CaseClassParm[ApplicationDescriptor,Option[ListenPort]] = CaseClassParm[ApplicationDescriptor,Option[ListenPort]]("listenPort", _.listenPort, (d,v) => d.copy(listenPort = v), Some(()=> None), 5)
+      lazy val javaVersion: CaseClassParm[ApplicationDescriptor,JavaVersion] = CaseClassParm[ApplicationDescriptor,JavaVersion]("javaVersion", _.javaVersion, (d,v) => d.copy(javaVersion = v), Some(()=> JavaVersion(11)), 6)
+      lazy val stopServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("stopServerCommand", _.stopServerCommand, (d,v) => d.copy(stopServerCommand = v), Some(()=> None), 7)
+      lazy val startServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("startServerCommand", _.startServerCommand, (d,v) => d.copy(startServerCommand = v), Some(()=> None), 8)
+      lazy val domainName: CaseClassParm[ApplicationDescriptor,Option[DomainName]] = CaseClassParm[ApplicationDescriptor,Option[DomainName]]("domainName", _.domainName, (d,v) => d.copy(domainName = v), Some(()=> None), 9)
+      lazy val domainNames: CaseClassParm[ApplicationDescriptor,Iterable[DomainName]] = CaseClassParm[ApplicationDescriptor,Iterable[DomainName]]("domainNames", _.domainNames, (d,v) => d.copy(domainNames = v), Some(()=> Iterable.empty), 10)
+      lazy val repository: CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]] = CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]]("repository", _.repository, (d,v) => d.copy(repository = v), Some(()=> None), 11)
+      lazy val restartOnCalendar: CaseClassParm[ApplicationDescriptor,Option[OnCalendarValue]] = CaseClassParm[ApplicationDescriptor,Option[OnCalendarValue]]("restartOnCalendar", _.restartOnCalendar, (d,v) => d.copy(restartOnCalendar = v), None, 12)
+      lazy val startOnCalendar: CaseClassParm[ApplicationDescriptor,Option[OnCalendarValue]] = CaseClassParm[ApplicationDescriptor,Option[OnCalendarValue]]("startOnCalendar", _.startOnCalendar, (d,v) => d.copy(startOnCalendar = v), None, 13)
+      lazy val launcher: CaseClassParm[ApplicationDescriptor,Launcher] = CaseClassParm[ApplicationDescriptor,Launcher]("launcher", _.launcher, (d,v) => d.copy(launcher = v), Some(()=> SupervisorDescriptor.empty), 14)
     }
     
     
@@ -144,17 +262,18 @@ object Mxmodel {
           name = values(0).asInstanceOf[ApplicationName],
           install = values(1).asInstanceOf[Install],
           jvmArgs = values(2).asInstanceOf[Iterable[String]],
-          autoStart = values(3).asInstanceOf[Option[Boolean]],
-          appArgs = values(4).asInstanceOf[Iterable[String]],
-          mainClass = values(5).asInstanceOf[String],
-          listenPort = values(6).asInstanceOf[Option[ListenPort]],
-          javaVersion = values(7).asInstanceOf[JavaVersion],
-          stopServerCommand = values(8).asInstanceOf[Option[Command]],
-          startServerCommand = values(9).asInstanceOf[Option[Command]],
-          domainName = values(10).asInstanceOf[Option[DomainName]],
-          domainNames = values(11).asInstanceOf[Iterable[DomainName]],
-          trigger = values(12).asInstanceOf[JsDoc],
-          repository = values(13).asInstanceOf[Option[RepoConfigPrefix]],
+          appArgs = values(3).asInstanceOf[Iterable[String]],
+          mainClass = values(4).asInstanceOf[String],
+          listenPort = values(5).asInstanceOf[Option[ListenPort]],
+          javaVersion = values(6).asInstanceOf[JavaVersion],
+          stopServerCommand = values(7).asInstanceOf[Option[Command]],
+          startServerCommand = values(8).asInstanceOf[Option[Command]],
+          domainName = values(9).asInstanceOf[Option[DomainName]],
+          domainNames = values(10).asInstanceOf[Iterable[DomainName]],
+          repository = values(11).asInstanceOf[Option[RepoConfigPrefix]],
+          restartOnCalendar = values(12).asInstanceOf[Option[OnCalendarValue]],
+          startOnCalendar = values(13).asInstanceOf[Option[OnCalendarValue]],
+          launcher = values(14).asInstanceOf[Launcher],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): ApplicationDescriptor = {
@@ -163,7 +282,6 @@ object Mxmodel {
             name = values.next().asInstanceOf[ApplicationName],
             install = values.next().asInstanceOf[Install],
             jvmArgs = values.next().asInstanceOf[Iterable[String]],
-            autoStart = values.next().asInstanceOf[Option[Boolean]],
             appArgs = values.next().asInstanceOf[Iterable[String]],
             mainClass = values.next().asInstanceOf[String],
             listenPort = values.next().asInstanceOf[Option[ListenPort]],
@@ -172,15 +290,17 @@ object Mxmodel {
             startServerCommand = values.next().asInstanceOf[Option[Command]],
             domainName = values.next().asInstanceOf[Option[DomainName]],
             domainNames = values.next().asInstanceOf[Iterable[DomainName]],
-            trigger = values.next().asInstanceOf[JsDoc],
             repository = values.next().asInstanceOf[Option[RepoConfigPrefix]],
+            restartOnCalendar = values.next().asInstanceOf[Option[OnCalendarValue]],
+            startOnCalendar = values.next().asInstanceOf[Option[OnCalendarValue]],
+            launcher = values.next().asInstanceOf[Launcher],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(name: ApplicationName, install: Install, jvmArgs: Iterable[String], autoStart: Option[Boolean], appArgs: Iterable[String], mainClass: String, listenPort: Option[ListenPort], javaVersion: JavaVersion, stopServerCommand: Option[Command], startServerCommand: Option[Command], domainName: Option[DomainName], domainNames: Iterable[DomainName], trigger: JsDoc, repository: Option[RepoConfigPrefix]): ApplicationDescriptor =
-        ApplicationDescriptor(name, install, jvmArgs, autoStart, appArgs, mainClass, listenPort, javaVersion, stopServerCommand, startServerCommand, domainName, domainNames, trigger, repository)
+      def typedConstruct(name: ApplicationName, install: Install, jvmArgs: Iterable[String], appArgs: Iterable[String], mainClass: String, listenPort: Option[ListenPort], javaVersion: JavaVersion, stopServerCommand: Option[Command], startServerCommand: Option[Command], domainName: Option[DomainName], domainNames: Iterable[DomainName], repository: Option[RepoConfigPrefix], restartOnCalendar: Option[OnCalendarValue], startOnCalendar: Option[OnCalendarValue], launcher: Launcher): ApplicationDescriptor =
+        ApplicationDescriptor(name, install, jvmArgs, appArgs, mainClass, listenPort, javaVersion, stopServerCommand, startServerCommand, domainName, domainNames, repository, restartOnCalendar, startOnCalendar, launcher)
     
     }
     
@@ -297,7 +417,7 @@ object Mxmodel {
     object parameters {
       lazy val name: CaseClassParm[RSnapshotClientDescriptor,String] = CaseClassParm[RSnapshotClientDescriptor,String]("name", _.name, (d,v) => d.copy(name = v), None, 0)
       lazy val directories: CaseClassParm[RSnapshotClientDescriptor,Vector[String]] = CaseClassParm[RSnapshotClientDescriptor,Vector[String]]("directories", _.directories, (d,v) => d.copy(directories = v), None, 1)
-      lazy val runAt: CaseClassParm[RSnapshotClientDescriptor,String] = CaseClassParm[RSnapshotClientDescriptor,String]("runAt", _.runAt, (d,v) => d.copy(runAt = v), None, 2)
+      lazy val runAt: CaseClassParm[RSnapshotClientDescriptor,OnCalendarValue] = CaseClassParm[RSnapshotClientDescriptor,OnCalendarValue]("runAt", _.runAt, (d,v) => d.copy(runAt = v), None, 2)
       lazy val hourly: CaseClassParm[RSnapshotClientDescriptor,Boolean] = CaseClassParm[RSnapshotClientDescriptor,Boolean]("hourly", _.hourly, (d,v) => d.copy(hourly = v), Some(()=> false), 3)
       lazy val includeExcludeLines: CaseClassParm[RSnapshotClientDescriptor,Iterable[String]] = CaseClassParm[RSnapshotClientDescriptor,Iterable[String]]("includeExcludeLines", _.includeExcludeLines, (d,v) => d.copy(includeExcludeLines = v), Some(()=> Iterable.empty), 4)
     }
@@ -309,7 +429,7 @@ object Mxmodel {
         RSnapshotClientDescriptor(
           name = values(0).asInstanceOf[String],
           directories = values(1).asInstanceOf[Vector[String]],
-          runAt = values(2).asInstanceOf[String],
+          runAt = values(2).asInstanceOf[OnCalendarValue],
           hourly = values(3).asInstanceOf[Boolean],
           includeExcludeLines = values(4).asInstanceOf[Iterable[String]],
         )
@@ -319,7 +439,7 @@ object Mxmodel {
           RSnapshotClientDescriptor(
             name = values.next().asInstanceOf[String],
             directories = values.next().asInstanceOf[Vector[String]],
-            runAt = values.next().asInstanceOf[String],
+            runAt = values.next().asInstanceOf[OnCalendarValue],
             hourly = values.next().asInstanceOf[Boolean],
             includeExcludeLines = values.next().asInstanceOf[Iterable[String]],
           )
@@ -327,7 +447,7 @@ object Mxmodel {
            sys.error("")
         value
       }
-      def typedConstruct(name: String, directories: Vector[String], runAt: String, hourly: Boolean, includeExcludeLines: Iterable[String]): RSnapshotClientDescriptor =
+      def typedConstruct(name: String, directories: Vector[String], runAt: OnCalendarValue, hourly: Boolean, includeExcludeLines: Iterable[String]): RSnapshotClientDescriptor =
         RSnapshotClientDescriptor(name, directories, runAt, hourly, includeExcludeLines)
     
     }
@@ -434,7 +554,7 @@ object Mxmodel {
       lazy val name: CaseClassParm[PgbackrestClientDescriptor,String] = CaseClassParm[PgbackrestClientDescriptor,String]("name", _.name, (d,v) => d.copy(name = v), None, 0)
       lazy val pgdata: CaseClassParm[PgbackrestClientDescriptor,String] = CaseClassParm[PgbackrestClientDescriptor,String]("pgdata", _.pgdata, (d,v) => d.copy(pgdata = v), None, 1)
       lazy val stanzaNameOverride: CaseClassParm[PgbackrestClientDescriptor,Option[String]] = CaseClassParm[PgbackrestClientDescriptor,Option[String]]("stanzaNameOverride", _.stanzaNameOverride, (d,v) => d.copy(stanzaNameOverride = v), Some(()=> None), 2)
-      lazy val onCalendar: CaseClassParm[PgbackrestClientDescriptor,Option[String]] = CaseClassParm[PgbackrestClientDescriptor,Option[String]]("onCalendar", _.onCalendar, (d,v) => d.copy(onCalendar = v), Some(()=> None), 3)
+      lazy val onCalendar: CaseClassParm[PgbackrestClientDescriptor,Option[OnCalendarValue]] = CaseClassParm[PgbackrestClientDescriptor,Option[OnCalendarValue]]("onCalendar", _.onCalendar, (d,v) => d.copy(onCalendar = v), Some(()=> None), 3)
       lazy val configFile: CaseClassParm[PgbackrestClientDescriptor,Option[String]] = CaseClassParm[PgbackrestClientDescriptor,Option[String]]("configFile", _.configFile, (d,v) => d.copy(configFile = v), Some(()=> None), 4)
     }
     
@@ -446,7 +566,7 @@ object Mxmodel {
           name = values(0).asInstanceOf[String],
           pgdata = values(1).asInstanceOf[String],
           stanzaNameOverride = values(2).asInstanceOf[Option[String]],
-          onCalendar = values(3).asInstanceOf[Option[String]],
+          onCalendar = values(3).asInstanceOf[Option[OnCalendarValue]],
           configFile = values(4).asInstanceOf[Option[String]],
         )
       }
@@ -456,14 +576,14 @@ object Mxmodel {
             name = values.next().asInstanceOf[String],
             pgdata = values.next().asInstanceOf[String],
             stanzaNameOverride = values.next().asInstanceOf[Option[String]],
-            onCalendar = values.next().asInstanceOf[Option[String]],
+            onCalendar = values.next().asInstanceOf[Option[OnCalendarValue]],
             configFile = values.next().asInstanceOf[Option[String]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(name: String, pgdata: String, stanzaNameOverride: Option[String], onCalendar: Option[String], configFile: Option[String]): PgbackrestClientDescriptor =
+      def typedConstruct(name: String, pgdata: String, stanzaNameOverride: Option[String], onCalendar: Option[OnCalendarValue], configFile: Option[String]): PgbackrestClientDescriptor =
         PgbackrestClientDescriptor(name, pgdata, stanzaNameOverride, onCalendar, configFile)
     
     }

@@ -13,7 +13,7 @@ import io.accur8.neodeploy.Sync.Phase
 import io.accur8.neodeploy.Systemd.{TimerFile, UnitFile}
 import io.accur8.neodeploy.dsl.Step
 import io.accur8.neodeploy.dsl.Step.impl.ParallelSteps
-import io.accur8.neodeploy.model.{QualifiedUserName, RSnapshotClientDescriptor, RSnapshotServerDescriptor}
+import io.accur8.neodeploy.model.{OnCalendarValue, QualifiedUserName, RSnapshotClientDescriptor, RSnapshotServerDescriptor}
 
 object RSnapshotServerSync {
 
@@ -167,7 +167,7 @@ case class RSnapshotServerSync(healthchecksDotIo: HealthchecksDotIo) extends Syn
           execStart = z"/bootstrap/bin/run-rsnapshot ${rsnapshotConfigFile} ${client.server.name}",
         ),
         TimerFile(
-          onCalendar = "hourly",
+          onCalendar = OnCalendarValue.hourly,
           persistent = true.some,
         ).some
       )

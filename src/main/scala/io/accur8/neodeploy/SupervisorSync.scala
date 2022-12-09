@@ -6,7 +6,7 @@ import zio.{Task, ZIO}
 import a8.shared.SharedImports._
 import a8.shared.{FileSystem, ZString}
 import a8.shared.ZString.ZStringer
-import io.accur8.neodeploy.model.SupervisorDirectory
+import io.accur8.neodeploy.model.{SupervisorDescriptor, SupervisorDirectory}
 import io.accur8.neodeploy.resolvedmodel.ResolvedApp
 
 case class SupervisorSync(supervisorDir: SupervisorDirectory) extends ConfigFileSync[ResolvedApp] {
@@ -17,11 +17,16 @@ case class SupervisorSync(supervisorDir: SupervisorDirectory) extends ConfigFile
     supervisorDir.unresolvedDirectory.file(z"${input.descriptor.name}.conf")
 
   override def configFileContents(input: ResolvedApp): Task[Option[String]] =
-    zsucceed(
-      supervisorConfigContents(input).some
-    )
+    input.descriptor.launcher match {
+      case sd: SupervisorDescriptor =>
+        zsucceed (
+          supervisorConfigContents(input, sd).some
+        )
+      case _ =>
+        zsucceed(None)
+    }
 
-  def supervisorConfigContents(app: ResolvedApp) = {
+  def supervisorConfigContents(app: ResolvedApp, supervisor: SupervisorDescriptor) = {
 
     def pathZStringer[A <: a8.shared.FileSystem.Path]: ZStringer[A] =
       new ZStringer[A] {
@@ -33,7 +38,12 @@ case class SupervisorSync(supervisorDir: SupervisorDirectory) extends ConfigFile
     implicit val fileZStringer = pathZStringer[File]
 
     import app.descriptor._
-    val resolvedAutoStart = app.descriptor.autoStart.getOrElse(true)
+
+    val resolvedAutoStart = supervisor.autoStart.getOrElse(true)
+    val resolvedStartRetries = supervisor.startRetries.getOrElse(0)
+    val resolvedAutoRestart = supervisor.autoRestart.getOrElse(true)
+    val resolvedStartSecs = supervisor.startSecs.getOrElse(5)
+
     val appsRoot = app.user.appsRootDirectory.unresolvedDirectory
     val bin = appsRoot.subdir("bin").file(app.descriptor.name.value)
     val logsDir = appsRoot.subdir("logs")
@@ -61,9 +71,9 @@ command = ${commandArgs.mkString(" ")}
 directory = ${appDir}
 
 autostart       = ${resolvedAutoStart}
-autorestart     = ${resolvedAutoStart}
-startretries    = 3
-startsecs       = 30
+autorestart     = ${resolvedAutoRestart}
+startretries    = ${resolvedStartRetries}
+startsecs       = ${resolvedStartSecs}
 redirect_stderr = true
 user            = ${app.user.login}
 

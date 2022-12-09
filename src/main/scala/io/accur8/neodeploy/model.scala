@@ -113,6 +113,42 @@ object model extends LoggingF {
 
   }
 
+  object OnCalendarValue extends StringValue.Companion[OnCalendarValue] {
+    val hourly = OnCalendarValue("hourly")
+    val daily = OnCalendarValue("daily")
+  }
+  case class OnCalendarValue(value: String) extends StringValue
+
+  object SupervisorDescriptor extends MxSupervisorDescriptor {
+    val empty = SupervisorDescriptor()
+  }
+  @CompanionGen
+  case class SupervisorDescriptor(
+    autoStart: Option[Boolean] = None,
+    autoRestart: Option[Boolean] = None,
+    startRetries: Option[Int] = None,
+    startSecs: Option[Int] = None,
+  ) extends Launcher
+
+  object SystemdDescriptor extends MxSystemdDescriptor {
+  }
+  @CompanionGen
+  case class SystemdDescriptor(
+    description: Option[String] = None,
+  ) extends Launcher
+
+  object Launcher {
+    implicit val jsonCodec =
+      UnionCodecBuilder[Launcher]
+        .typeFieldName("kind")
+        .defaultType[SupervisorDescriptor]
+        .addType[SystemdDescriptor]("systemd")
+        .addType[SupervisorDescriptor]("supervisor")
+        .build
+  }
+
+  sealed trait Launcher
+
   object ApplicationDescriptor extends MxApplicationDescriptor {
   }
   @CompanionGen
@@ -120,7 +156,6 @@ object model extends LoggingF {
     name: ApplicationName,
     install: Install,
     jvmArgs: Iterable[String] = None,
-    autoStart: Option[Boolean] = None,
     appArgs: Iterable[String] = Iterable.empty,
     mainClass: String,
     listenPort: Option[ListenPort] = None,
@@ -129,8 +164,10 @@ object model extends LoggingF {
     startServerCommand: Option[Command] = None,
     domainName: Option[DomainName] = None,
     domainNames: Iterable[DomainName] = Iterable.empty,
-    trigger: JsDoc = JsDoc.empty,
     repository: Option[RepoConfigPrefix] = None,
+    restartOnCalendar: Option[OnCalendarValue],
+    startOnCalendar: Option[OnCalendarValue],
+    launcher: Launcher = SupervisorDescriptor.empty
   ) {
     def resolvedDomainNames = domainName ++ domainNames
   }
@@ -173,7 +210,7 @@ object model extends LoggingF {
   case class RSnapshotClientDescriptor(
     name: String,
     directories: Vector[String],
-    runAt: String,
+    runAt: OnCalendarValue,
     hourly: Boolean = false,
     includeExcludeLines: Iterable[String] = Iterable.empty,
   ) {
@@ -195,7 +232,7 @@ object model extends LoggingF {
     name: String,
     pgdata: String,
     stanzaNameOverride: Option[String] = None,
-    onCalendar: Option[String] = None,
+    onCalendar: Option[OnCalendarValue] = None,
     configFile: Option[String] = None,
   ) {
   }

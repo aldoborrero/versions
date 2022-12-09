@@ -182,7 +182,7 @@ object Main extends Logging {
       val values: Iterable[String] = singleArg.toOption ++ csvArg.toOption.toVector.flatMap(_.split(","))
       val fromString = implicitly[FromString[A]].fromString _
       Filter(
-        singleArg.name,
+        csvArg.name,
         values
           .flatMap(fromString)
           .toVector

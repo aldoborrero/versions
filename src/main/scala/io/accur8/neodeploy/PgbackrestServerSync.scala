@@ -6,7 +6,7 @@ import io.accur8.neodeploy.MxPgbackrestServerSync._
 import io.accur8.neodeploy.PgbackrestServerSync.{QualifiedClient, State}
 import io.accur8.neodeploy.Systemd.{TimerFile, UnitFile}
 import io.accur8.neodeploy.dsl.Step
-import io.accur8.neodeploy.model.{PgbackrestClientDescriptor, PgbackrestServerDescriptor, QualifiedUserName, RSnapshotClientDescriptor, RSnapshotServerDescriptor}
+import io.accur8.neodeploy.model.{OnCalendarValue, PgbackrestClientDescriptor, PgbackrestServerDescriptor, QualifiedUserName, RSnapshotClientDescriptor, RSnapshotServerDescriptor}
 import io.accur8.neodeploy.resolvedmodel.ResolvedUser
 import zio.Task
 
@@ -125,7 +125,7 @@ case class PgbackrestServerSync(healthchecksDotIo: HealthchecksDotIo) extends Sy
           execStart = z"/bootstrap/bin/run-pgbackrest ${client.stanzaName} ${client.server.name}",
         ),
         TimerFile(
-          onCalendar = client.descriptor.onCalendar.getOrElse("daily"),
+          onCalendar = client.descriptor.onCalendar.getOrElse(OnCalendarValue.daily),
           persistent = true.some,
         ).some
       )

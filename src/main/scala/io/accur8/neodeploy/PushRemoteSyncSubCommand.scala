@@ -27,7 +27,7 @@ object PushRemoteSyncSubCommand {
 
     def args =
       values
-        .isEmpty
+        .nonEmpty
         .toOption(
           Some("--" + argName) ++ values.map(v => implicitly[ZStringer[A]].toZString(v).toString())
         )

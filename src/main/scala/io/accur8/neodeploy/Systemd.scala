@@ -9,6 +9,7 @@ import io.accur8.neodeploy.resolvedmodel.ResolvedUser
 import zio.ZIO
 import PredefAssist._
 import a8.shared.FileSystem
+import io.accur8.neodeploy.model.OnCalendarValue
 
 /**
  * user level systemd service and timers
@@ -26,7 +27,7 @@ object Systemd {
   )
 
   case class TimerFile(
-    onCalendar: String,
+    onCalendar: OnCalendarValue,
     persistent: Option[Boolean],
   ) {
     def timerLines = (
