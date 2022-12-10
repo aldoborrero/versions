@@ -10,22 +10,12 @@ import io.accur8.neodeploy.model.{SupervisorDescriptor, SupervisorDirectory}
 import io.accur8.neodeploy.resolvedmodel.ResolvedApp
 import io.accur8.neodeploy.systemstate.SystemState
 
-case class SupervisorSync(supervisorDir: SupervisorDirectory) extends ConfigFileSync[ResolvedApp] {
+case class SupervisorSync(supervisorDir: SupervisorDirectory) extends Sync[ResolvedApp] {
 
   override val name: Sync.SyncName = Sync.SyncName("supervisor")
 
-  override def configFile(input: ResolvedApp): File =
+  def configFile(input: ResolvedApp): File =
     supervisorDir.unresolvedDirectory.file(z"${input.descriptor.name}.conf")
-
-  override def configFileContents(input: ResolvedApp): Task[Option[String]] =
-    input.descriptor.launcher match {
-      case sd: SupervisorDescriptor =>
-        zsucceed (
-          supervisorConfigContents(input, sd).some
-        )
-      case _ =>
-        zsucceed(None)
-    }
 
   def supervisorConfigContents(app: ResolvedApp, supervisor: SupervisorDescriptor) = {
 

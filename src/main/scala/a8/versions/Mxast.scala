@@ -33,6 +33,8 @@ object Mxast {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[Repo] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[Repo] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[Repo,parameters.type] =  {
@@ -104,6 +106,8 @@ object Mxast {
           .addField(_.extraSettings)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[Module] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[Module] = cats.Eq.fromUniversalEquals
     
@@ -185,6 +189,8 @@ object Mxast {
           .addField(_.exclusions)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[Dependency] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[Dependency] = cats.Eq.fromUniversalEquals
     

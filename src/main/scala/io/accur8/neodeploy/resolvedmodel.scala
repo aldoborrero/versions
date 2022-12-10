@@ -9,8 +9,7 @@ import a8.shared.ZString.ZStringer
 import a8.shared.app.LoggingF
 import a8.shared.json.JsonCodec
 import a8.shared.json.ast.{JsDoc, JsObj, JsVal}
-import io.accur8.neodeploy.Mxresolvedmodel.MxStoredSyncState
-import io.accur8.neodeploy.Sync.{ContainerSteps, Phase, ResolvedSteps, Step, SyncName}
+import io.accur8.neodeploy.Sync.SyncName
 import zio.{Chunk, Task, UIO, ZIO}
 import PredefAssist._
 import a8.versions.model.ResolvedPersonnel
@@ -125,17 +124,17 @@ object resolvedmodel extends LoggingF {
         applicationName.value
       ))
 
-    def appCommandStep(phase: Phase, supervisorAction: String, commandGetter: ApplicationDescriptor=>Option[Command], currentApplicationOpt: Option[ApplicationDescriptor]): Seq[Step] = {
-      currentApplicationOpt match {
-        case None =>
-          Seq.empty
-        case Some(currentApplication) =>
-          val command =
-            commandGetter(currentApplication)
-              .getOrElse(supervisorCommand(supervisorAction, currentApplication.name))
-          Seq(Step.runCommand(phase, command, failOnNonZeroExitCode = false))
-      }
-    }
+//    def appCommandStep(phase: Phase, supervisorAction: String, commandGetter: ApplicationDescriptor=>Option[Command], currentApplicationOpt: Option[ApplicationDescriptor]): Seq[Step] = {
+//      currentApplicationOpt match {
+//        case None =>
+//          Seq.empty
+//        case Some(currentApplication) =>
+//          val command =
+//            commandGetter(currentApplication)
+//              .getOrElse(supervisorCommand(supervisorAction, currentApplication.name))
+//          Seq(Step.runCommand(phase, command, failOnNonZeroExitCode = false))
+//      }
+//    }
 
 
     def execCommand(command: Command): Task[Unit] = {
@@ -149,7 +148,7 @@ object resolvedmodel extends LoggingF {
 
     def name = descriptor.name
 
-    lazy val resolvedApps =
+    lazy val resolvedApps: Vector[ResolvedApp] =
       gitServerDirectory
         .unresolvedDirectory
         .subdirs()
@@ -166,6 +165,7 @@ object resolvedmodel extends LoggingF {
                 }
           }
         }
+        .toVector
 
     def supervisorDirectory: SupervisorDirectory = descriptor.supervisorDirectory
     def caddyDirectory: CaddyDirectory = descriptor.caddyDirectory
@@ -313,37 +313,37 @@ object resolvedmodel extends LoggingF {
   }
 
 
-  object StoredSyncState extends MxStoredSyncState {
-    def fromResolvedSteps[A : JsonCodec](name: StringValue, descriptor: A, containerSteps: ContainerSteps): StoredSyncState = {
-      val statesJsoValues =
-        containerSteps
-          .resolvedSteps
-          .flatMap(rs => rs.newState.map(rs.syncName.value -> _))
-          .toMap
-
-      new StoredSyncState(
-        name.value,
-        descriptor.toJsDoc,
-        JsObj(statesJsoValues).toJsDoc,
-      )
-    }
-  }
-  @CompanionGen
-  case class StoredSyncState(
-    name: String,
-    descriptor: JsDoc,
-    states: JsDoc,
-  ) {
-    def syncState(name: SyncName): Option[JsVal] =
-      states.actualJsVal match {
-        case jso: JsObj =>
-          jso
-            .values
-            .get(name.value)
-        case _ =>
-          None
-      }
-  }
+//  object StoredSyncState extends MxStoredSyncState {
+//    def fromResolvedSteps[A : JsonCodec](name: StringValue, descriptor: A, containerSteps: ContainerSteps): StoredSyncState = {
+//      val statesJsoValues =
+//        containerSteps
+//          .resolvedSteps
+//          .flatMap(rs => rs.newState.map(rs.syncName.value -> _))
+//          .toMap
+//
+//      new StoredSyncState(
+//        name.value,
+//        descriptor.toJsDoc,
+//        JsObj(statesJsoValues).toJsDoc,
+//      )
+//    }
+//  }
+//  @CompanionGen
+//  case class StoredSyncState(
+//    name: String,
+//    descriptor: JsDoc,
+//    states: JsDoc,
+//  ) {
+//    def syncState(name: SyncName): Option[JsVal] =
+//      states.actualJsVal match {
+//        case jso: JsObj =>
+//          jso
+//            .values
+//            .get(name.value)
+//        case _ =>
+//          None
+//      }
+//  }
 
   object ResolvedRSnapshotClient extends UserPlugin.Factory.AbstractFactory[RSnapshotClientDescriptor]("rsnapshotClient")
 

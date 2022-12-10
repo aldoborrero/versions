@@ -3,8 +3,7 @@ package io.accur8.neodeploy.systemstate
 import a8.shared.FileSystem
 import a8.shared.SharedImports._
 import io.accur8.neodeploy.ApplicationInstallSync.Installer
-import io.accur8.neodeploy.dsl.Step.M
-import io.accur8.neodeploy.systemstate.SystemStateModel.{StateKey, UnixPerms}
+import io.accur8.neodeploy.systemstate.SystemStateModel._
 import io.accur8.neodeploy.{Command, HealthchecksDotIo}
 import zio.ZIO
 
@@ -22,6 +21,11 @@ object SystemStateImpl {
         files
           .map(inner)
           .flatten
+      case SystemState.SecretsTextFile(f, _, perms) =>
+        val permsStr =
+          if (perms.value.isEmpty) ""
+          else s" with perms ${perms.value}"
+        Vector(s"secret file ${f}${permsStr}")
       case SystemState.TextFile(f, _, perms) =>
         val permsStr =
           if (perms.value.isEmpty) ""
@@ -70,6 +74,8 @@ object SystemStateImpl {
           .map(inner)
           .sequence
           .as(())
+      case stf: SystemState.SecretsTextFile =>
+        runImpl(stf.asTextFile)
       case tf: SystemState.TextFile =>
         runImpl(tf)
       case d: SystemState.Directory =>
@@ -120,12 +126,14 @@ object SystemStateImpl {
     systemState match {
       case SystemState.Empty =>
         None
+      case SystemState.SecretsTextFile(f, _, _) =>
+        None
       case SystemState.TextFile(f, _, _) =>
         StateKey(f).some
       case SystemState.Caddy(c) =>
         StateKey("caddy-" + c.filename).some
       case sd: SystemState.Systemd =>
-        StateKey("unit-" + sd.user + "-" + sd.unitName).some
+        StateKey("userunit-" + sd.unitName).some
       case jai: SystemState.JavaAppInstall =>
         StateKey(jai.appInstallDir).some
       case SystemState.Supervisor(f) =>

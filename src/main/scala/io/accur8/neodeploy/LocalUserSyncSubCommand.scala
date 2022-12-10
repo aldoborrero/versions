@@ -11,7 +11,8 @@ import io.accur8.neodeploy.PushRemoteSyncSubCommand.Filter
 import io.accur8.neodeploy.Sync.SyncName
 import io.accur8.neodeploy.model.{ApplicationName, AppsRootDirectory, CaddyDirectory, DomainName, GitRootDirectory, GitServerDirectory, ServerName, SupervisorDirectory, UserLogin}
 import io.accur8.neodeploy.resolvedmodel.ResolvedRepository
-import zio.ZIO
+import zio.{ZIO, ZLayer}
+import systemstate.SystemStateModel._
 
 import java.net.InetAddress
 
@@ -78,6 +79,10 @@ case class LocalUserSyncSubCommand(appsFilter: Filter[ApplicationName], syncsFil
     LocalUserSync(resolvedServer.fetchUser(config.userLogin), appsFilter, syncsFilter)
       .run
       .logVoid
+      .provide(
+        ZLayer.succeed(HealthchecksDotIo(resolvedRepository.descriptor.healthchecksApiToken)),
+        SystemStateLogger.simpleLayer,
+      )
 
 
 }

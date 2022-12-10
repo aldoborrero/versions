@@ -33,6 +33,8 @@ object MxLocalUserSyncSubCommand {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[Config] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[Config] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[Config,parameters.type] =  {

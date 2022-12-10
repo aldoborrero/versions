@@ -9,25 +9,16 @@ import io.accur8.neodeploy.resolvedmodel.ResolvedApp
 import io.accur8.neodeploy.systemstate.SystemState
 import zio.{Task, ZIO}
 
-object CaddySync extends LoggingF {
-
-  val reloadCaddyStep =
-    Sync.Step.runCommand(
-      phase = Sync.Phase.Post,
-      command = Overrides.sudoSystemCtlCommand.appendArgs("reload", "caddy"),
-    ).some
+object CaddySync {
 
 }
 
-case class CaddySync(caddyDir: CaddyDirectory) extends ConfigFileSync[ResolvedApp] {
+case class CaddySync(caddyDir: CaddyDirectory) extends Sync[ResolvedApp] {
 
   override val name: Sync.SyncName = Sync.SyncName("caddy")
 
-  override def configFile(resolvedApp: ResolvedApp): File =
+  def configFile(resolvedApp: ResolvedApp): File =
     caddyDir.unresolvedDirectory.file(z"${resolvedApp.descriptor.name}.caddy")
-
-  override def configFileContents(input: ResolvedApp): Task[Option[String]] =
-    zsucceed(caddyConfigContents(input.descriptor))
 
   def caddyConfigContents(applicationDescriptor: model.ApplicationDescriptor): Option[String] = {
     import applicationDescriptor._
@@ -51,9 +42,6 @@ ${applicationDescriptor.resolvedDomainNames.map(_.value).mkString(", ")} {
     }
 
   }
-
-  override def resolveStepsFromModification(modification: Sync.Modification[ConfigFileSync.State, ResolvedApp]): Vector[Sync.Step] =
-    super.resolveStepsFromModification(modification) ++ CaddySync.reloadCaddyStep
 
   override def rawSystemState(input: ResolvedApp): SystemState =
     caddyConfigContents(input.descriptor) match {

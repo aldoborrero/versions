@@ -1,4 +1,4 @@
-package io.accur8.neodeploy
+package io.accur8.neodeploy.systemstate
 
 /**
 
@@ -9,11 +9,11 @@ package io.accur8.neodeploy
 */
 
 //====
-import io.accur8.neodeploy.systemstate.SystemState._
-import io.accur8.neodeploy.model.{ApplicationDescriptor, UserLogin}
+import io.accur8.neodeploy.HealthchecksDotIo
+import io.accur8.neodeploy.model.ApplicationDescriptor
 import io.accur8.neodeploy.model.Install.FromRepo
-import io.accur8.neodeploy.systemstate.SystemState
-import io.accur8.neodeploy.systemstate.SystemStateModel.{PreviousState, UnixPerms}
+import io.accur8.neodeploy.systemstate.SystemState._
+import io.accur8.neodeploy.systemstate.SystemStateModel._
 
 //====
 
@@ -22,58 +22,6 @@ import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
 
 
 object MxSystemState {
-  
-  trait MxPreviousState {
-  
-    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[PreviousState,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[PreviousState,parameters.type] = builder
-    
-    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[PreviousState,a8.shared.json.ast.JsObj] =
-      jsonCodecBuilder(
-        a8.shared.json.JsonObjectCodecBuilder(generator)
-          .addField(_.value)
-      )
-      .build
-    
-    implicit val catsEq: cats.Eq[PreviousState] = cats.Eq.fromUniversalEquals
-    
-    lazy val generator: Generator[PreviousState,parameters.type] =  {
-      val constructors = Constructors[PreviousState](1, unsafe.iterRawConstruct)
-      Generator(constructors, parameters)
-    }
-    
-    object parameters {
-      lazy val value: CaseClassParm[PreviousState,SystemState] = CaseClassParm[PreviousState,SystemState]("value", _.value, (d,v) => d.copy(value = v), None, 0)
-    }
-    
-    
-    object unsafe {
-    
-      def rawConstruct(values: IndexedSeq[Any]): PreviousState = {
-        PreviousState(
-          value = values(0).asInstanceOf[SystemState],
-        )
-      }
-      def iterRawConstruct(values: Iterator[Any]): PreviousState = {
-        val value =
-          PreviousState(
-            value = values.next().asInstanceOf[SystemState],
-          )
-        if ( values.hasNext )
-           sys.error("")
-        value
-      }
-      def typedConstruct(value: SystemState): PreviousState =
-        PreviousState(value)
-    
-    }
-    
-    
-    lazy val typeName = "PreviousState"
-  
-  }
-  
-  
-  
   
   trait MxTextFile {
   
@@ -87,6 +35,8 @@ object MxSystemState {
           .addField(_.perms)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[TextFile] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[TextFile] = cats.Eq.fromUniversalEquals
     
@@ -135,6 +85,68 @@ object MxSystemState {
   
   
   
+  trait MxSecretsTextFile {
+  
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[SecretsTextFile,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[SecretsTextFile,parameters.type] = builder
+    
+    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[SecretsTextFile,a8.shared.json.ast.JsObj] =
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.filename)
+          .addField(_.contents)
+          .addField(_.perms)
+      )
+      .build
+    
+    implicit val zioEq: zio.prelude.Equal[SecretsTextFile] = zio.prelude.Equal.default
+    
+    implicit val catsEq: cats.Eq[SecretsTextFile] = cats.Eq.fromUniversalEquals
+    
+    lazy val generator: Generator[SecretsTextFile,parameters.type] =  {
+      val constructors = Constructors[SecretsTextFile](3, unsafe.iterRawConstruct)
+      Generator(constructors, parameters)
+    }
+    
+    object parameters {
+      lazy val filename: CaseClassParm[SecretsTextFile,String] = CaseClassParm[SecretsTextFile,String]("filename", _.filename, (d,v) => d.copy(filename = v), None, 0)
+      lazy val contents: CaseClassParm[SecretsTextFile,SecretContent] = CaseClassParm[SecretsTextFile,SecretContent]("contents", _.contents, (d,v) => d.copy(contents = v), None, 1)
+      lazy val perms: CaseClassParm[SecretsTextFile,UnixPerms] = CaseClassParm[SecretsTextFile,UnixPerms]("perms", _.perms, (d,v) => d.copy(perms = v), Some(()=> UnixPerms.empty), 2)
+    }
+    
+    
+    object unsafe {
+    
+      def rawConstruct(values: IndexedSeq[Any]): SecretsTextFile = {
+        SecretsTextFile(
+          filename = values(0).asInstanceOf[String],
+          contents = values(1).asInstanceOf[SecretContent],
+          perms = values(2).asInstanceOf[UnixPerms],
+        )
+      }
+      def iterRawConstruct(values: Iterator[Any]): SecretsTextFile = {
+        val value =
+          SecretsTextFile(
+            filename = values.next().asInstanceOf[String],
+            contents = values.next().asInstanceOf[SecretContent],
+            perms = values.next().asInstanceOf[UnixPerms],
+          )
+        if ( values.hasNext )
+           sys.error("")
+        value
+      }
+      def typedConstruct(filename: String, contents: SecretContent, perms: UnixPerms): SecretsTextFile =
+        SecretsTextFile(filename, contents, perms)
+    
+    }
+    
+    
+    lazy val typeName = "SecretsTextFile"
+  
+  }
+  
+  
+  
+  
   trait MxJavaAppInstall {
   
     protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[JavaAppInstall,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[JavaAppInstall,parameters.type] = builder
@@ -148,6 +160,8 @@ object MxSystemState {
           .addField(_.gitAppDirectory)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[JavaAppInstall] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[JavaAppInstall] = cats.Eq.fromUniversalEquals
     
@@ -211,6 +225,8 @@ object MxSystemState {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[Directory] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[Directory] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[Directory,parameters.type] =  {
@@ -262,11 +278,13 @@ object MxSystemState {
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[Systemd,a8.shared.json.ast.JsObj] =
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
-          .addField(_.user)
           .addField(_.unitName)
+          .addField(_.enable)
           .addField(_.unitFiles)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[Systemd] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[Systemd] = cats.Eq.fromUniversalEquals
     
@@ -276,8 +294,8 @@ object MxSystemState {
     }
     
     object parameters {
-      lazy val user: CaseClassParm[Systemd,UserLogin] = CaseClassParm[Systemd,UserLogin]("user", _.user, (d,v) => d.copy(user = v), None, 0)
-      lazy val unitName: CaseClassParm[Systemd,String] = CaseClassParm[Systemd,String]("unitName", _.unitName, (d,v) => d.copy(unitName = v), None, 1)
+      lazy val unitName: CaseClassParm[Systemd,String] = CaseClassParm[Systemd,String]("unitName", _.unitName, (d,v) => d.copy(unitName = v), None, 0)
+      lazy val enable: CaseClassParm[Systemd,Vector[String]] = CaseClassParm[Systemd,Vector[String]]("enable", _.enable, (d,v) => d.copy(enable = v), Some(()=> Vector.empty), 1)
       lazy val unitFiles: CaseClassParm[Systemd,Vector[TextFile]] = CaseClassParm[Systemd,Vector[TextFile]]("unitFiles", _.unitFiles, (d,v) => d.copy(unitFiles = v), None, 2)
     }
     
@@ -286,24 +304,24 @@ object MxSystemState {
     
       def rawConstruct(values: IndexedSeq[Any]): Systemd = {
         Systemd(
-          user = values(0).asInstanceOf[UserLogin],
-          unitName = values(1).asInstanceOf[String],
+          unitName = values(0).asInstanceOf[String],
+          enable = values(1).asInstanceOf[Vector[String]],
           unitFiles = values(2).asInstanceOf[Vector[TextFile]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): Systemd = {
         val value =
           Systemd(
-            user = values.next().asInstanceOf[UserLogin],
             unitName = values.next().asInstanceOf[String],
+            enable = values.next().asInstanceOf[Vector[String]],
             unitFiles = values.next().asInstanceOf[Vector[TextFile]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(user: UserLogin, unitName: String, unitFiles: Vector[TextFile]): Systemd =
-        Systemd(user, unitName, unitFiles)
+      def typedConstruct(unitName: String, enable: Vector[String], unitFiles: Vector[TextFile]): Systemd =
+        Systemd(unitName, enable, unitFiles)
     
     }
     
@@ -325,6 +343,8 @@ object MxSystemState {
           .addField(_.configFile)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[Supervisor] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[Supervisor] = cats.Eq.fromUniversalEquals
     
@@ -378,6 +398,8 @@ object MxSystemState {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[Caddy] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[Caddy] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[Caddy,parameters.type] =  {
@@ -430,6 +452,8 @@ object MxSystemState {
           .addField(_.states)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[Composite] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[Composite] = cats.Eq.fromUniversalEquals
     
@@ -485,6 +509,8 @@ object MxSystemState {
           .addField(_.data)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[HealthCheck] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[HealthCheck] = cats.Eq.fromUniversalEquals
     

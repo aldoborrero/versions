@@ -3,10 +3,10 @@ package io.accur8.neodeploy.systemstate
 import a8.shared.CompanionGen
 import a8.shared.json.UnionCodecBuilder
 import io.accur8.neodeploy.HealthchecksDotIo
-import io.accur8.neodeploy.MxSystemState._
 import io.accur8.neodeploy.model.Install.FromRepo
 import io.accur8.neodeploy.model.{ApplicationDescriptor, UserLogin}
-import io.accur8.neodeploy.systemstate.SystemStateModel.UnixPerms
+import io.accur8.neodeploy.systemstate.MxSystemState._
+import io.accur8.neodeploy.systemstate.SystemStateModel._
 
 
 
@@ -19,6 +19,18 @@ object SystemState {
     contents: String,
     perms: UnixPerms = UnixPerms.empty,
   ) extends SystemState
+
+  object SecretsTextFile extends MxSecretsTextFile {
+  }
+  @CompanionGen
+  case class SecretsTextFile(
+    filename: String,
+    contents: SecretContent,
+    perms: UnixPerms = UnixPerms.empty,
+  ) extends SystemState {
+    def asTextFile =
+      TextFile(filename, contents.value, perms)
+  }
 
   object JavaAppInstall extends MxJavaAppInstall
   @CompanionGen
@@ -39,8 +51,8 @@ object SystemState {
   object Systemd extends MxSystemd
   @CompanionGen
   case class Systemd(
-    user: UserLogin,
     unitName: String,
+    enable: Vector[String] = Vector.empty,
     unitFiles: Vector[TextFile],
   ) extends HasSubStates {
     override def subStates: Vector[SystemState] = unitFiles

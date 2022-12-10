@@ -4,7 +4,6 @@ import a8.shared.{CompanionGen, StringValue}
 import a8.shared.SharedImports._
 import io.accur8.neodeploy.HealthchecksDotIo.{ApiAuthToken, CheckReadOnly, CheckUpsertRequest, impl}
 import io.accur8.neodeploy.MxHealthchecksDotIo._
-import io.accur8.neodeploy.dsl.Step
 import zio.{Task, ZIO}
 
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
@@ -114,6 +113,7 @@ object HealthchecksDotIo {
 
   object ApiAuthToken extends StringValue.Companion[ApiAuthToken]
   case class ApiAuthToken(value: String) extends StringValue
+
 }
 
 case class HealthchecksDotIo(apiAuthToken: ApiAuthToken) { self =>
@@ -218,27 +218,6 @@ case class HealthchecksDotIo(apiAuthToken: ApiAuthToken) { self =>
         case None =>
           zsucceed(None)
       }
-  }
-
-  object step {
-
-    def pause(name: String): Step = {
-      ???
-//      Step.rawEffect(
-//        s"disable healthchecks.io ${name} check",
-//        ZIO.attemptBlocking(!doesCheckExist(name)),
-//        ZIO.attemptBlocking(self.pause(name)),
-//      )
-    }
-
-    def upsert(check: CheckUpsertRequest): Step =
-      ???
-//      Step.rawEffect(
-//        s"insert healthchecks.io ${check.name} check",
-//        ZIO.attemptBlocking(!doesCheckExist(check.name)),
-//        ZIO.attemptBlocking(insertCheckIfItDoesNotExist(check))
-//      )
-
   }
 
 }

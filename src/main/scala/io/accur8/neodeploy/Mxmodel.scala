@@ -38,6 +38,8 @@ object Mxmodel {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[FromRepo] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[FromRepo] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[FromRepo,parameters.type] =  {
@@ -102,6 +104,8 @@ object Mxmodel {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[SupervisorDescriptor] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[SupervisorDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[SupervisorDescriptor,parameters.type] =  {
@@ -162,6 +166,8 @@ object Mxmodel {
           .addField(_.description)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[SystemdDescriptor] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[SystemdDescriptor] = cats.Eq.fromUniversalEquals
     
@@ -228,6 +234,8 @@ object Mxmodel {
           .addField(_.launcher)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[ApplicationDescriptor] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[ApplicationDescriptor] = cats.Eq.fromUniversalEquals
     
@@ -330,6 +338,8 @@ object Mxmodel {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[UserDescriptor] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[UserDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[UserDescriptor,parameters.type] =  {
@@ -407,6 +417,8 @@ object Mxmodel {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[RSnapshotClientDescriptor] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[RSnapshotClientDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[RSnapshotClientDescriptor,parameters.type] =  {
@@ -474,6 +486,8 @@ object Mxmodel {
           .addField(_.runDir)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[RSnapshotServerDescriptor] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[RSnapshotServerDescriptor] = cats.Eq.fromUniversalEquals
     
@@ -543,6 +557,8 @@ object Mxmodel {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[PgbackrestClientDescriptor] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[PgbackrestClientDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[PgbackrestClientDescriptor,parameters.type] =  {
@@ -609,6 +625,8 @@ object Mxmodel {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[PgbackrestServerDescriptor] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[PgbackrestServerDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[PgbackrestServerDescriptor,parameters.type] =  {
@@ -674,6 +692,8 @@ object Mxmodel {
           .addField(_.supervisorctlExec)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[ServerDescriptor] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[ServerDescriptor] = cats.Eq.fromUniversalEquals
     
@@ -753,6 +773,8 @@ object Mxmodel {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[RepositoryDescriptor] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[RepositoryDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[RepositoryDescriptor,parameters.type] =  {
@@ -814,6 +836,8 @@ object Mxmodel {
           .addField(_.members)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[Personnel] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[Personnel] = cats.Eq.fromUniversalEquals
     

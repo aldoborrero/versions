@@ -32,6 +32,8 @@ object Mxmodel {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[ArtifactResponse] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[ArtifactResponse] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[ArtifactResponse,parameters.type] =  {
@@ -87,6 +89,8 @@ object Mxmodel {
           .addField(_.artifacts)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[ResolutionResponse] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[ResolutionResponse] = cats.Eq.fromUniversalEquals
     
@@ -146,6 +150,8 @@ object Mxmodel {
           .addField(_.branch)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[ResolutionRequest] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[ResolutionRequest] = cats.Eq.fromUniversalEquals
     

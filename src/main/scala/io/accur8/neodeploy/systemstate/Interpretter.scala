@@ -3,12 +3,12 @@ package io.accur8.neodeploy.systemstate
 import a8.shared.FileSystem
 import a8.shared.SharedImports._
 import io.accur8.neodeploy.HealthchecksDotIo
-import io.accur8.neodeploy.dsl.Step.M
 import io.accur8.neodeploy.model.ApplicationDescriptor
-import io.accur8.neodeploy.systemstate.SystemStateModel.{PreviousState, StateKey}
+import io.accur8.neodeploy.systemstate.SystemStateModel._
 import zio.ZIO
 
 object Interpretter {
+
 
 
 
@@ -48,6 +48,12 @@ object Interpretter {
       case SystemState.Empty =>
         zsucceed(ret(false))
       case SystemState.TextFile(f, expectedContents, perms) =>
+        val file = FileSystem.file(f)
+        for {
+          permissionActionNeeded0 <- permissionsActionNeeded(file, perms)
+          actualContents <- readContents(file)
+        } yield ret(permissionActionNeeded0 || (actualContents !== some(expectedContents)))
+      case SystemState.SecretsTextFile(f, SecretContent(expectedContents), perms) =>
         val file = FileSystem.file(f)
         for {
           permissionActionNeeded0 <- permissionsActionNeeded(file, perms)
@@ -113,6 +119,10 @@ object Interpretter {
         // ??? TODO properly disable systemd unit
         zunit
       case SystemState.TextFile(f, _, _) =>
+        ZIO.attemptBlocking(
+          FileSystem.file(f).delete()
+        )
+      case SystemState.SecretsTextFile(f, _, _) =>
         ZIO.attemptBlocking(
           FileSystem.file(f).delete()
         )

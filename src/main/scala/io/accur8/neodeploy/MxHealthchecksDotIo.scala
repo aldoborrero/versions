@@ -57,6 +57,8 @@ object MxHealthchecksDotIo {
       )
       .build
     
+    implicit val zioEq: zio.prelude.Equal[CheckReadOnly] = zio.prelude.Equal.default
+    
     implicit val catsEq: cats.Eq[CheckReadOnly] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[CheckReadOnly,parameters.type] =  {
@@ -190,6 +192,8 @@ object MxHealthchecksDotIo {
           .addField(_.unique)
       )
       .build
+    
+    implicit val zioEq: zio.prelude.Equal[CheckUpsertRequest] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[CheckUpsertRequest] = cats.Eq.fromUniversalEquals
     

@@ -3,18 +3,14 @@ package io.accur8.neodeploy
 import a8.shared.FileSystem
 import a8.shared.SharedImports._
 import io.accur8.neodeploy.Systemd.{TimerFile, UnitFile}
-import io.accur8.neodeploy.dsl.Step
-import io.accur8.neodeploy.dsl.Step.impl.ParallelSteps
 import io.accur8.neodeploy.resolvedmodel.{ResolvedPgbackrestClient, ResolvedPgbackrestServer, ResolvedRSnapshotServer, ResolvedUser}
 import io.accur8.neodeploy.systemstate.SystemState
 import zio.Task
 
 
-object PgbackrestConfgSync extends ConfigFileSync[ResolvedUser] {
+object PgbackrestConfgSync extends Sync[ResolvedUser] {
 
-  import Step._
-
-  override def configFile(input: ResolvedUser): FileSystem.File =
+  def configFile(input: ResolvedUser): FileSystem.File =
     FileSystem.file(
       input
         .plugins
@@ -23,9 +19,6 @@ object PgbackrestConfgSync extends ConfigFileSync[ResolvedUser] {
         .orElse(input.plugins.pgbackrestServerOpt.map(_.descriptor.configFile))
         .flatten
         .getOrElse("/etc/pgbackrest/pgbackrest.conf"))
-
-  override def configFileContents(input: ResolvedUser): Task[Option[String]] =
-    zsucceed(fileContents(input))
 
   def fileContents(input: ResolvedUser): Option[String] =
     input

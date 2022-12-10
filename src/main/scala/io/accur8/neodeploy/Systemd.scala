@@ -2,15 +2,14 @@ package io.accur8.neodeploy
 
 
 import a8.shared.FileSystem.Directory
-import io.accur8.neodeploy.dsl.Step
 import a8.shared.SharedImports._
-import io.accur8.neodeploy.dsl.Step.impl.ParallelSteps
 import io.accur8.neodeploy.resolvedmodel.ResolvedUser
 import zio.ZIO
 import PredefAssist._
 import a8.shared.FileSystem
 import io.accur8.neodeploy.model.OnCalendarValue
 import io.accur8.neodeploy.systemstate.SystemState
+import io.accur8.neodeploy.systemstate.SystemStateModel._
 
 /**
  * user level systemd service and timers
@@ -18,8 +17,6 @@ import io.accur8.neodeploy.systemstate.SystemState
  *        https://opensource.com/article/20/7/systemd-timers
  */
 object Systemd {
-
-  import Step._
 
   case class UnitFile(
     Type: String,
@@ -37,18 +34,18 @@ object Systemd {
     )
   }
 
-  def removeStep(
-    unitName: String,
-    user: ResolvedUser,
-  ): Step = {
-    val systemdUserDir = user.home.subdir(z".config/systemd/user")
-    (
-      Step.runCommand("systemctl", "stop", unitName)
-        >> Step.runCommand("systemctl", "disable", unitName)
-        >> Step.delete(systemdUserDir.file(s"${unitName}.service"))
-        >> Step.delete(systemdUserDir.file(s"${unitName}.timer"))
-    )
-  }
+//  def removeStep(
+//    unitName: String,
+//    user: ResolvedUser,
+//  ): Step = {
+//    val systemdUserDir = user.home.subdir(z".config/systemd/user")
+//    (
+//      Step.runCommand("systemctl", "stop", unitName)
+//        >> Step.runCommand("systemctl", "disable", unitName)
+//        >> Step.delete(systemdUserDir.file(s"${unitName}.service"))
+//        >> Step.delete(systemdUserDir.file(s"${unitName}.timer"))
+//    )
+//  }
 
     //  systemctl stop [servicename]
     //    systemctl disable [servicename]
@@ -68,19 +65,7 @@ object Systemd {
     user: ResolvedUser,
     unitFile: UnitFile,
     timerFileOpt: Option[TimerFile] = None,
-  ): SystemState = ???
-
-
-    /**
-    *  from here https://wiki.archlinux.org/title/systemd/User#Automatic_start-up_of_systemd_user_instances
-    */
-  def setupStep(
-    unitName: String,
-    description: String,
-    user: ResolvedUser,
-    unitFile: UnitFile,
-    timerFileOpt: Option[TimerFile] = None,
-  ): Step = {
+  ): SystemState = {
 
     val directory = user.home.subdir(z".config/systemd/user")
 
@@ -97,13 +82,13 @@ object Systemd {
          |WantedBy=multi-user.target
          |""".stripMargin
 
-    val unitFileStep =
-      Step.fileStep(
-        file = directory.file(z"${unitName}.service"),
-        content = unitFileContents,
+    val unitFileState =
+      SystemState.TextFile(
+        filename = directory.file(z"${unitName}.service").absolutePath,
+        contents = unitFileContents,
       )
 
-    val timerFileStepOpt =
+    val timerFileStateOpt =
       timerFileOpt.map {timerFile =>
 
         val timerFileContents =
@@ -118,39 +103,39 @@ object Systemd {
              |WantedBy=timers.target
           """.stripMargin
 
-        Step.fileStep(
-          file = directory.file(z"${unitName}.timer"),
-          content = timerFileContents,
+        SystemState.TextFile(
+          filename = directory.file(z"${unitName}.timer").absolutePath,
+          contents = timerFileContents,
         )
       }
 
-    def enableTimerEffect: M[Unit] = {
-      Overrides
-        .userSystemCtlCommand
-        .appendArgs("--user", "enable", "--now", z"${unitName}.timer")
-        .exec()
-        .as(())
-    }
+//    def enableTimerEffect: M[Unit] = {
+//      Overrides
+//        .userSystemCtlCommand
+//        .appendArgs("--user", "enable", "--now", z"${unitName}.timer")
+//        .exec()
+//        .as(())
+//    }
+//
+//    val ensureUserLingerIsEnabled = {
+//      val doesLingerNeedToBeEnabledEffect =
+//        ZIO.attemptBlocking(
+//          !FileSystem.file(z"/var/lib/systemd/linger/${user.login}").exists()
+//        )
+//
+//      Step.rawEffect(
+//        z"enable linger for ${user.login}",
+//        doesLingerNeedToBeEnabledEffect,
+//        Overrides.userLoginCtlCommand
+//          .appendArgs("enable-linger")
+//          .execDropOutput
+//      )
+//    }
 
-    val ensureUserLingerIsEnabled = {
-      val doesLingerNeedToBeEnabledEffect =
-        ZIO.attemptBlocking(
-          !FileSystem.file(z"/var/lib/systemd/linger/${user.login}").exists()
-        )
-
-      Step.rawEffect(
-        z"enable linger for ${user.login}",
-        doesLingerNeedToBeEnabledEffect,
-        Overrides.userLoginCtlCommand
-          .appendArgs("enable-linger")
-          .execDropOutput
-      )
-    }
-
-    ParallelSteps((unitFileStep.some ++ timerFileStepOpt).toVector)
-      .onActionRunAfter(s"enable systemd unit ${unitName}", enableTimerEffect)
-      .andThen(ensureUserLingerIsEnabled)
-      .span("systemd setup for " + unitName)
+    SystemState.Systemd(
+      unitName = unitName,
+      unitFiles = Vector(unitFileState) ++ timerFileStateOpt,
+    )
 
   }
 

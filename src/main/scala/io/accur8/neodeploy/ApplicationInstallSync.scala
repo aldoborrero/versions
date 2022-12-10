@@ -8,9 +8,7 @@ import a8.shared.SharedImports._
 import a8.shared.app.{Logging, LoggingF}
 import a8.versions.RepositoryOps.RepoConfigPrefix
 import coursier.core.{ModuleName, Organization}
-import io.accur8.neodeploy.ApplicationInstallSync.{Installer, State}
-import io.accur8.neodeploy.MxApplicationInstallSync._
-import io.accur8.neodeploy.Sync.{Phase, Step}
+import io.accur8.neodeploy.ApplicationInstallSync.Installer
 import io.accur8.neodeploy.model.Install.FromRepo
 import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, Install, Version}
 import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedServer}
@@ -113,8 +111,8 @@ object ApplicationInstallSync extends Logging with LoggingF {
 //      }
 //    }
 
-    def asSteps: Vector[Step] = {
-      ???
+//    def asSteps: Vector[Step] = {
+//      ???
 //      Vector(
 //        Step(
 //          phase = Phase.Apply,
@@ -122,7 +120,7 @@ object ApplicationInstallSync extends Logging with LoggingF {
 //          action = installAction,
 //        ),
 //      )
-    }
+//    }
 
     def symlinkConfig: Task[Unit] =
       updateSymLink(dir(installState.gitAppDirectory), appDir.file("config"))
@@ -152,18 +150,9 @@ object ApplicationInstallSync extends Logging with LoggingF {
 
   }
 
-  object State extends MxState
-  @CompanionGen
-  case class State(
-    appInstallDir: String,
-    fromRepo: FromRepo,
-    gitAppDirectory: String,
-    applicationDescriptor: ApplicationDescriptor,
-  )
-
 }
 
-case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends ApplicationSync[State] with LoggingF {
+case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends ApplicationSync with LoggingF {
 
   // Install
   //    create app directory
@@ -179,53 +168,53 @@ case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends 
 
   override val name: Sync.SyncName = Sync.SyncName("installer")
 
-  override def state(resolvedApp: ResolvedApp): Task[Option[State]] =
-    resolvedApp.descriptor.install match {
-      case fr: FromRepo =>
-        zsucceed(Some(
-          State(
-            appInstallDir = appsRootDirectory.unresolvedDirectory.subdir(resolvedApp.descriptor.name.value).toString(),
-            fromRepo = fr,
-            gitAppDirectory = resolvedApp.gitDirectory.toString(),
-            applicationDescriptor = resolvedApp.descriptor,
-          )
-        ))
-      case Install.Manual =>
-        zsucceed(None)
-    }
+//  override def state(resolvedApp: ResolvedApp): Task[Option[State]] =
+//    resolvedApp.descriptor.install match {
+//      case fr: FromRepo =>
+//        zsucceed(Some(
+//          State(
+//            appInstallDir = appsRootDirectory.unresolvedDirectory.subdir(resolvedApp.descriptor.name.value).toString(),
+//            fromRepo = fr,
+//            gitAppDirectory = resolvedApp.gitDirectory.toString(),
+//            applicationDescriptor = resolvedApp.descriptor,
+//          )
+//        ))
+//      case Install.Manual =>
+//        zsucceed(None)
+//    }
 
 
-  override def resolveStepsFromModification(modification: Sync.Modification[State, ResolvedApp]): Vector[Sync.Step] = {
-    modification match {
-      case Sync.Update(_, newState, newInput) =>
-        val javaAppInstall =
-          JavaAppInstall(
-            appInstallDir = ???,
-            fromRepo = ???,
-            descriptor = ???,
-            gitAppDirectory = ???
-          )
-        Installer(javaAppInstall).asSteps
-      case Sync.Delete(currentState) =>
-        Vector(Step(
-          Phase.Apply,
-          z"uninstall ${currentState.applicationDescriptor.name} by deleting it's ${currentState.appInstallDir} installed directory",
-          ZIO.attemptBlocking(
-            dir(currentState.appInstallDir).delete()
-          )
-        ))
-      case Sync.Insert(newState, newInput) =>
-        val javaAppInstall =
-          JavaAppInstall(
-            gitAppDirectory = newInput.gitDirectory.absolutePath,
-            descriptor = newInput.descriptor,
-            fromRepo = newState.fromRepo,
-            appInstallDir = newState.appInstallDir,
-          )
-        Installer(javaAppInstall)
-          .asSteps
-    }
-  }
+//  override def resolveStepsFromModification(modification: Sync.Modification[State, ResolvedApp]): Vector[Sync.Step] = {
+//    modification match {
+//      case Sync.Update(_, newState, newInput) =>
+//        val javaAppInstall =
+//          JavaAppInstall(
+//            appInstallDir = ???,
+//            fromRepo = ???,
+//            descriptor = ???,
+//            gitAppDirectory = ???
+//          )
+//        Installer(javaAppInstall).asSteps
+//      case Sync.Delete(currentState) =>
+//        Vector(Step(
+//          Phase.Apply,
+//          z"uninstall ${currentState.applicationDescriptor.name} by deleting it's ${currentState.appInstallDir} installed directory",
+//          ZIO.attemptBlocking(
+//            dir(currentState.appInstallDir).delete()
+//          )
+//        ))
+//      case Sync.Insert(newState, newInput) =>
+//        val javaAppInstall =
+//          JavaAppInstall(
+//            gitAppDirectory = newInput.gitDirectory.absolutePath,
+//            descriptor = newInput.descriptor,
+//            fromRepo = newState.fromRepo,
+//            appInstallDir = newState.appInstallDir,
+//          )
+//        Installer(javaAppInstall)
+//          .asSteps
+//    }
+//  }
 
   override def rawSystemState(resolvedApp: ResolvedApp): SystemState =
     resolvedApp.descriptor.install match {
