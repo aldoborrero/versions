@@ -12,6 +12,7 @@ import a8.versions.Exec
 import io.accur8.neodeploy.Sync.{Step, SyncName}
 import PredefAssist._
 import io.accur8.neodeploy.ConfigFileSync.State
+import io.accur8.neodeploy.systemstate.SystemState
 
 object Sync extends LoggingF {
 
@@ -172,7 +173,12 @@ abstract class Sync[A : JsonCodec, B] {
       }
   }
 
-  //  def run(currentStateJs: Option[JsVal], newInput: Option[B]): Task[Option[JsVal]] = {
+  def systemState(input: B): Task[SystemState] =
+    zsucceed(rawSystemState(input))
+
+  def rawSystemState(input: B): SystemState
+
+//  def run(currentStateJs: Option[JsVal], newInput: Option[B]): Task[Option[JsVal]] = {
 //    val currentState = currentStateJs.map(_.unsafeAs[A])
 //    actions(currentState, newInput)
 //      .flatMap { case (newState, action) =>

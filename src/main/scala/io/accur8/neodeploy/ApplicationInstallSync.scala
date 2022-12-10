@@ -16,17 +16,21 @@ import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, Inst
 import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedServer}
 import zio.{Task, ZIO}
 import a8.versions.RepositoryOps
+import io.accur8.neodeploy.systemstate.SystemState
+import io.accur8.neodeploy.systemstate.SystemState.JavaAppInstall
+
 import java.nio.file.Paths
 
 object ApplicationInstallSync extends Logging with LoggingF {
 
-  case class Installer(server: ResolvedServer, state: State) {
+  case class Installer(installState: SystemState.JavaAppInstall) {
 
-    lazy val appDir = dir(state.appInstallDir)
+    lazy val gitAppDirectory = dir(installState.gitAppDirectory)
+
+    lazy val appDir = dir(installState.appInstallDir)
 
     def applicationDescriptor: ApplicationDescriptor =
-      state
-        .applicationDescriptor
+      installState.descriptor
 
     def appRootBinDir = appDir.parentOpt.get.subdir("bin").resolve
 
@@ -71,51 +75,62 @@ object ApplicationInstallSync extends Logging with LoggingF {
     )
 
 
-    def runInstallFromRepoExcternalProc(repo: FromRepo): Task[Unit] = {
-      ZIO.attemptBlocking {
-        val a8VersionsExec = server.descriptor.a8VersionsExec.getOrElse("a8-versions")
-        val repoConfig = applicationDescriptor.repository.getOrElse(RepoConfigPrefix.default)
-        val args =
-          Seq(
-            a8VersionsExec,
-            "install",
-            "--organization",
-            repo.organization.value,
-            "--artifact",
-            repo.artifact.value,
-            "--version",
-            repo.version.value,
-            "--install-dir",
-            appDir.canonicalPath,
-            "--lib-dir-kind",
-            "copy",
-            "--webapp-explode",
-            repo.webappExplode.toString,
-            "--backup",
-            "false",
-            "--repo",
-            repoConfig.value,
-          )
-        val result =
-          Exec(args:_*)
-            .inDirectory(appDir)
-            .execCaptureOutput()
-        result
-      }.flatMap {
-        case result if result.exitCode === 0 =>
-          loggerF.debug(s"install of ${applicationDescriptor.name} completed successfully")
-        case result =>
-          loggerF.warn(s"install of ${applicationDescriptor.name} non-zero exit code ${result.exitCode}\nstdout=${result.stdout}\nstderr=\n${result.stderr}")
-      }
+//    def runInstallFromRepoExternalProc(repo: FromRepo): Task[Unit] = {
+//      ZIO.attemptBlocking {
+//        val a8VersionsExec = server.descriptor.a8VersionsExec.getOrElse("a8-versions")
+//        val repoConfig = applicationDescriptor.repository.getOrElse(RepoConfigPrefix.default)
+//        val args =
+//          Seq(
+//            a8VersionsExec,
+//            "install",
+//            "--organization",
+//            repo.organization.value,
+//            "--artifact",
+//            repo.artifact.value,
+//            "--version",
+//            repo.version.value,
+//            "--install-dir",
+//            appDir.canonicalPath,
+//            "--lib-dir-kind",
+//            "copy",
+//            "--webapp-explode",
+//            repo.webappExplode.toString,
+//            "--backup",
+//            "false",
+//            "--repo",
+//            repoConfig.value,
+//          )
+//        val result =
+//          Exec(args:_*)
+//            .inDirectory(appDir)
+//            .execCaptureOutput()
+//        result
+//      }.flatMap {
+//        case result if result.exitCode === 0 =>
+//          loggerF.debug(s"install of ${applicationDescriptor.name} completed successfully")
+//        case result =>
+//          loggerF.warn(s"install of ${applicationDescriptor.name} non-zero exit code ${result.exitCode}\nstdout=${result.stdout}\nstderr=\n${result.stderr}")
+//      }
+//    }
+
+    def asSteps: Vector[Step] = {
+      ???
+//      Vector(
+//        Step(
+//          phase = Phase.Apply,
+//          description = z"install ${state.applicationDescriptor.name} ${applicationDescriptor.install.description} into ${appDir.toString}",
+//          action = installAction,
+//        ),
+//      )
     }
 
     def symlinkConfig: Task[Unit] =
-      updateSymLink(dir(state.gitAppDirectory), appDir.file("config"))
+      updateSymLink(dir(installState.gitAppDirectory), appDir.file("config"))
 
     def symlinkJavaExecutable: Task[Unit] =
       updateSymLink(
-        target = appRootBinDir.file(z"java${state.applicationDescriptor.javaVersion}"),
-        link = appRootBinDir.file(z"${state.applicationDescriptor.name}"),
+        target = appRootBinDir.file(z"java${applicationDescriptor.javaVersion}"),
+        link = appRootBinDir.file(z"${applicationDescriptor.name}"),
       )
 
     def updateSymLink(
@@ -126,15 +141,6 @@ object ApplicationInstallSync extends Logging with LoggingF {
         _ <- PathAssist.symlink(target, link, deleteIfExists = false)
       } yield ()
     }
-
-    def asSteps: Vector[Step] =
-      Vector(
-        Step(
-          phase = Phase.Apply,
-          description = z"install ${state.applicationDescriptor.name} ${applicationDescriptor.install.description} into ${appDir.toString}",
-          action = installAction,
-        ),
-      )
 
     def installAction: Task[Unit] =
       for {
@@ -192,7 +198,14 @@ case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends 
   override def resolveStepsFromModification(modification: Sync.Modification[State, ResolvedApp]): Vector[Sync.Step] = {
     modification match {
       case Sync.Update(_, newState, newInput) =>
-        Installer(newInput.server, newState).asSteps
+        val javaAppInstall =
+          JavaAppInstall(
+            appInstallDir = ???,
+            fromRepo = ???,
+            descriptor = ???,
+            gitAppDirectory = ???
+          )
+        Installer(javaAppInstall).asSteps
       case Sync.Delete(currentState) =>
         Vector(Step(
           Phase.Apply,
@@ -202,9 +215,29 @@ case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends 
           )
         ))
       case Sync.Insert(newState, newInput) =>
-        Installer(newInput.server, newState).asSteps
+        val javaAppInstall =
+          JavaAppInstall(
+            gitAppDirectory = newInput.gitDirectory.absolutePath,
+            descriptor = newInput.descriptor,
+            fromRepo = newState.fromRepo,
+            appInstallDir = newState.appInstallDir,
+          )
+        Installer(javaAppInstall)
+          .asSteps
     }
   }
 
+  override def rawSystemState(resolvedApp: ResolvedApp): SystemState =
+    resolvedApp.descriptor.install match {
+      case fr: FromRepo =>
+        SystemState.JavaAppInstall(
+          gitAppDirectory = resolvedApp.gitDirectory.absolutePath,
+          descriptor = resolvedApp.descriptor,
+          appInstallDir = appsRootDirectory.unresolvedDirectory.subdir(resolvedApp.descriptor.name.value).toString(),
+          fromRepo = fr,
+        )
+      case Install.Manual =>
+        SystemState.Empty
+    }
 
 }

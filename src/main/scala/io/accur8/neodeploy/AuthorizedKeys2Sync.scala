@@ -7,8 +7,11 @@ import a8.shared.SharedImports._
 import a8.shared.app.Logging
 import a8.shared.{FileSystem, ZString}
 import com.softwaremill.sttp.Uri
+import io.accur8.neodeploy.systemstate.SystemState.Directory
 import io.accur8.neodeploy.model.{AuthorizedKey, UserDescriptor}
 import io.accur8.neodeploy.resolvedmodel.ResolvedUser
+import io.accur8.neodeploy.systemstate.SystemState
+import io.accur8.neodeploy.systemstate.SystemStateModel.UnixPerms
 
 object AuthorizedKeys2Sync extends ConfigFileSync[ResolvedUser] with Logging {
 
@@ -21,12 +24,14 @@ object AuthorizedKeys2Sync extends ConfigFileSync[ResolvedUser] with Logging {
 
   override def configFileContents(input: ResolvedUser): Task[Option[String]] =
     zsucceed(
-      input
-        .resolvedAuthorizedKeys
-        .map(_.value)
-        .mkString("\n")
-        .some
+      contents(input).some
     )
+
+  def contents(input: ResolvedUser): String =
+    input
+      .resolvedAuthorizedKeys
+      .map(_.value)
+      .mkString("\n")
 
   override def resolveStepsFromModification(modification: Sync.Modification[ConfigFileSync.State, ResolvedUser]): Vector[Sync.Step] = {
     def setSshDirPermsStep(user: ResolvedUser): Option[Sync.Step] =
@@ -45,5 +50,17 @@ object AuthorizedKeys2Sync extends ConfigFileSync[ResolvedUser] with Logging {
     super.resolveStepsFromModification(modification) ++ setSshDirPerms
 
   }
+
+  override def rawSystemState(input: ResolvedUser): SystemState = {
+    val file = configFile(input)
+    SystemState.Composite(
+      "authorized keys 2",
+      Vector(
+        SystemState.Directory(file.parent.absolutePath, UnixPerms("0700")),
+        SystemState.TextFile(file.absolutePath, contents(input), UnixPerms("0644"))
+      )
+    )
+  }
+
 }
 

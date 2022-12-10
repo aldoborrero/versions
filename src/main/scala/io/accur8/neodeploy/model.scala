@@ -150,6 +150,7 @@ object model extends LoggingF {
   sealed trait Launcher
 
   object ApplicationDescriptor extends MxApplicationDescriptor {
+    implicit val equal = zio.prelude.Equal.default
   }
   @CompanionGen
   case class ApplicationDescriptor(

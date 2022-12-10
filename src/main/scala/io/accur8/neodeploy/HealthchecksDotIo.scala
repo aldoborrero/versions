@@ -5,7 +5,7 @@ import a8.shared.SharedImports._
 import io.accur8.neodeploy.HealthchecksDotIo.{ApiAuthToken, CheckReadOnly, CheckUpsertRequest, impl}
 import io.accur8.neodeploy.MxHealthchecksDotIo._
 import io.accur8.neodeploy.dsl.Step
-import zio.ZIO
+import zio.{Task, ZIO}
 
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.time.Duration
@@ -21,8 +21,10 @@ object HealthchecksDotIo {
         .connectTimeout(Duration.ofSeconds(20))
         .build();
 
-    def send(request: HttpRequest): HttpResponse[String] =
-      httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+    def send(request: HttpRequest): Task[HttpResponse[String]] =
+      ZIO.attemptBlocking(
+        httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+      )
 
   }
 
@@ -56,7 +58,35 @@ object HealthchecksDotIo {
     subject_fail: Option[String] = None,
     timeout: Option[Long] = None,
     last_duration: Option[Long] = None,
-  )
+  ) {
+
+    def resolvedTags: Vector[String] =
+      tags
+        .splitList(" ")
+        .toVector
+
+    def matches(upsertRequest: CheckUpsertRequest) = {
+
+      def check[A](actual: A, getter: CheckUpsertRequest=>Option[A]): Boolean = {
+        getter(upsertRequest) match {
+          case None =>
+            true
+          case Some(v) =>
+            v == actual
+        }
+      }
+
+      (
+        name === upsertRequest.name
+          && check(tags, _.tags)
+          && check(desc, _.desc)
+          && check(timeout, _.timeout)
+          && check(grace, _.grace)
+          && check(schedule, _.schedule)
+          && check(tz, _.tz)
+      )
+    }
+  }
 
 
   /**
@@ -75,7 +105,12 @@ object HealthchecksDotIo {
     schedule: Option[String] = None,
     tz: Option[String] = None,
     unique: Iterable[String] = Iterable.empty,
-  )
+  ) {
+    def resolvedTags: Vector[String] =
+      tags
+        .toVector
+        .flatMap(_.splitList(" "))
+  }
 
   object ApiAuthToken extends StringValue.Companion[ApiAuthToken]
   case class ApiAuthToken(value: String) extends StringValue
@@ -88,36 +123,48 @@ case class HealthchecksDotIo(apiAuthToken: ApiAuthToken) { self =>
       .newBuilder()
       .header("X-Api-Key", apiAuthToken.value)
 
-  def listChecks(): Iterable[CheckReadOnly] = {
+  def listChecks: Task[Iterable[CheckReadOnly]] = {
     val request =
       baseRequest
         .GET()
         .uri(java.net.URI.create("https://healthchecks.io/api/v1/checks/"))
         .build()
 
-    val response = impl.send(request)
+    impl.send(request)
+      .flatMap { response =>
+        if (response.statusCode() / 100 == 2) {
+          val responseJsv = json.unsafeParse(response.body())
+          responseJsv("checks").asF[Iterable[CheckReadOnly]]
+        } else {
+          zfail(new RuntimeException(s"Unexpected response from healthchecks.io: ${response.statusCode()} ${response.body()}"))
+        }
+      }
 
-    if (response.statusCode() / 100 == 2) {
-      val responseJsv = json.unsafeParse(response.body())
-      responseJsv("checks").unsafeAs[Iterable[CheckReadOnly]]
-    } else {
-      throw new RuntimeException(s"Unexpected response from healthchecks.io: ${response.statusCode()} ${response.body()}")
-    }
   }
 
+  def isUpdateNeeded(check: CheckUpsertRequest): Task[Boolean] =
+    fetchCheck(check.name)
+      .map {
+        case None =>
+          true
+        case Some(actualCheck) if actualCheck.matches(check) =>
+          true
+        case _ =>
+          false
+      }
 
-  def fetchCheck(name: String): Option[CheckReadOnly] =
-    listChecks()
-      .find(_.name == name)
+  def fetchCheck(name: String): Task[Option[CheckReadOnly]] =
+    listChecks
+      .map(_.find(_.name == name))
 
+  def doesCheckExist(name: String): Task[Boolean] =
+    fetchCheck(name)
+      .map(_.nonEmpty)
 
-  def doesCheckExist(name: String): Boolean =
-    listChecks()
-      .exists(_.name == name)
-
-  def insertCheckIfItDoesNotExist(check: CheckUpsertRequest): CheckReadOnly = {
+  def upsert(check: CheckUpsertRequest): Task[CheckReadOnly] = {
     val jsonRequestBody: HttpRequest.BodyPublisher =
       HttpRequest.BodyPublishers.ofString(check.prettyJson)
+
     val request =
       baseRequest
         .POST(jsonRequestBody)
@@ -125,53 +172,72 @@ case class HealthchecksDotIo(apiAuthToken: ApiAuthToken) { self =>
         .header("Content-Type", "application/json")
         .build()
 
-    val response = impl.send(request)
-
-    if ( response.statusCode() / 100 == 2 ) {
-      json.unsafeRead[CheckReadOnly](response.body())
-    } else {
-      throw new RuntimeException(s"Unexpected response from healthchecks.io: ${response.statusCode()} ${response.body()}")
-    }
+    impl.send(request)
+      .flatMap( response =>
+        if ( response.statusCode() / 100 == 2 ) {
+          json.readF[CheckReadOnly](response.body())
+        } else {
+          zfail(new RuntimeException(s"Unexpected response from healthchecks.io: ${response.statusCode()} ${response.body()}"))
+        }
+      )
 
   }
 
-  def pause(name: String): Unit = {
-    fetchCheck(name) match {
-      case Some(check) =>
-        val request =
-          baseRequest
-            .POST(HttpRequest.BodyPublishers.ofString(""))
-            .uri(java.net.URI.create(check.pause_url))
-            .build()
+  def disable(check: CheckUpsertRequest): Task[Option[CheckReadOnly]] = {
+    pause(check.name)
+      .flatMap {
+        case Some(cro) =>
+          val tags = (cro.resolvedTags ++ Vector("disabled")).distinct.mkString(" ")
+          upsert(check.copy(tags = Some(tags)))
+            .map(_.some)
+        case None =>
+          zsucceed(None)
+      }
+  }
 
-        val response = impl.send(request)
-        if (response.statusCode() / 100 == 2) {
-          json.unsafeRead[CheckReadOnly](response.body())
-        } else {
-          throw new RuntimeException(s"Unexpected response from healthchecks.io: ${response.statusCode()} ${response.body()}")
-        }
+  def pause(name: String): Task[Option[CheckReadOnly]] = {
+    fetchCheck(name)
+      .flatMap {
+        case Some(check) =>
+          val request =
+            baseRequest
+              .POST(HttpRequest.BodyPublishers.ofString(""))
+              .uri(java.net.URI.create(check.pause_url))
+              .build()
 
-      case None =>
-        ()
-    }
+          impl.send(request)
+            .flatMap( response =>
+              if (response.statusCode() / 100 == 2) {
+                json.readF[CheckReadOnly](response.body())
+                  .map(_.some)
+              } else {
+                zfail(new RuntimeException(s"Unexpected response from healthchecks.io: ${response.statusCode()} ${response.body()}"))
+              }
+            )
+
+        case None =>
+          zsucceed(None)
+      }
   }
 
   object step {
 
     def pause(name: String): Step = {
-      Step.rawEffect(
-        s"disable healthchecks.io ${name} check",
-        ZIO.attemptBlocking(!doesCheckExist(name)),
-        ZIO.attemptBlocking(self.pause(name)),
-      )
+      ???
+//      Step.rawEffect(
+//        s"disable healthchecks.io ${name} check",
+//        ZIO.attemptBlocking(!doesCheckExist(name)),
+//        ZIO.attemptBlocking(self.pause(name)),
+//      )
     }
 
     def upsert(check: CheckUpsertRequest): Step =
-      Step.rawEffect(
-        s"insert healthchecks.io ${check.name} check",
-        ZIO.attemptBlocking(!doesCheckExist(check.name)),
-        ZIO.attemptBlocking(insertCheckIfItDoesNotExist(check))
-      )
+      ???
+//      Step.rawEffect(
+//        s"insert healthchecks.io ${check.name} check",
+//        ZIO.attemptBlocking(!doesCheckExist(check.name)),
+//        ZIO.attemptBlocking(insertCheckIfItDoesNotExist(check))
+//      )
 
   }
 

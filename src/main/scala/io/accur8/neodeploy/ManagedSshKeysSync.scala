@@ -10,6 +10,8 @@ import io.accur8.neodeploy.Sync.Phase
 import io.accur8.neodeploy.resolvedmodel.ResolvedUser
 import zio.{Task, ZIO}
 import PredefAssist._
+import io.accur8.neodeploy.systemstate.SystemState
+import io.accur8.neodeploy.systemstate.SystemStateModel.UnixPerms
 
 object ManagedSshKeysSync {
 
@@ -71,6 +73,23 @@ class ManagedSshKeysSync extends Sync[State, ResolvedUser] with LoggingF {
         updateKeys(newInput)
     }
   }
+
+  /**
+   * ??? TODO lift this into IO monad
+   */
+  override def rawSystemState(user: ResolvedUser): SystemState = {
+    val publicKey = user.sshPublicKeyFileInHome
+    val privateKey = user.sshPublicKeyFileInHome
+    SystemState.Composite(
+      "authorized keys 2",
+      Vector(
+        SystemState.Directory(publicKey.parent.absolutePath, UnixPerms("0700")),
+        SystemState.TextFile(publicKey.absolutePath, publicKey.readAsString(), UnixPerms("0644")),
+        SystemState.TextFile(privateKey.absolutePath, privateKey.readAsString(), UnixPerms("0600")),
+      )
+    )
+  }
+
 
 }
 

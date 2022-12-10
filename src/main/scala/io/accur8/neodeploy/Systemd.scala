@@ -10,6 +10,7 @@ import zio.ZIO
 import PredefAssist._
 import a8.shared.FileSystem
 import io.accur8.neodeploy.model.OnCalendarValue
+import io.accur8.neodeploy.systemstate.SystemState
 
 /**
  * user level systemd service and timers
@@ -59,6 +60,18 @@ object Systemd {
     //  systemctl reset-failed
 
   /**
+   * from here https://wiki.archlinux.org/title/systemd/User#Automatic_start-up_of_systemd_user_instances
+   */
+  def systemState(
+    unitName: String,
+    description: String,
+    user: ResolvedUser,
+    unitFile: UnitFile,
+    timerFileOpt: Option[TimerFile] = None,
+  ): SystemState = ???
+
+
+    /**
     *  from here https://wiki.archlinux.org/title/systemd/User#Automatic_start-up_of_systemd_user_instances
     */
   def setupStep(

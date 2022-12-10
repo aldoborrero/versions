@@ -4,8 +4,9 @@ import a8.shared.SharedImports._
 import a8.shared.FileSystem.{Directory, File}
 import a8.shared.ZString
 import a8.shared.app.LoggingF
-import io.accur8.neodeploy.model.{CaddyDirectory}
+import io.accur8.neodeploy.model.CaddyDirectory
 import io.accur8.neodeploy.resolvedmodel.ResolvedApp
+import io.accur8.neodeploy.systemstate.SystemState
 import zio.{Task, ZIO}
 
 object CaddySync extends LoggingF {
@@ -53,5 +54,19 @@ ${applicationDescriptor.resolvedDomainNames.map(_.value).mkString(", ")} {
 
   override def resolveStepsFromModification(modification: Sync.Modification[ConfigFileSync.State, ResolvedApp]): Vector[Sync.Step] =
     super.resolveStepsFromModification(modification) ++ CaddySync.reloadCaddyStep
+
+  override def rawSystemState(input: ResolvedApp): SystemState =
+    caddyConfigContents(input.descriptor) match {
+      case Some(contents) =>
+        SystemState.Caddy(
+          SystemState.TextFile(
+            configFile(input).absolutePath,
+            contents,
+          )
+        )
+      case None =>
+        SystemState.Empty
+    }
+
 
 }

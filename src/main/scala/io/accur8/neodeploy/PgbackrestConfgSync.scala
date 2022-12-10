@@ -6,6 +6,7 @@ import io.accur8.neodeploy.Systemd.{TimerFile, UnitFile}
 import io.accur8.neodeploy.dsl.Step
 import io.accur8.neodeploy.dsl.Step.impl.ParallelSteps
 import io.accur8.neodeploy.resolvedmodel.{ResolvedPgbackrestClient, ResolvedPgbackrestServer, ResolvedRSnapshotServer, ResolvedUser}
+import io.accur8.neodeploy.systemstate.SystemState
 import zio.Task
 
 
@@ -23,20 +24,20 @@ object PgbackrestConfgSync extends ConfigFileSync[ResolvedUser] {
         .flatten
         .getOrElse("/etc/pgbackrest/pgbackrest.conf"))
 
-  override def configFileContents(input: ResolvedUser): Task[Option[String]] = {
-    zsucceed(
-      input
-        .plugins
-        .pluginInstances
-        .collect {
-          case rps: ResolvedPgbackrestServer =>
-            serverConfig(rps)
-          case rpc: ResolvedPgbackrestClient =>
-            clientConfig(rpc)
-        }
-        .headOption
-    )
-  }
+  override def configFileContents(input: ResolvedUser): Task[Option[String]] =
+    zsucceed(fileContents(input))
+
+  def fileContents(input: ResolvedUser): Option[String] =
+    input
+      .plugins
+      .pluginInstances
+      .collect {
+        case rps: ResolvedPgbackrestServer =>
+          serverConfig(rps)
+        case rpc: ResolvedPgbackrestClient =>
+          clientConfig(rpc)
+      }
+      .headOption
 
   def clientConfig(resolvedClient: ResolvedPgbackrestClient): String = {
 z"""
@@ -79,5 +80,16 @@ pg1-path=${resolvedClient.descriptor.pgdata}
   }
 
   override val name: Sync.SyncName = Sync.SyncName("pgbackrestServer")
+
+  override def rawSystemState(input: ResolvedUser): SystemState =
+    fileContents(input) match {
+      case Some(contents) =>
+        SystemState.TextFile(
+          configFile(input).absolutePath,
+          contents,
+        )
+      case None =>
+        SystemState.Empty
+    }
 
 }

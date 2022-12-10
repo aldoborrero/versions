@@ -8,6 +8,7 @@ import a8.shared.{FileSystem, ZString}
 import a8.shared.ZString.ZStringer
 import io.accur8.neodeploy.model.{SupervisorDescriptor, SupervisorDirectory}
 import io.accur8.neodeploy.resolvedmodel.ResolvedApp
+import io.accur8.neodeploy.systemstate.SystemState
 
 case class SupervisorSync(supervisorDir: SupervisorDirectory) extends ConfigFileSync[ResolvedApp] {
 
@@ -80,5 +81,19 @@ user            = ${app.user.login}
 #
 """.trim
   }
+
+
+  override def rawSystemState(input: ResolvedApp): SystemState =
+    input.descriptor.launcher match {
+      case sd: SupervisorDescriptor =>
+        SystemState.Supervisor(
+          SystemState.TextFile(
+            configFile(input).absolutePath,
+            supervisorConfigContents(input, sd)
+          )
+        )
+      case _ =>
+        SystemState.Empty
+    }
 
 }

@@ -14,6 +14,7 @@ import io.accur8.neodeploy.Systemd.{TimerFile, UnitFile}
 import io.accur8.neodeploy.dsl.Step
 import io.accur8.neodeploy.dsl.Step.impl.ParallelSteps
 import io.accur8.neodeploy.model.{OnCalendarValue, QualifiedUserName, RSnapshotClientDescriptor, RSnapshotServerDescriptor}
+import io.accur8.neodeploy.systemstate.SystemState
 
 object RSnapshotServerSync {
 
@@ -28,7 +29,7 @@ object RSnapshotServerSync {
 
 }
 
-case class RSnapshotServerSync(healthchecksDotIo: HealthchecksDotIo) extends Sync[State,ResolvedUser] {
+case class RSnapshotServerSync(healthchecksDotIo: HealthchecksDotIo) extends Sync[State, ResolvedUser] {
 
   import Step._
 
@@ -174,6 +175,78 @@ case class RSnapshotServerSync(healthchecksDotIo: HealthchecksDotIo) extends Syn
 
 
     rsnapshotConfigFileStep >> setupHealtcheckRecordsStep >> systemdSetupStep
+
+  }
+
+  override def rawSystemState(input: ResolvedUser): SystemState =
+    input
+      .plugins
+      .resolvedRSnapshotServerOpt
+      .map(systemState)
+      .getOrElse(SystemState.Empty)
+
+
+  def systemState(resolvedRSnapshotServer: ResolvedRSnapshotServer): SystemState =
+    SystemState.Composite(
+      "setup rsnapshot server",
+      resolvedRSnapshotServer
+        .clients
+        .map { client =>
+          setupClientSystemState(resolvedRSnapshotServer, client)
+        }
+    )
+
+
+  def setupClientSystemState(resolvedServer: resolvedmodel.ResolvedRSnapshotServer, client: resolvedmodel.ResolvedRSnapshotClient): SystemState = {
+
+    lazy val rsnapshotConfigFile =
+      resolvedServer
+        .descriptor
+        .configDir
+        .resolvedDirectory
+        .file(z"rsnapshot-${client.server.name}.conf")
+
+    lazy val configFileState =
+      SystemState.TextFile(
+        rsnapshotConfigFile.absolutePath,
+        RSnapshotConfig.serverConfigForClient(resolvedServer, client),
+      )
+
+    val healthCheckState =
+      SystemState.HealthCheck(
+        HealthchecksDotIo.CheckUpsertRequest(
+          name = z"rsnapshot-${client.server.name}",
+          tags = z"rsnapshot managed ${client.server.name} active".some,
+          timeout = 1.day.toSeconds.some,
+          grace = 1.hours.toSeconds.some,
+          unique = Iterable("name")
+        )
+      )
+
+    val systemdState =
+      Systemd.systemState(
+        z"rsnapshot-${client.server.name}",
+        z"run snapshot from ${client.server.name} to this machine",
+        resolvedServer.user,
+        UnitFile(
+          Type = "oneshot",
+          workingDirectory = rsnapshotConfigFile.parent,
+          execStart = z"/bootstrap/bin/run-rsnapshot ${rsnapshotConfigFile} ${client.server.name}",
+        ),
+        TimerFile(
+          onCalendar = OnCalendarValue.hourly,
+          persistent = true.some,
+        ).some
+      )
+
+    SystemState.Composite(
+      z"setup rsnapshot for client ${client.server.name}",
+      Vector(
+        configFileState,
+        configFileState,
+        systemdState,
+      )
+    )
 
   }
 
