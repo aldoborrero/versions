@@ -126,11 +126,14 @@ abstract class SyncContainer[Resolved, Name <: StringValue : Equal](
     val isEmpty = Interpretter.isEmpty(newState.systemState)
     val stateFile = stateDirectory.file(z"${prefix.value}-${newState.resolvedName}-${newState.syncName}.json")
     if (isEmpty) {
-      loggerF.debug(z"deleting state ${stateFile}") *>
-        ZIO.attemptBlocking(
-          if ( stateFile.exists() )
+      if ( stateFile.exists() ) {
+        loggerF.debug(z"deleting state ${stateFile}") *>
+          ZIO.attemptBlocking(
             stateFile.delete()
-        )
+          )
+      } else {
+        zunit
+      }
     } else {
       loggerF.debug(z"updating state ${stateFile}") *>
         ZIO.attemptBlocking(
