@@ -3,52 +3,121 @@ package io.accur8.neodeploy.systemstate
 import a8.shared.FileSystem
 import a8.shared.SharedImports._
 import io.accur8.neodeploy.ApplicationInstallSync.Installer
+import io.accur8.neodeploy.systemstate.Interpretter.RunArgs
 import io.accur8.neodeploy.systemstate.SystemStateModel._
 import io.accur8.neodeploy.{Command, HealthchecksDotIo}
 import zio.ZIO
 
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFileAttributeView
+
 object SystemStateImpl {
 
-  def dryRun(state: SystemState, inner: SystemState => Vector[String]): Vector[String] = {
+  def dryRunCleanup(runArgs: RunArgs): Vector[String] = {
+
+    // cleanup anything in previous not in current
+    runArgs
+      .statesToCleanup
+      .flatMap { ss =>
+        dryRun(ss, _ => Vector.empty, "cleanup ")
+      }
+
+  }
+
+
+  def dryRun(state: SystemState, inner: SystemState => Vector[String], prefix: String): Vector[String] = {
+    def ret(msg: String) = Vector(prefix + msg)
     state match {
       case SystemState.Empty =>
         Vector.empty
       case SystemState.HealthCheck(check) =>
-        Vector(s"healthcheck ${check.name}")
+        ret(s"healthcheck ${check.name}")
       case SystemState.Caddy(f) =>
         inner(f)
       case SystemState.Systemd(_, _, files) =>
         files
           .map(inner)
           .flatten
-      case SystemState.SecretsTextFile(f, _, perms) =>
+      case SystemState.SecretsTextFile(f, _, perms, _) =>
         val permsStr =
           if (perms.value.isEmpty) ""
           else s" with perms ${perms.value}"
-        Vector(s"secret file ${f}${permsStr}")
-      case SystemState.TextFile(f, _, perms) =>
+        ret(s"secret file ${f}${permsStr}")
+      case SystemState.TextFile(f, _, perms, _) =>
         val permsStr =
           if (perms.value.isEmpty) ""
           else s" with perms ${perms.value}"
-        Vector(s"file ${f}${permsStr}")
+        ret(s"file ${f}${permsStr}")
       case SystemState.Supervisor(f) =>
         inner(f)
       case SystemState.Directory(d, perms) =>
         val permsStr =
           if (perms.value.isEmpty) ""
           else s" with perms ${perms.value}"
-        Vector(s"directory ${d}${permsStr}")
+        ret(s"directory ${d}${permsStr}")
       case javaAppInstall: SystemState.JavaAppInstall =>
-        Vector(s"app install into ${javaAppInstall.appInstallDir} -- ${javaAppInstall.fromRepo.compactJson}")
+        ret(s"app install into ${javaAppInstall.appInstallDir} -- ${javaAppInstall.fromRepo.compactJson}")
       case SystemState.Composite(desc, states) =>
         val statesStr =
           states
             .map(inner)
             .flatten
             .map("    " + _)
-        Vector(desc) ++ statesStr
+        ret(desc) ++ statesStr
     }
   }
+
+  def runCleanupSingle(state: SystemState): M[Unit] =
+    state match {
+      case SystemState.Empty =>
+        zunit
+      case SystemState.Caddy(f) =>
+        zunit
+      case SystemState.HealthCheck(check) =>
+        for {
+          service <- zservice[HealthchecksDotIo]
+          _ <- service.disable(check)
+        } yield ()
+      case SystemState.Composite(_, _) =>
+        zunit
+      case SystemState.Directory(d, _) =>
+        ZIO.attemptBlocking(
+          FileSystem.dir(d).delete()
+        )
+      case SystemState.Supervisor(_) =>
+        // ??? TODO properly disable systemd unit
+        zunit
+      case SystemState.TextFile(f, _, _, mkdirs) =>
+        ZIO.attemptBlocking {
+          val file = FileSystem.file(f)
+          if ( mkdirs && !file.parent.exists() )
+            file.parent.makeDirectories()
+          file.delete()
+        }
+      case SystemState.SecretsTextFile(f, _, _, mkdirs) =>
+        ZIO.attemptBlocking {
+          val file = FileSystem.file(f)
+          if (mkdirs && !file.parent.exists())
+            file.parent.makeDirectories()
+          file.delete()
+        }
+      case SystemState.Systemd(_, _, _) =>
+        // ??? TODO properly disable systemd unit
+        zunit
+      case SystemState.JavaAppInstall(d, _, _, _) =>
+        // ??? TODO properly uninstall / move app
+        zunit
+    }
+
+  /**
+   * cleanup anything in previousState not in currentState
+   */
+  def runCleanup(runArgs: RunArgs): M[Unit] =
+    runArgs
+      .statesToCleanup
+      .map(runCleanupSingle)
+      .sequence
+      .as(())
 
 
   def run(state: SystemState, inner: SystemState => M[Unit]): M[Unit] = {
@@ -86,12 +155,16 @@ object SystemStateImpl {
     }
   }
 
-  def runImpl(tf: SystemState.TextFile): M[Unit] = {
-    val file = FileSystem.file(tf.filename)
-    ZIO.attemptBlocking(
-      file.write(tf.contents)
-    ).flatMap(_ => applyPermissions(file, tf.perms))
-  }
+  def runImpl(tf: SystemState.TextFile): M[Unit] =
+    ZIO
+      .attemptBlocking {
+        val file = FileSystem.file(tf.filename)
+        if ( tf.makeParentDirectories && !file.parent.exists() )
+          file.parent.makeDirectories()
+        file.write(tf.contents)
+        file
+      }
+      .flatMap(applyPermissions(_, tf.perms))
 
   def runImpl(d: SystemState.Directory): M[Unit] = {
     val fsDir = FileSystem.dir(d.path)
@@ -107,28 +180,44 @@ object SystemStateImpl {
     )
 
   def permissionsActionNeeded(path: FileSystem.Path, perms: UnixPerms): M[Boolean] = {
-    // ??? TODO make more robust
-    zsucceed(perms.value.nonEmpty)
+    if (perms.expectedPerms.isEmpty) {
+      zsucceed(false)
+    } else {
+      ZIO.attemptBlocking {
+        if ( path.exists() ) {
+          val actual =
+            Files.getFileAttributeView(path.asNioPath, classOf[PosixFileAttributeView])
+              .readAttributes()
+              .permissions()
+              .asScala
+          val expected = perms.expectedPermsAsNioSet
+          val result = expected != actual
+          result
+        } else {
+          true
+        }
+      }
+    }
   }
 
   def applyPermissions(path: FileSystem.Path, perms: UnixPerms): M[Unit] =
     permissionsActionNeeded(path, perms)
-      .map {
+      .flatMap {
         case true =>
           Command("chmod", perms.value, path.absolutePath)
             .execCaptureOutput
             .as(())
         case false =>
-          ()
+          zunit
       }
 
   def singleStateKey(systemState: SystemState): Option[StateKey] =
     systemState match {
       case SystemState.Empty =>
         None
-      case SystemState.SecretsTextFile(f, _, _) =>
+      case SystemState.SecretsTextFile(f, _, _, _) =>
         None
-      case SystemState.TextFile(f, _, _) =>
+      case SystemState.TextFile(f, _, _, _) =>
         StateKey(f).some
       case SystemState.Caddy(c) =>
         StateKey("caddy-" + c.filename).some

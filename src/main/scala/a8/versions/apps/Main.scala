@@ -45,7 +45,8 @@ object Main extends Logging {
          |""".stripMargin
     )
 
-    val verbose = opt[Boolean]()
+    val debug = opt[Boolean](descr = "show debug level logging, all logging except trace")
+    val trace = opt[Boolean](descr = "show trace level logging, this has the most detail and include debug logging")
 
     def setupVerbosity(): Unit = {
 
@@ -55,10 +56,12 @@ object Main extends Logging {
           "a8.versions",
         )
       val level =
-        verbose.toOption match {
-          case Some(true) =>
+        (debug.toOption, trace.toOption) match {
+          case (_, Some(true)) =>
             LogLevel.TRACE
-          case None | Some(false) =>
+          case (Some(true), _) =>
+            LogLevel.DEBUG
+          case _ =>
             LogLevel.INFO
         }
 
@@ -160,7 +163,8 @@ object Main extends Logging {
             usersFilter = resolveArgs[UserLogin](user, users),
             appsFilter = resolveArgs[ApplicationName](app, apps),
             syncsFilter = resolveArgs[SyncName](sync, syncs),
-            verbose.toOption.getOrElse(false),
+            debug.toOption.getOrElse(false),
+            trace.toOption.getOrElse(false),
           )
 
         pushRemoteSync.main(Array.empty)

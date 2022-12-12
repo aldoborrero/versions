@@ -105,7 +105,7 @@ object WebappExploder extends Logging {
 
   def explodeSingleJar(jarFile: JarFile, target: Directory, tracking: PrintStream): Unit = {
     val jarFilename = jarFile.getName
-    logger.debug(s"exploding webapp folder in ${jarFilename}")
+    logger.trace(s"exploding webapp folder in ${jarFilename}")
 
     jarFile.entries.asScala.foreach { je =>
       val jePath = je.getName
@@ -141,7 +141,7 @@ object WebappExploder extends Logging {
     val path = toFile.relativeTo(target)
 
     if (toFile.exists()) {
-      logger.warn(s"resource ${path} already exists will ignore that resource from ${source}")
+      logger.debug(s"resource ${path} already exists will ignore that resource from ${source}")
     } else {
       addTracking(source, toFile, target, tracking)
       toFile.withOutputStream { out =>

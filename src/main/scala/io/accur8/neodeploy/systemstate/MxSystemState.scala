@@ -33,6 +33,7 @@ object MxSystemState {
           .addField(_.filename)
           .addField(_.contents)
           .addField(_.perms)
+          .addField(_.makeParentDirectories)
       )
       .build
     
@@ -41,7 +42,7 @@ object MxSystemState {
     implicit val catsEq: cats.Eq[TextFile] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[TextFile,parameters.type] =  {
-      val constructors = Constructors[TextFile](3, unsafe.iterRawConstruct)
+      val constructors = Constructors[TextFile](4, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
@@ -49,6 +50,7 @@ object MxSystemState {
       lazy val filename: CaseClassParm[TextFile,String] = CaseClassParm[TextFile,String]("filename", _.filename, (d,v) => d.copy(filename = v), None, 0)
       lazy val contents: CaseClassParm[TextFile,String] = CaseClassParm[TextFile,String]("contents", _.contents, (d,v) => d.copy(contents = v), None, 1)
       lazy val perms: CaseClassParm[TextFile,UnixPerms] = CaseClassParm[TextFile,UnixPerms]("perms", _.perms, (d,v) => d.copy(perms = v), Some(()=> UnixPerms.empty), 2)
+      lazy val makeParentDirectories: CaseClassParm[TextFile,Boolean] = CaseClassParm[TextFile,Boolean]("makeParentDirectories", _.makeParentDirectories, (d,v) => d.copy(makeParentDirectories = v), Some(()=> true), 3)
     }
     
     
@@ -59,6 +61,7 @@ object MxSystemState {
           filename = values(0).asInstanceOf[String],
           contents = values(1).asInstanceOf[String],
           perms = values(2).asInstanceOf[UnixPerms],
+          makeParentDirectories = values(3).asInstanceOf[Boolean],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): TextFile = {
@@ -67,13 +70,14 @@ object MxSystemState {
             filename = values.next().asInstanceOf[String],
             contents = values.next().asInstanceOf[String],
             perms = values.next().asInstanceOf[UnixPerms],
+            makeParentDirectories = values.next().asInstanceOf[Boolean],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(filename: String, contents: String, perms: UnixPerms): TextFile =
-        TextFile(filename, contents, perms)
+      def typedConstruct(filename: String, contents: String, perms: UnixPerms, makeParentDirectories: Boolean): TextFile =
+        TextFile(filename, contents, perms, makeParentDirectories)
     
     }
     
@@ -95,6 +99,7 @@ object MxSystemState {
           .addField(_.filename)
           .addField(_.contents)
           .addField(_.perms)
+          .addField(_.makeParentDirectories)
       )
       .build
     
@@ -103,7 +108,7 @@ object MxSystemState {
     implicit val catsEq: cats.Eq[SecretsTextFile] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[SecretsTextFile,parameters.type] =  {
-      val constructors = Constructors[SecretsTextFile](3, unsafe.iterRawConstruct)
+      val constructors = Constructors[SecretsTextFile](4, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
@@ -111,6 +116,7 @@ object MxSystemState {
       lazy val filename: CaseClassParm[SecretsTextFile,String] = CaseClassParm[SecretsTextFile,String]("filename", _.filename, (d,v) => d.copy(filename = v), None, 0)
       lazy val contents: CaseClassParm[SecretsTextFile,SecretContent] = CaseClassParm[SecretsTextFile,SecretContent]("contents", _.contents, (d,v) => d.copy(contents = v), None, 1)
       lazy val perms: CaseClassParm[SecretsTextFile,UnixPerms] = CaseClassParm[SecretsTextFile,UnixPerms]("perms", _.perms, (d,v) => d.copy(perms = v), Some(()=> UnixPerms.empty), 2)
+      lazy val makeParentDirectories: CaseClassParm[SecretsTextFile,Boolean] = CaseClassParm[SecretsTextFile,Boolean]("makeParentDirectories", _.makeParentDirectories, (d,v) => d.copy(makeParentDirectories = v), Some(()=> true), 3)
     }
     
     
@@ -121,6 +127,7 @@ object MxSystemState {
           filename = values(0).asInstanceOf[String],
           contents = values(1).asInstanceOf[SecretContent],
           perms = values(2).asInstanceOf[UnixPerms],
+          makeParentDirectories = values(3).asInstanceOf[Boolean],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): SecretsTextFile = {
@@ -129,13 +136,14 @@ object MxSystemState {
             filename = values.next().asInstanceOf[String],
             contents = values.next().asInstanceOf[SecretContent],
             perms = values.next().asInstanceOf[UnixPerms],
+            makeParentDirectories = values.next().asInstanceOf[Boolean],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(filename: String, contents: SecretContent, perms: UnixPerms): SecretsTextFile =
-        SecretsTextFile(filename, contents, perms)
+      def typedConstruct(filename: String, contents: SecretContent, perms: UnixPerms, makeParentDirectories: Boolean): SecretsTextFile =
+        SecretsTextFile(filename, contents, perms, makeParentDirectories)
     
     }
     
@@ -443,16 +451,6 @@ object MxSystemState {
   
   trait MxComposite {
   
-    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[Composite,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[Composite,parameters.type] = builder
-    
-    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[Composite,a8.shared.json.ast.JsObj] =
-      jsonCodecBuilder(
-        a8.shared.json.JsonObjectCodecBuilder(generator)
-          .addField(_.description)
-          .addField(_.states)
-      )
-      .build
-    
     implicit val zioEq: zio.prelude.Equal[Composite] = zio.prelude.Equal.default
     
     implicit val catsEq: cats.Eq[Composite] = cats.Eq.fromUniversalEquals

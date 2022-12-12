@@ -49,7 +49,8 @@ case class PushRemoteSyncSubCommand(
   usersFilter: Filter[UserLogin],
   appsFilter: Filter[ApplicationName],
   syncsFilter: Filter[SyncName],
-  remoteVerbose: Boolean,
+  remoteDebug: Boolean,
+  remoteTrace: Boolean,
 ) extends BootstrappedIOApp {
 
   lazy val validateParameters =
@@ -128,7 +129,8 @@ case class PushRemoteSyncSubCommand(
     val sshEffect =
       Command("ssh", z"${resolvedUser.sshName}", "--")
         .appendArgs(resolvedUser.a8VersionsExec)
-        .appendArgsSeq(remoteVerbose.toOption("--verbose"))
+        .appendArgsSeq(remoteDebug.toOption("--debug"))
+        .appendArgsSeq(remoteTrace.toOption("--trace"))
         .appendArgs("local_user_sync")
         .appendArgsSeq(appsFilter.args)
         .appendArgsSeq(syncsFilter.args)

@@ -59,7 +59,7 @@ case class InstallBuilder(
           val target: Path = Paths.get(fromFile.getCanonicalPath)
           Files.createSymbolicLink(link, target)
         case LibDirKind.Copy =>
-          logger.debug("copying artifact " + fromFile)
+          logger.trace("copying artifact " + fromFile)
           Files.copy(Paths.get(fromFile.getCanonicalPath), Paths.get(toFile.getCanonicalPath))
         case LibDirKind.Repo =>
           // noop

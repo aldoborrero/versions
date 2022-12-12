@@ -1,8 +1,9 @@
 package io.accur8.neodeploy.systemstate
 
 import a8.shared.CompanionGen
-import a8.shared.json.UnionCodecBuilder
-import io.accur8.neodeploy.HealthchecksDotIo
+import a8.shared.json.ast.JsObj
+import a8.shared.json.{JsonCodec, JsonTypedCodec, UnionCodecBuilder, ast}
+import io.accur8.neodeploy.{HealthchecksDotIo, LazyJsonCodec}
 import io.accur8.neodeploy.model.Install.FromRepo
 import io.accur8.neodeploy.model.{ApplicationDescriptor, UserLogin}
 import io.accur8.neodeploy.systemstate.MxSystemState._
@@ -18,6 +19,7 @@ object SystemState {
     filename: String,
     contents: String,
     perms: UnixPerms = UnixPerms.empty,
+    makeParentDirectories: Boolean = true,
   ) extends SystemState
 
   object SecretsTextFile extends MxSecretsTextFile {
@@ -27,9 +29,10 @@ object SystemState {
     filename: String,
     contents: SecretContent,
     perms: UnixPerms = UnixPerms.empty,
+    makeParentDirectories: Boolean = true,
   ) extends SystemState {
     def asTextFile =
-      TextFile(filename, contents.value, perms)
+      TextFile(filename, contents.value, perms, makeParentDirectories)
   }
 
   object JavaAppInstall extends MxJavaAppInstall
@@ -76,8 +79,18 @@ object SystemState {
 
   case object Empty extends SystemState
 
-  object Composite extends MxComposite
-  @CompanionGen
+  object Composite extends MxComposite {
+
+    implicit lazy val jsonCodec: JsonTypedCodec[Composite, JsObj] =
+      LazyJsonCodec(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.description)
+          .addField(_.states)
+          .build
+      )
+
+  }
+  @CompanionGen(jsonCodec = false)
   case class Composite(
     description: String,
     states: Vector[SystemState],
@@ -96,7 +109,7 @@ object SystemState {
   }
 
 
-  implicit val jsonCodec =
+  implicit lazy val jsonCodec: JsonTypedCodec[SystemState, ast.JsObj] =
     UnionCodecBuilder[SystemState]
       .typeFieldName("kind")
       .addSingleton("empty", Empty)
@@ -108,6 +121,7 @@ object SystemState {
       .addType[Supervisor]("supervisor")
       .addType[Systemd]("systemd")
       .addType[TextFile]("textfile")
+      .addType[SecretsTextFile]("secretstextfile")
       .build
 
 }

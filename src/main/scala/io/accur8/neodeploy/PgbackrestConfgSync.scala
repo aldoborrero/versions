@@ -10,6 +10,8 @@ import zio.Task
 
 object PgbackrestConfgSync extends Sync[ResolvedUser] {
 
+  override val name: Sync.SyncName = Sync.SyncName("pgbackrestConfig")
+
   def configFile(input: ResolvedUser): FileSystem.File =
     FileSystem.file(
       input
@@ -71,8 +73,6 @@ pg1-path=${resolvedClient.descriptor.pgdata}
 
     s"${resolvedServer.descriptor.configHeader}\n\n${clientConfigs}"
   }
-
-  override val name: Sync.SyncName = Sync.SyncName("pgbackrestServer")
 
   override def rawSystemState(input: ResolvedUser): SystemState =
     fileContents(input) match {

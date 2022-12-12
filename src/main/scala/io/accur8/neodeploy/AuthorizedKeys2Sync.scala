@@ -50,7 +50,7 @@ object AuthorizedKeys2Sync extends Sync[ResolvedUser] with Logging {
       "authorized keys 2",
       Vector(
         SystemState.Directory(file.parent.absolutePath, UnixPerms("0700")),
-        SystemState.TextFile(file.absolutePath, contents(input), UnixPerms("0644"))
+        SystemState.TextFile(file.absolutePath, contents(input), UnixPerms("0644"), makeParentDirectories=false)
       )
     )
   }
