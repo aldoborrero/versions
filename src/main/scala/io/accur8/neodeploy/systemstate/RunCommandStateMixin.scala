@@ -6,38 +6,30 @@ import io.accur8.neodeploy.systemstate.SystemStateModel._
 
 trait RunCommandStateMixin extends SystemStateMixin { self: SystemState.RunCommandState =>
 
-  def dryRun: Vector[String] =
-    installCommand
-      .toVector
-      .map(ic =>
-        s"run install command${ic.workingDirectory.map(wd => s" in working directory ${wd}")} -- ${ic.args.mkString(" ")}"
-      )
+  override def dryRun: Vector[String] =
+    dryRun("install", installCommands)
 
-  override def dryRunUninstall: Vector[String] = super.dryRunUninstall
-    uninstallCommand
-      .toVector
-      .map(c =>
-        s"run uninstall command${c.workingDirectory.map(wd => s" in working directory ${wd}")} -- ${c.args.mkString(" ")}"
-      )
+  def dryRun(actionName: String, commands: Vector[Command]): Vector[String] =
+    commands
+      .map { cmd =>
+        s"run ${actionName} command -- ${cmd.args.mkString(" ")}${cmd.workingDirectory.map(wd => s" in working directory ${wd}")}"
+      }
 
-  def isActionNeeded: M[Boolean] = zsucceed(installCommand.nonEmpty)
+  override def dryRunUninstall: Vector[String] =
+    dryRun("uninstall", installCommands)
+
+  override def isActionNeeded: M[Boolean] = zsucceed(true)
 
   override def runApplyNewState =
-    installCommand
-      .map(
-        _.asRunnableCommand
-          .execCaptureOutput
-          .as(())
-      )
-      .getOrElse(zunit)
+    installCommands
+      .map(_.asRunnableCommand.execCaptureOutput)
+      .sequence
+      .as(())
 
   override def runUninstallObsolete =
-    uninstallCommand
-      .map(
-        _.asRunnableCommand
-          .execCaptureOutput
-          .as(())
-      )
-      .getOrElse(zunit)
+    uninstallCommands
+      .map(_.asRunnableCommand.execCaptureOutput)
+      .sequence
+      .as(())
 
 }

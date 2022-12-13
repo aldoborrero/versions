@@ -53,16 +53,6 @@ object SystemState {
     perms: UnixPerms = UnixPerms.empty,
   ) extends SystemState with DirectoryMixin
 
-  object Systemd extends MxSystemd
-  @CompanionGen
-  case class Systemd(
-    unitName: String,
-    enable: Vector[String] = Vector.empty,
-    unitFiles: Vector[TextFile],
-  ) extends HasSubStates with SystemdMixin {
-    override def subStates: Vector[SystemState] = unitFiles
-  }
-
   object Supervisor extends MxSupervisor
   @CompanionGen
   case class Supervisor(
@@ -120,8 +110,8 @@ object SystemState {
   @CompanionGen
   case class RunCommandState(
     override val stateKey: Option[StateKey] = None,
-    installCommand: Option[Command] = None,
-    uninstallCommand: Option[Command] = None,
+    installCommands: Vector[Command] = Vector.empty,
+    uninstallCommands: Vector[Command] = Vector.empty,
   ) extends SystemState with RunCommandStateMixin
 
 
@@ -134,9 +124,9 @@ object SystemState {
    */
   @CompanionGen
   case class TriggeredState(
-    preTriggerState: SystemState,
-    postTriggerState: SystemState,
-    triggerState: SystemState,
+    preTriggerState: SystemState = SystemState.Empty,
+    postTriggerState: SystemState = SystemState.Empty,
+    triggerState: SystemState = SystemState.Empty,
   ) extends SystemState with TriggeredStateMixin
 
 
@@ -150,7 +140,6 @@ object SystemState {
       .addType[HealthCheck]("healthcheck")
       .addType[JavaAppInstall]("javaappinstall")
       .addType[Supervisor]("supervisor")
-      .addType[Systemd]("systemd")
       .addType[TextFile]("textfile")
       .addType[SecretsTextFile]("secretstextfile")
       .build

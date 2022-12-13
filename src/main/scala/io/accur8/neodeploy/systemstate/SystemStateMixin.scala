@@ -5,10 +5,9 @@ import SystemStateModel._
 trait SystemStateMixin {
 
   def stateKey: Option[StateKey]
-
   def dryRun: Vector[String]
   def dryRunUninstall: Vector[String] = dryRun.map("uninstall " + _)
-
+  
   def isActionNeeded: M[Boolean]
 
   /**

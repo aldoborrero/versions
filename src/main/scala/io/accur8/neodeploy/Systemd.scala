@@ -9,6 +9,7 @@ import PredefAssist._
 import a8.shared.FileSystem
 import io.accur8.neodeploy.model.OnCalendarValue
 import io.accur8.neodeploy.systemstate.SystemState
+import io.accur8.neodeploy.systemstate.SystemState.{RunCommandState, TriggeredState, jsonCodec}
 import io.accur8.neodeploy.systemstate.SystemStateModel._
 
 /**
@@ -76,6 +77,7 @@ object Systemd {
          |
          |[Service]
          |WorkingDirectory=${unitFile.workingDirectory}
+         |StandardOutput=journal
          |ExecStart=${unitFile.execStart}
          |
          |[Install]
@@ -109,32 +111,67 @@ object Systemd {
         )
       }
 
-//    def enableTimerEffect: M[Unit] = {
-//      Overrides
-//        .userSystemCtlCommand
-//        .appendArgs("--user", "enable", "--now", z"${unitName}.timer")
-//        .exec()
-//        .as(())
-//    }
-//
-//    val ensureUserLingerIsEnabled = {
-//      val doesLingerNeedToBeEnabledEffect =
-//        ZIO.attemptBlocking(
-//          !FileSystem.file(z"/var/lib/systemd/linger/${user.login}").exists()
-//        )
-//
-//      Step.rawEffect(
-//        z"enable linger for ${user.login}",
-//        doesLingerNeedToBeEnabledEffect,
-//        Overrides.userLoginCtlCommand
-//          .appendArgs("enable-linger")
-//          .execDropOutput
-//      )
-//    }
 
-    SystemState.Systemd(
-      unitName = unitName,
-      unitFiles = Vector(unitFileState) ++ timerFileStateOpt,
+    val daemonReloadCommand =
+      Overrides.userSystemCtlCommand
+        .appendArgs("--user", "daemon-reload")
+        .asSystemStateCommand
+
+    val enableTimerCommand =
+      Overrides.userSystemCtlCommand
+        .appendArgs("--user", "enable", "--now", z"${unitName}.timer")
+        .asSystemStateCommand
+
+    val disableTimerCommand =
+      Overrides.userSystemCtlCommand
+        .appendArgs("--user", "disable", z"${unitName}.timer")
+        .asSystemStateCommand
+
+    val stopTimerCommand =
+      Overrides.userSystemCtlCommand
+        .appendArgs("--user", "stop", z"${unitName}.timer")
+        .asSystemStateCommand
+
+    val enableTimerCommands =
+      timerFileOpt
+        .toVector
+        .flatMap(_ =>
+          Vector(enableTimerCommand)
+        )
+
+    val uninstallTimerCommands =
+      timerFileOpt
+        .toVector
+        .flatMap(_ =>
+          Vector(stopTimerCommand, disableTimerCommand)
+        )
+
+    val enableUserLingerCommand =
+      Overrides.userLoginCtlCommand
+        .appendArgs("enable-linger")
+        .asSystemStateCommand
+
+    val manageSystemdUnitState: SystemState =
+      RunCommandState(
+        StateKey("enable systemd unit").some,
+        installCommands = Vector(daemonReloadCommand) ++ enableTimerCommands ++ Vector(enableUserLingerCommand),
+        uninstallCommands = uninstallTimerCommands,
+      )
+
+    val unitFiles = Vector(unitFileState) ++ timerFileStateOpt
+
+    SystemState.Composite(
+      description = s"systemd unit ${unitName}",
+      states = Vector(
+        TriggeredState(
+          triggerState =
+            SystemState.Composite(
+              description = "install unit files",
+              states = unitFiles,
+            ),
+          postTriggerState = manageSystemdUnitState,
+        )
+      )
     )
 
   }

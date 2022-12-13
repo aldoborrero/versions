@@ -9,6 +9,7 @@ import PredefAssist._
 import a8.shared.FileSystem.Directory
 import a8.shared.app.{LoggerF, LoggingF}
 import io.accur8.neodeploy.Command.CommandException
+import io.accur8.neodeploy.systemstate.SystemState.RunCommandState
 import zio.process.CommandError
 import zio.process.CommandError.NonZeroErrorCode
 
@@ -33,6 +34,12 @@ object Command {
 }
 
 case class Command(args: Iterable[String], workingDirectory: Option[Directory] = None) extends LoggingF {
+
+  def asSystemStateCommand =
+    systemstate.SystemStateModel.Command(
+      args = args,
+      workingDirectory = workingDirectory.map(_.absolutePath),
+    )
 
   def workingDirectory(wd: Directory): Command =
     copy(workingDirectory = wd.some)

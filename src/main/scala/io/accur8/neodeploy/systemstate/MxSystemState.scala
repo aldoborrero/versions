@@ -271,68 +271,6 @@ object MxSystemState {
   
   
   
-  trait MxSystemd {
-  
-    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[Systemd,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[Systemd,parameters.type] = builder
-    
-    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[Systemd,a8.shared.json.ast.JsObj] =
-      jsonCodecBuilder(
-        a8.shared.json.JsonObjectCodecBuilder(generator)
-          .addField(_.unitName)
-          .addField(_.enable)
-          .addField(_.unitFiles)
-      )
-      .build
-    
-    implicit val zioEq: zio.prelude.Equal[Systemd] = zio.prelude.Equal.default
-    
-    implicit val catsEq: cats.Eq[Systemd] = cats.Eq.fromUniversalEquals
-    
-    lazy val generator: Generator[Systemd,parameters.type] =  {
-      val constructors = Constructors[Systemd](3, unsafe.iterRawConstruct)
-      Generator(constructors, parameters)
-    }
-    
-    object parameters {
-      lazy val unitName: CaseClassParm[Systemd,String] = CaseClassParm[Systemd,String]("unitName", _.unitName, (d,v) => d.copy(unitName = v), None, 0)
-      lazy val enable: CaseClassParm[Systemd,Vector[String]] = CaseClassParm[Systemd,Vector[String]]("enable", _.enable, (d,v) => d.copy(enable = v), Some(()=> Vector.empty), 1)
-      lazy val unitFiles: CaseClassParm[Systemd,Vector[TextFile]] = CaseClassParm[Systemd,Vector[TextFile]]("unitFiles", _.unitFiles, (d,v) => d.copy(unitFiles = v), None, 2)
-    }
-    
-    
-    object unsafe {
-    
-      def rawConstruct(values: IndexedSeq[Any]): Systemd = {
-        Systemd(
-          unitName = values(0).asInstanceOf[String],
-          enable = values(1).asInstanceOf[Vector[String]],
-          unitFiles = values(2).asInstanceOf[Vector[TextFile]],
-        )
-      }
-      def iterRawConstruct(values: Iterator[Any]): Systemd = {
-        val value =
-          Systemd(
-            unitName = values.next().asInstanceOf[String],
-            enable = values.next().asInstanceOf[Vector[String]],
-            unitFiles = values.next().asInstanceOf[Vector[TextFile]],
-          )
-        if ( values.hasNext )
-           sys.error("")
-        value
-      }
-      def typedConstruct(unitName: String, enable: Vector[String], unitFiles: Vector[TextFile]): Systemd =
-        Systemd(unitName, enable, unitFiles)
-    
-    }
-    
-    
-    lazy val typeName = "Systemd"
-  
-  }
-  
-  
-  
-  
   trait MxSupervisor {
   
     protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[Supervisor,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[Supervisor,parameters.type] = builder
@@ -551,8 +489,8 @@ object MxSystemState {
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.stateKey)
-          .addField(_.installCommand)
-          .addField(_.uninstallCommand)
+          .addField(_.installCommands)
+          .addField(_.uninstallCommands)
       )
       .build
     
@@ -567,8 +505,8 @@ object MxSystemState {
     
     object parameters {
       lazy val stateKey: CaseClassParm[RunCommandState,Option[StateKey]] = CaseClassParm[RunCommandState,Option[StateKey]]("stateKey", _.stateKey, (d,v) => d.copy(stateKey = v), Some(()=> None), 0)
-      lazy val installCommand: CaseClassParm[RunCommandState,Option[Command]] = CaseClassParm[RunCommandState,Option[Command]]("installCommand", _.installCommand, (d,v) => d.copy(installCommand = v), Some(()=> None), 1)
-      lazy val uninstallCommand: CaseClassParm[RunCommandState,Option[Command]] = CaseClassParm[RunCommandState,Option[Command]]("uninstallCommand", _.uninstallCommand, (d,v) => d.copy(uninstallCommand = v), Some(()=> None), 2)
+      lazy val installCommands: CaseClassParm[RunCommandState,Vector[Command]] = CaseClassParm[RunCommandState,Vector[Command]]("installCommands", _.installCommands, (d,v) => d.copy(installCommands = v), Some(()=> Vector.empty), 1)
+      lazy val uninstallCommands: CaseClassParm[RunCommandState,Vector[Command]] = CaseClassParm[RunCommandState,Vector[Command]]("uninstallCommands", _.uninstallCommands, (d,v) => d.copy(uninstallCommands = v), Some(()=> Vector.empty), 2)
     }
     
     
@@ -577,23 +515,23 @@ object MxSystemState {
       def rawConstruct(values: IndexedSeq[Any]): RunCommandState = {
         RunCommandState(
           stateKey = values(0).asInstanceOf[Option[StateKey]],
-          installCommand = values(1).asInstanceOf[Option[Command]],
-          uninstallCommand = values(2).asInstanceOf[Option[Command]],
+          installCommands = values(1).asInstanceOf[Vector[Command]],
+          uninstallCommands = values(2).asInstanceOf[Vector[Command]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): RunCommandState = {
         val value =
           RunCommandState(
             stateKey = values.next().asInstanceOf[Option[StateKey]],
-            installCommand = values.next().asInstanceOf[Option[Command]],
-            uninstallCommand = values.next().asInstanceOf[Option[Command]],
+            installCommands = values.next().asInstanceOf[Vector[Command]],
+            uninstallCommands = values.next().asInstanceOf[Vector[Command]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(stateKey: Option[StateKey], installCommand: Option[Command], uninstallCommand: Option[Command]): RunCommandState =
-        RunCommandState(stateKey, installCommand, uninstallCommand)
+      def typedConstruct(stateKey: Option[StateKey], installCommands: Vector[Command], uninstallCommands: Vector[Command]): RunCommandState =
+        RunCommandState(stateKey, installCommands, uninstallCommands)
     
     }
     
@@ -628,9 +566,9 @@ object MxSystemState {
     }
     
     object parameters {
-      lazy val preTriggerState: CaseClassParm[TriggeredState,SystemState] = CaseClassParm[TriggeredState,SystemState]("preTriggerState", _.preTriggerState, (d,v) => d.copy(preTriggerState = v), None, 0)
-      lazy val postTriggerState: CaseClassParm[TriggeredState,SystemState] = CaseClassParm[TriggeredState,SystemState]("postTriggerState", _.postTriggerState, (d,v) => d.copy(postTriggerState = v), None, 1)
-      lazy val triggerState: CaseClassParm[TriggeredState,SystemState] = CaseClassParm[TriggeredState,SystemState]("triggerState", _.triggerState, (d,v) => d.copy(triggerState = v), None, 2)
+      lazy val preTriggerState: CaseClassParm[TriggeredState,SystemState] = CaseClassParm[TriggeredState,SystemState]("preTriggerState", _.preTriggerState, (d,v) => d.copy(preTriggerState = v), Some(()=> SystemState.Empty), 0)
+      lazy val postTriggerState: CaseClassParm[TriggeredState,SystemState] = CaseClassParm[TriggeredState,SystemState]("postTriggerState", _.postTriggerState, (d,v) => d.copy(postTriggerState = v), Some(()=> SystemState.Empty), 1)
+      lazy val triggerState: CaseClassParm[TriggeredState,SystemState] = CaseClassParm[TriggeredState,SystemState]("triggerState", _.triggerState, (d,v) => d.copy(triggerState = v), Some(()=> SystemState.Empty), 2)
     }
     
     
