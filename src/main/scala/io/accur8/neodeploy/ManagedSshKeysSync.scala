@@ -69,8 +69,8 @@ object ManagedSshKeysSync extends Sync[ResolvedUser] with LoggingF {
       "authorized keys 2",
       Vector(
         SystemState.Directory(publicKey.parent.absolutePath, UnixPerms("0700")),
-        SystemState.TextFile(publicKey.absolutePath, user.sshPublicKeyFileInRepo.readAsString(), UnixPerms("0644"), makeParentDirectories=false),
-        SystemState.SecretsTextFile(privateKey.absolutePath, SecretContent(user.sshPrivateKeyFileInRepo.readAsString()), UnixPerms("0600"), makeParentDirectories=false),
+        SystemState.TextFile(publicKey.absolutePath, user.sshPublicKeyFileInRepo.readAsString(), UnixPerms("0644")),
+        SystemState.SecretsTextFile(privateKey.absolutePath, SecretContent(user.sshPrivateKeyFileInRepo.readAsString()), UnixPerms("0600")),
       )
     )
   }

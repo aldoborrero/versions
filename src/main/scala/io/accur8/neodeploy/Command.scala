@@ -31,6 +31,7 @@ object Command {
   case class CommandException(cause: CommandError, command: Command) extends Exception
 
 }
+
 case class Command(args: Iterable[String], workingDirectory: Option[Directory] = None) extends LoggingF {
 
   def workingDirectory(wd: Directory): Command =

@@ -33,7 +33,6 @@ object MxSystemState {
           .addField(_.filename)
           .addField(_.contents)
           .addField(_.perms)
-          .addField(_.makeParentDirectories)
       )
       .build
     
@@ -42,7 +41,7 @@ object MxSystemState {
     implicit val catsEq: cats.Eq[TextFile] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[TextFile,parameters.type] =  {
-      val constructors = Constructors[TextFile](4, unsafe.iterRawConstruct)
+      val constructors = Constructors[TextFile](3, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
@@ -50,7 +49,6 @@ object MxSystemState {
       lazy val filename: CaseClassParm[TextFile,String] = CaseClassParm[TextFile,String]("filename", _.filename, (d,v) => d.copy(filename = v), None, 0)
       lazy val contents: CaseClassParm[TextFile,String] = CaseClassParm[TextFile,String]("contents", _.contents, (d,v) => d.copy(contents = v), None, 1)
       lazy val perms: CaseClassParm[TextFile,UnixPerms] = CaseClassParm[TextFile,UnixPerms]("perms", _.perms, (d,v) => d.copy(perms = v), Some(()=> UnixPerms.empty), 2)
-      lazy val makeParentDirectories: CaseClassParm[TextFile,Boolean] = CaseClassParm[TextFile,Boolean]("makeParentDirectories", _.makeParentDirectories, (d,v) => d.copy(makeParentDirectories = v), Some(()=> true), 3)
     }
     
     
@@ -61,7 +59,6 @@ object MxSystemState {
           filename = values(0).asInstanceOf[String],
           contents = values(1).asInstanceOf[String],
           perms = values(2).asInstanceOf[UnixPerms],
-          makeParentDirectories = values(3).asInstanceOf[Boolean],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): TextFile = {
@@ -70,14 +67,13 @@ object MxSystemState {
             filename = values.next().asInstanceOf[String],
             contents = values.next().asInstanceOf[String],
             perms = values.next().asInstanceOf[UnixPerms],
-            makeParentDirectories = values.next().asInstanceOf[Boolean],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(filename: String, contents: String, perms: UnixPerms, makeParentDirectories: Boolean): TextFile =
-        TextFile(filename, contents, perms, makeParentDirectories)
+      def typedConstruct(filename: String, contents: String, perms: UnixPerms): TextFile =
+        TextFile(filename, contents, perms)
     
     }
     
@@ -97,9 +93,8 @@ object MxSystemState {
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.filename)
-          .addField(_.contents)
+          .addField(_.secretContents)
           .addField(_.perms)
-          .addField(_.makeParentDirectories)
       )
       .build
     
@@ -108,15 +103,14 @@ object MxSystemState {
     implicit val catsEq: cats.Eq[SecretsTextFile] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[SecretsTextFile,parameters.type] =  {
-      val constructors = Constructors[SecretsTextFile](4, unsafe.iterRawConstruct)
+      val constructors = Constructors[SecretsTextFile](3, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
       lazy val filename: CaseClassParm[SecretsTextFile,String] = CaseClassParm[SecretsTextFile,String]("filename", _.filename, (d,v) => d.copy(filename = v), None, 0)
-      lazy val contents: CaseClassParm[SecretsTextFile,SecretContent] = CaseClassParm[SecretsTextFile,SecretContent]("contents", _.contents, (d,v) => d.copy(contents = v), None, 1)
+      lazy val secretContents: CaseClassParm[SecretsTextFile,SecretContent] = CaseClassParm[SecretsTextFile,SecretContent]("secretContents", _.secretContents, (d,v) => d.copy(secretContents = v), None, 1)
       lazy val perms: CaseClassParm[SecretsTextFile,UnixPerms] = CaseClassParm[SecretsTextFile,UnixPerms]("perms", _.perms, (d,v) => d.copy(perms = v), Some(()=> UnixPerms.empty), 2)
-      lazy val makeParentDirectories: CaseClassParm[SecretsTextFile,Boolean] = CaseClassParm[SecretsTextFile,Boolean]("makeParentDirectories", _.makeParentDirectories, (d,v) => d.copy(makeParentDirectories = v), Some(()=> true), 3)
     }
     
     
@@ -125,25 +119,23 @@ object MxSystemState {
       def rawConstruct(values: IndexedSeq[Any]): SecretsTextFile = {
         SecretsTextFile(
           filename = values(0).asInstanceOf[String],
-          contents = values(1).asInstanceOf[SecretContent],
+          secretContents = values(1).asInstanceOf[SecretContent],
           perms = values(2).asInstanceOf[UnixPerms],
-          makeParentDirectories = values(3).asInstanceOf[Boolean],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): SecretsTextFile = {
         val value =
           SecretsTextFile(
             filename = values.next().asInstanceOf[String],
-            contents = values.next().asInstanceOf[SecretContent],
+            secretContents = values.next().asInstanceOf[SecretContent],
             perms = values.next().asInstanceOf[UnixPerms],
-            makeParentDirectories = values.next().asInstanceOf[Boolean],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(filename: String, contents: SecretContent, perms: UnixPerms, makeParentDirectories: Boolean): SecretsTextFile =
-        SecretsTextFile(filename, contents, perms, makeParentDirectories)
+      def typedConstruct(filename: String, secretContents: SecretContent, perms: UnixPerms): SecretsTextFile =
+        SecretsTextFile(filename, secretContents, perms)
     
     }
     
@@ -545,6 +537,130 @@ object MxSystemState {
     
     
     lazy val typeName = "HealthCheck"
+  
+  }
+  
+  
+  
+  
+  trait MxRunCommandState {
+  
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[RunCommandState,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[RunCommandState,parameters.type] = builder
+    
+    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[RunCommandState,a8.shared.json.ast.JsObj] =
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.stateKey)
+          .addField(_.installCommand)
+          .addField(_.uninstallCommand)
+      )
+      .build
+    
+    implicit val zioEq: zio.prelude.Equal[RunCommandState] = zio.prelude.Equal.default
+    
+    implicit val catsEq: cats.Eq[RunCommandState] = cats.Eq.fromUniversalEquals
+    
+    lazy val generator: Generator[RunCommandState,parameters.type] =  {
+      val constructors = Constructors[RunCommandState](3, unsafe.iterRawConstruct)
+      Generator(constructors, parameters)
+    }
+    
+    object parameters {
+      lazy val stateKey: CaseClassParm[RunCommandState,Option[StateKey]] = CaseClassParm[RunCommandState,Option[StateKey]]("stateKey", _.stateKey, (d,v) => d.copy(stateKey = v), Some(()=> None), 0)
+      lazy val installCommand: CaseClassParm[RunCommandState,Option[Command]] = CaseClassParm[RunCommandState,Option[Command]]("installCommand", _.installCommand, (d,v) => d.copy(installCommand = v), Some(()=> None), 1)
+      lazy val uninstallCommand: CaseClassParm[RunCommandState,Option[Command]] = CaseClassParm[RunCommandState,Option[Command]]("uninstallCommand", _.uninstallCommand, (d,v) => d.copy(uninstallCommand = v), Some(()=> None), 2)
+    }
+    
+    
+    object unsafe {
+    
+      def rawConstruct(values: IndexedSeq[Any]): RunCommandState = {
+        RunCommandState(
+          stateKey = values(0).asInstanceOf[Option[StateKey]],
+          installCommand = values(1).asInstanceOf[Option[Command]],
+          uninstallCommand = values(2).asInstanceOf[Option[Command]],
+        )
+      }
+      def iterRawConstruct(values: Iterator[Any]): RunCommandState = {
+        val value =
+          RunCommandState(
+            stateKey = values.next().asInstanceOf[Option[StateKey]],
+            installCommand = values.next().asInstanceOf[Option[Command]],
+            uninstallCommand = values.next().asInstanceOf[Option[Command]],
+          )
+        if ( values.hasNext )
+           sys.error("")
+        value
+      }
+      def typedConstruct(stateKey: Option[StateKey], installCommand: Option[Command], uninstallCommand: Option[Command]): RunCommandState =
+        RunCommandState(stateKey, installCommand, uninstallCommand)
+    
+    }
+    
+    
+    lazy val typeName = "RunCommandState"
+  
+  }
+  
+  
+  
+  
+  trait MxTriggeredState {
+  
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[TriggeredState,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[TriggeredState,parameters.type] = builder
+    
+    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[TriggeredState,a8.shared.json.ast.JsObj] =
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.preTriggerState)
+          .addField(_.postTriggerState)
+          .addField(_.triggerState)
+      )
+      .build
+    
+    implicit val zioEq: zio.prelude.Equal[TriggeredState] = zio.prelude.Equal.default
+    
+    implicit val catsEq: cats.Eq[TriggeredState] = cats.Eq.fromUniversalEquals
+    
+    lazy val generator: Generator[TriggeredState,parameters.type] =  {
+      val constructors = Constructors[TriggeredState](3, unsafe.iterRawConstruct)
+      Generator(constructors, parameters)
+    }
+    
+    object parameters {
+      lazy val preTriggerState: CaseClassParm[TriggeredState,SystemState] = CaseClassParm[TriggeredState,SystemState]("preTriggerState", _.preTriggerState, (d,v) => d.copy(preTriggerState = v), None, 0)
+      lazy val postTriggerState: CaseClassParm[TriggeredState,SystemState] = CaseClassParm[TriggeredState,SystemState]("postTriggerState", _.postTriggerState, (d,v) => d.copy(postTriggerState = v), None, 1)
+      lazy val triggerState: CaseClassParm[TriggeredState,SystemState] = CaseClassParm[TriggeredState,SystemState]("triggerState", _.triggerState, (d,v) => d.copy(triggerState = v), None, 2)
+    }
+    
+    
+    object unsafe {
+    
+      def rawConstruct(values: IndexedSeq[Any]): TriggeredState = {
+        TriggeredState(
+          preTriggerState = values(0).asInstanceOf[SystemState],
+          postTriggerState = values(1).asInstanceOf[SystemState],
+          triggerState = values(2).asInstanceOf[SystemState],
+        )
+      }
+      def iterRawConstruct(values: Iterator[Any]): TriggeredState = {
+        val value =
+          TriggeredState(
+            preTriggerState = values.next().asInstanceOf[SystemState],
+            postTriggerState = values.next().asInstanceOf[SystemState],
+            triggerState = values.next().asInstanceOf[SystemState],
+          )
+        if ( values.hasNext )
+           sys.error("")
+        value
+      }
+      def typedConstruct(preTriggerState: SystemState, postTriggerState: SystemState, triggerState: SystemState): TriggeredState =
+        TriggeredState(preTriggerState, postTriggerState, triggerState)
+    
+    }
+    
+    
+    lazy val typeName = "TriggeredState"
   
   }
 }

@@ -1,6 +1,7 @@
 package io.accur8.neodeploy.systemstate
 
-import a8.shared.CompanionGen
+
+import a8.shared.{CompanionGen, ZFileSystem}
 import a8.shared.json.ast.JsObj
 import a8.shared.json.{JsonCodec, JsonTypedCodec, UnionCodecBuilder, ast}
 import io.accur8.neodeploy.{HealthchecksDotIo, LazyJsonCodec}
@@ -8,8 +9,8 @@ import io.accur8.neodeploy.model.Install.FromRepo
 import io.accur8.neodeploy.model.{ApplicationDescriptor, UserLogin}
 import io.accur8.neodeploy.systemstate.MxSystemState._
 import io.accur8.neodeploy.systemstate.SystemStateModel._
-
-
+import zio.Chunk
+import a8.shared.SharedImports._
 
 object SystemState {
 
@@ -19,21 +20,22 @@ object SystemState {
     filename: String,
     contents: String,
     perms: UnixPerms = UnixPerms.empty,
-    makeParentDirectories: Boolean = true,
-  ) extends SystemState
+  ) extends SystemState with TextFileContentsMixin {
+    override def prefix: String = ""
+  }
 
   object SecretsTextFile extends MxSecretsTextFile {
   }
   @CompanionGen
   case class SecretsTextFile(
     filename: String,
-    contents: SecretContent,
+    secretContents: SecretContent,
     perms: UnixPerms = UnixPerms.empty,
-    makeParentDirectories: Boolean = true,
-  ) extends SystemState {
-    def asTextFile =
-      TextFile(filename, contents.value, perms, makeParentDirectories)
+  ) extends SystemState with TextFileContentsMixin {
+    override def contents: String = secretContents.value
+    override def prefix: String = "secret "
   }
+
 
   object JavaAppInstall extends MxJavaAppInstall
   @CompanionGen
@@ -42,14 +44,14 @@ object SystemState {
     fromRepo: FromRepo,
     descriptor: ApplicationDescriptor,
     gitAppDirectory: String,
-  ) extends SystemState
+  ) extends SystemState with JavaAppInstallMixin
 
   object Directory extends MxDirectory
   @CompanionGen
   case class Directory(
     path: String,
     perms: UnixPerms = UnixPerms.empty,
-  ) extends SystemState
+  ) extends SystemState with DirectoryMixin
 
   object Systemd extends MxSystemd
   @CompanionGen
@@ -57,7 +59,7 @@ object SystemState {
     unitName: String,
     enable: Vector[String] = Vector.empty,
     unitFiles: Vector[TextFile],
-  ) extends HasSubStates {
+  ) extends HasSubStates with SystemdMixin {
     override def subStates: Vector[SystemState] = unitFiles
   }
 
@@ -65,7 +67,7 @@ object SystemState {
   @CompanionGen
   case class Supervisor(
     configFile: TextFile,
-  ) extends HasSubStates {
+  ) extends HasSubStates with SupervisorMixin {
     override def subStates: Vector[SystemState] = Vector(configFile)
   }
 
@@ -73,11 +75,17 @@ object SystemState {
   @CompanionGen
   case class Caddy(
     configFile: TextFile,
-  ) extends HasSubStates {
+  ) extends HasSubStates with CaddyMixin {
     override def subStates: Vector[SystemState] = Vector(configFile)
   }
 
-  case object Empty extends SystemState
+  case object Empty extends SystemState {
+    override def stateKey = None
+    override def dryRun: Vector[String] = Vector.empty
+    override def isActionNeeded = zsucceed(false)
+    override def runApplyNewState = zunit
+    override def runUninstallObsolete = zunit
+  }
 
   object Composite extends MxComposite {
 
@@ -94,7 +102,7 @@ object SystemState {
   case class Composite(
     description: String,
     states: Vector[SystemState],
-  ) extends HasSubStates {
+  ) extends HasSubStates with CompositeMixin {
     override def subStates: Vector[SystemState] = states
   }
 
@@ -102,11 +110,34 @@ object SystemState {
   @CompanionGen
   case class HealthCheck(
     data: HealthchecksDotIo.CheckUpsertRequest,
-  ) extends SystemState
+  ) extends SystemState with HealthCheckMixin
 
   sealed trait HasSubStates extends SystemState {
     def subStates: Vector[SystemState]
   }
+
+  object RunCommandState extends MxRunCommandState
+  @CompanionGen
+  case class RunCommandState(
+    override val stateKey: Option[StateKey] = None,
+    installCommand: Option[Command] = None,
+    uninstallCommand: Option[Command] = None,
+  ) extends SystemState with RunCommandStateMixin
+
+
+  object TriggeredState extends MxTriggeredState
+  /**
+   * if any changes are needed in triggerState then preTriggeredState will get applied
+   * then triggerState then postTriggerState
+   * for example for systemd the triggerState are all the systemd unit files
+   * and the postTriggerState is the systemd daemon reload and enable commands
+   */
+  @CompanionGen
+  case class TriggeredState(
+    preTriggerState: SystemState,
+    postTriggerState: SystemState,
+    triggerState: SystemState,
+  ) extends SystemState with TriggeredStateMixin
 
 
   implicit lazy val jsonCodec: JsonTypedCodec[SystemState, ast.JsObj] =
@@ -126,6 +157,7 @@ object SystemState {
 
 }
 
-sealed trait SystemState
+sealed trait SystemState extends SystemStateMixin {
+}
 
 

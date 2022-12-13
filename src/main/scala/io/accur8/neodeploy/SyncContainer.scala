@@ -18,7 +18,6 @@ import io.accur8.neodeploy.systemstate.SystemStateModel._
 import zio.prelude.Equal
 import zio.{Task, UIO, ZIO}
 import PredefAssist._
-import io.accur8.neodeploy.systemstate.Interpretter.{ActionNeededCache, RunArgs}
 
 object SyncContainer extends Logging {
 
@@ -104,10 +103,10 @@ abstract class SyncContainer[Resolved, Name <: StringValue : Equal](
     val effect: M[Unit] =
       for {
         newState <- newStateEffect
-        actionNeededCache <- systemstate.Interpretter.actionNeededCache(newState)
-        runArgs = RunArgs(newState, previousState, actionNeededCache)
-        _ <- runArgs.dryRunLog(loggerF)
-        _ <- systemstate.Interpretter.run(runArgs)
+        interpretter <- systemstate.Interpretter(newState, previousState)
+        _ <- interpretter.dryRunLog.map(m => loggerF.info(m)).getOrElse(zunit)
+        _ <- interpretter.runApplyNewState
+        _ <- interpretter.runUninstallObsolete
         _ <- updateState(newState)
       } yield ()
 
@@ -123,7 +122,7 @@ abstract class SyncContainer[Resolved, Name <: StringValue : Equal](
   }
 
   def updateState(newState: NewState): Task[Unit] = {
-    val isEmpty = Interpretter.isEmpty(newState.systemState)
+    val isEmpty = newState.isEmpty
     val stateFile = stateDirectory.file(z"${prefix.value}-${newState.resolvedName}-${newState.syncName}.json")
     if (isEmpty) {
       if ( stateFile.exists() ) {

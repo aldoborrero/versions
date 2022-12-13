@@ -1,12 +1,14 @@
 package io.accur8.neodeploy.systemstate
 
 
+import a8.shared.FileSystem.Directory
 import a8.shared.{CompanionGen, FileSystem, SecretValue, StringValue}
 import io.accur8.neodeploy.HealthchecksDotIo
 import io.accur8.neodeploy.Sync.SyncName
 import io.accur8.neodeploy.systemstate.MxSystemStateModel._
 import zio.{&, Task, Trace, ZIO, ZLayer}
 import a8.shared.SharedImports._
+import a8.shared.app.LoggingF
 
 import java.nio.file.attribute.PosixFilePermission
 
@@ -88,7 +90,7 @@ object SystemStateModel {
 
   object PreviousState extends MxPreviousState
   @CompanionGen
-  case class PreviousState(resolvedSyncState: ResolvedState) extends HasResolvedSyncState
+  case class PreviousState(resolvedSyncState: ResolvedState) extends HasResolvedState
 
   object ResolvedState extends MxResolvedState
   @CompanionGen
@@ -96,14 +98,22 @@ object SystemStateModel {
 
   object NewState extends MxNewState
   @CompanionGen
-  case class NewState(resolvedSyncState: ResolvedState) extends HasResolvedSyncState
+  case class NewState(resolvedSyncState: ResolvedState) extends HasResolvedState
 
-  sealed trait HasResolvedSyncState {
+  object Command extends MxCommand
+  @CompanionGen
+  case class Command(args: Iterable[String], workingDirectory: Option[String] = None) {
+    def asRunnableCommand =
+      io.accur8.neodeploy.Command(args, workingDirectory = workingDirectory.map(FileSystem.dir))
+  }
+
+  sealed trait HasResolvedState {
+    def isEmpty = SystemStateImpl.isEmpty(systemState)
     def resolvedName = resolvedSyncState.resolvedName
     def syncName = resolvedSyncState.syncName
     def systemState = resolvedSyncState.value
     def resolvedSyncState: ResolvedState
-    lazy val statesByKey = Interpretter.statesByKey(resolvedSyncState.value)
+    lazy val statesByKey = SystemStateImpl.statesByKey(resolvedSyncState.value)
   }
 
   object SystemStateLogger {

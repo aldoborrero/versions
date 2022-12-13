@@ -89,6 +89,7 @@ object RSnapshotServerSync extends Sync[ResolvedUser] {
       z"setup rsnapshot for client ${client.server.name}",
       Vector(
         configFileState,
+        healthCheckState,
         systemdState,
       )
     )
