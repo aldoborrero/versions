@@ -7,7 +7,7 @@ import io.accur8.neodeploy.systemstate.SystemStateModel._
 trait DirectoryMixin extends SystemStateMixin { self: SystemState.Directory =>
 
   override def stateKey: Option[StateKey] = StateKey(path).some
-  override def dryRun: Vector[String] = Vector(s"directory ${path} with ${perms}")
+  override def dryRunInstall: Vector[String] = Vector(s"directory ${path} with ${perms}")
 
   override def isActionNeeded = {
     val dir = ZFileSystem.dir(path)

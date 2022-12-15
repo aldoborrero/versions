@@ -1,35 +1,40 @@
 package io.accur8.neodeploy.systemstate
 
 
-import a8.shared.{FileSystem, ZFileSystem}
+import a8.shared.{FileSystem, StringValue, ZFileSystem}
 import a8.shared.SharedImports._
+import a8.sync.qubes.QubesApiClient
 import io.accur8.neodeploy.ApplicationInstallSync.Installer
 import io.accur8.neodeploy.systemstate.Interpretter.ActionNeededCache
+import io.accur8.neodeploy.systemstate.SystemState.TriggeredState
 import io.accur8.neodeploy.systemstate.SystemStateModel._
 import io.accur8.neodeploy.{Command, HealthchecksDotIo}
 import zio.ZIO
 
 import java.nio.file.Files
 import java.nio.file.attribute.PosixFileAttributeView
+import scala.collection.immutable.Vector
 
 object SystemStateImpl {
 
-  def dryRunCleanup(statesToCleanup: Vector[SystemState]): Vector[String] =
-    statesToCleanup
+  def dryRunUninstall(statesToUninstall: Vector[SystemState]): Vector[String] =
+    statesToUninstall
       .flatMap { ss =>
-        dryRun(ss, _ => Vector.empty, "cleanup ")
+        rawDryRun(_.dryRunUninstall, ss, _ => Vector.empty)
       }
 
-  def dryRun(state: SystemState, inner: SystemState => Vector[String], prefix: String): Vector[String] = {
-    val stateDryRun = state.dryRun
+  def rawDryRun(getLogsFn: SystemState=>Vector[String], state: SystemState, inner: SystemState => Vector[String]): Vector[String] = {
+    val stateDryRun = getLogsFn(state)
     val subStatesDryRun =
       state match {
         case hasSubStates: SystemState.HasSubStates =>
           hasSubStates
             .subStates
             .flatMap(inner)
-        case _ =>
+        case _: SystemState.NoSubStates =>
           Vector.empty
+        case triggeredState: TriggeredState =>
+          inner(triggeredState.preTriggerState) ++ inner(triggeredState.triggerState) ++ inner(triggeredState.postTriggerState)
       }
 
     (stateDryRun.isEmpty, subStatesDryRun.isEmpty) match {
@@ -52,7 +57,7 @@ object SystemStateImpl {
       .as(())
   }
 
-  def runApplyNewState(state: SystemState, inner: SystemState => M[Unit]): M[Unit] =
+  def runApplyNewState(state: SystemState, interpretter: Interpretter, inner: SystemState => M[Unit]): M[Unit] =
     for {
       _ <- state.runApplyNewState
       _ <-
@@ -62,8 +67,19 @@ object SystemStateImpl {
               .subStates
               .map(inner)
               .sequence
-          case _ =>
+          case _: SystemState.NoSubStates =>
             zunit
+          case triggeredState: SystemState.TriggeredState =>
+            interpretter.actionNeededCache.cache(triggeredState.triggerState) match {
+              case true =>
+                for {
+                  _ <- inner(triggeredState.preTriggerState)
+                  _ <- inner(triggeredState.triggerState)
+                  _ <- inner(triggeredState.postTriggerState)
+                } yield ()
+              case false =>
+                zunit
+            }
         }
     } yield ()
 
@@ -106,13 +122,13 @@ object SystemStateImpl {
   def dryRun(interpretter: Interpretter): Vector[String] = {
     def inner(s0: SystemState): Vector[String] = {
       interpretter.actionNeededCache.cache.get(s0) match {
-        case Some(true) =>
-          SystemStateImpl.dryRun(s0, inner, "")
-        case _ =>
+        case Some(false) =>
           Vector.empty
+        case _ =>
+          SystemStateImpl.rawDryRun(_.dryRunInstall, s0, inner)
       }
     }
-    inner(interpretter.newState.systemState) ++ SystemStateImpl.dryRunCleanup(interpretter.statesToCleanup)
+    inner(interpretter.newState.systemState) ++ SystemStateImpl.dryRunUninstall(interpretter.statesToCleanup)
   }
 
   def actionNeededCache(newState: NewState): M[ActionNeededCache] = {
@@ -120,15 +136,40 @@ object SystemStateImpl {
       systemState
         .isActionNeeded
         .flatMap { isActionNeeded =>
-          val value = Map(systemState -> isActionNeeded)
+          def value(b: Boolean) = Map(systemState -> b)
           systemState match {
             case hss: SystemState.HasSubStates =>
               hss.subStates
                 .map(impl)
                 .sequence
-                .map(_.reduce(_ ++ _) ++ value)
-            case _ =>
-              zsucceed(value)
+                .map(_.reduceOption(_ ++ _).getOrElse(Map.empty))
+                .map { cache =>
+                  val b = cache.values.exists(identity)
+                  cache ++ value(b || isActionNeeded)
+                }
+            case _: SystemState.NoSubStates =>
+              zsucceed(value(isActionNeeded))
+            case triggeredState: TriggeredState =>
+              impl(triggeredState.triggerState)
+                .map { actionNeededCache =>
+                  val value = actionNeededCache(triggeredState.triggerState)
+                  (actionNeededCache + (triggeredState -> value)) -> value
+                }
+                .flatMap {
+                  case (anc, true) =>
+                    Vector(triggeredState.preTriggerState, triggeredState.postTriggerState)
+                      .map(impl)
+                      .sequence
+                      .map { preAndPostAnc =>
+                        preAndPostAnc.reduce(_ ++ _) ++ anc
+                      }
+                  case (anc, false) =>
+                    zsucceed(
+                      Vector(triggeredState.preTriggerState, triggeredState.postTriggerState)
+                        .map(_ -> false)
+                        .toMap
+                    )
+                }
           }
         }
     }
@@ -143,33 +184,45 @@ object SystemStateImpl {
         true
       case hss: SystemState.HasSubStates =>
         hss.subStates.forall(isEmpty)
-      case _ =>
+      case _: SystemState.NoSubStates =>
+        false
+      case _: SystemState.TriggeredState =>
         false
     }
 
   def runApplyNewState(interpretter: Interpretter): M[Unit] = {
     def inner(s0: SystemState): M[Unit] =
       if (interpretter.actionNeededCache.cache(s0)) {
-        SystemStateImpl.runApplyNewState(s0, inner)
+        SystemStateImpl.runApplyNewState(s0, interpretter, inner)
       } else {
         zunit
       }
-    runApplyNewState(interpretter.newState.systemState, inner)
+    runApplyNewState(interpretter.newState.systemState, interpretter, inner)
   }
 
 
-  def statesByKey(systemState: SystemState): Map[StateKey, SystemState] =
-    states(systemState)
-      .flatMap(s => s.stateKey.map(_ -> s))
-      .toMap
+  def statesByKey(systemState: SystemState): Map[StateKey, SystemState] = {
+    val states0 =
+      states(systemState)
+        .flatMap(s => s.stateKey.map(_ -> s))
+        .toMap
+    states0
+  }
 
 
-  def states(systemState: SystemState): Vector[SystemState] =
-    systemState match {
-      case hss: SystemState.HasSubStates =>
-        Vector(systemState) ++ hss.subStates.flatMap(states)
-      case leaf =>
-        Vector(leaf)
-    }
+  def states(systemState: SystemState): Vector[SystemState] = {
+    val v = Vector(systemState)
+    val subStates =
+      systemState match {
+        case hss: SystemState.HasSubStates =>
+           hss.subStates.flatMap(states)
+        case leaf: SystemState.NoSubStates =>
+          Vector.empty
+        case triggeredState: SystemState.TriggeredState =>
+          Vector(triggeredState.preTriggerState, triggeredState.triggerState, triggeredState.postTriggerState)
+            .flatMap(states)
+      }
+    v ++ subStates
+  }
 
 }

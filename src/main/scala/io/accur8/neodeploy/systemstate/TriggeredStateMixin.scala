@@ -7,8 +7,7 @@ trait TriggeredStateMixin extends SystemStateMixin { self: SystemState.Triggered
 
   override def stateKey: Option[SystemStateModel.StateKey] = None
 
-  override def dryRun: Vector[String] =
-    ???
+  override def dryRunInstall: Vector[String] = Vector.empty
 
   override def isActionNeeded: M[Boolean] =
     zsucceed(false)
@@ -17,7 +16,7 @@ trait TriggeredStateMixin extends SystemStateMixin { self: SystemState.Triggered
    * applies the state for just this system state and no sub states
    */
   override def runApplyNewState: M[Unit] =
-    ???
+    zunit
 
   /**
    * uninstalls the state for just this system state and no sub states

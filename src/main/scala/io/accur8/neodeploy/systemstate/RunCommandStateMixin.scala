@@ -6,17 +6,17 @@ import io.accur8.neodeploy.systemstate.SystemStateModel._
 
 trait RunCommandStateMixin extends SystemStateMixin { self: SystemState.RunCommandState =>
 
-  override def dryRun: Vector[String] =
+  override def dryRunInstall: Vector[String] =
     dryRun("install", installCommands)
 
   def dryRun(actionName: String, commands: Vector[Command]): Vector[String] =
     commands
       .map { cmd =>
-        s"run ${actionName} command -- ${cmd.args.mkString(" ")}${cmd.workingDirectory.map(wd => s" in working directory ${wd}")}"
+        s"run ${actionName} command -- ${cmd.args.mkString(" ")}${cmd.workingDirectory.map(wd => s" in working directory ${wd}").getOrElse("")}"
       }
 
   override def dryRunUninstall: Vector[String] =
-    dryRun("uninstall", installCommands)
+    dryRun("uninstall", uninstallCommands)
 
   override def isActionNeeded: M[Boolean] = zsucceed(true)
 

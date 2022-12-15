@@ -16,7 +16,14 @@ trait TextFileContentsMixin extends SystemStateMixin {
 
   override def stateKey: Option[StateKey] = StateKey(filename).some
 
-  override def dryRun: Vector[String] = Vector(s"${prefix}file ${filename} with perms ${perms}")
+  override def dryRunInstall: Vector[String] = {
+    val permsStr =
+       if ( perms.value.nonEmpty )
+         s" with ${perms}"
+       else
+        ""
+    Vector(s"${prefix}file ${filename}${permsStr}")
+  }
 
   override def isActionNeeded = {
     val file = ZFileSystem.file(filename)

@@ -20,7 +20,7 @@ object SystemState {
     filename: String,
     contents: String,
     perms: UnixPerms = UnixPerms.empty,
-  ) extends SystemState with TextFileContentsMixin {
+  ) extends NoSubStates with TextFileContentsMixin {
     override def prefix: String = ""
   }
 
@@ -31,11 +31,10 @@ object SystemState {
     filename: String,
     secretContents: SecretContent,
     perms: UnixPerms = UnixPerms.empty,
-  ) extends SystemState with TextFileContentsMixin {
+  ) extends NoSubStates with TextFileContentsMixin {
     override def contents: String = secretContents.value
     override def prefix: String = "secret "
   }
-
 
   object JavaAppInstall extends MxJavaAppInstall
   @CompanionGen
@@ -44,34 +43,18 @@ object SystemState {
     fromRepo: FromRepo,
     descriptor: ApplicationDescriptor,
     gitAppDirectory: String,
-  ) extends SystemState with JavaAppInstallMixin
+  ) extends NoSubStates with JavaAppInstallMixin
 
   object Directory extends MxDirectory
   @CompanionGen
   case class Directory(
     path: String,
     perms: UnixPerms = UnixPerms.empty,
-  ) extends SystemState with DirectoryMixin
+  ) extends NoSubStates with DirectoryMixin
 
-  object Supervisor extends MxSupervisor
-  @CompanionGen
-  case class Supervisor(
-    configFile: TextFile,
-  ) extends HasSubStates with SupervisorMixin {
-    override def subStates: Vector[SystemState] = Vector(configFile)
-  }
-
-  object Caddy extends MxCaddy
-  @CompanionGen
-  case class Caddy(
-    configFile: TextFile,
-  ) extends HasSubStates with CaddyMixin {
-    override def subStates: Vector[SystemState] = Vector(configFile)
-  }
-
-  case object Empty extends SystemState {
+  case object Empty extends NoSubStates {
     override def stateKey = None
-    override def dryRun: Vector[String] = Vector.empty
+    override def dryRunInstall: Vector[String] = Vector.empty
     override def isActionNeeded = zsucceed(false)
     override def runApplyNewState = zunit
     override def runUninstallObsolete = zunit
@@ -100,7 +83,10 @@ object SystemState {
   @CompanionGen
   case class HealthCheck(
     data: HealthchecksDotIo.CheckUpsertRequest,
-  ) extends SystemState with HealthCheckMixin
+  ) extends NoSubStates with HealthCheckMixin
+
+  sealed trait NoSubStates extends SystemState {
+  }
 
   sealed trait HasSubStates extends SystemState {
     def subStates: Vector[SystemState]
@@ -112,7 +98,7 @@ object SystemState {
     override val stateKey: Option[StateKey] = None,
     installCommands: Vector[Command] = Vector.empty,
     uninstallCommands: Vector[Command] = Vector.empty,
-  ) extends SystemState with RunCommandStateMixin
+  ) extends NoSubStates with RunCommandStateMixin
 
 
   object TriggeredState extends MxTriggeredState
@@ -131,18 +117,20 @@ object SystemState {
 
 
   implicit lazy val jsonCodec: JsonTypedCodec[SystemState, ast.JsObj] =
-    UnionCodecBuilder[SystemState]
-      .typeFieldName("kind")
-      .addSingleton("empty", Empty)
-      .addType[Caddy]("caddy")
-      .addType[Composite]("composite")
-      .addType[Directory]("directory")
-      .addType[HealthCheck]("healthcheck")
-      .addType[JavaAppInstall]("javaappinstall")
-      .addType[Supervisor]("supervisor")
-      .addType[TextFile]("textfile")
-      .addType[SecretsTextFile]("secretstextfile")
-      .build
+    LazyJsonCodec(
+      UnionCodecBuilder[SystemState]
+        .typeFieldName("kind")
+        .addSingleton("empty", Empty)
+        .addType[Composite]("composite")
+        .addType[Directory]("directory")
+        .addType[HealthCheck]("healthcheck")
+        .addType[JavaAppInstall]("javaappinstall")
+        .addType[RunCommandState]("runcommand")
+        .addType[SecretsTextFile]("secretstextfile")
+        .addType[TextFile]("textfile")
+        .addType[TriggeredState]("triggeredstate")
+        .build
+    )
 
 }
 

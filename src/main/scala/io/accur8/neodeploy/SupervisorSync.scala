@@ -76,11 +76,9 @@ user            = ${app.user.login}
   override def rawSystemState(input: ResolvedApp): SystemState =
     input.descriptor.launcher match {
       case sd: SupervisorDescriptor =>
-        SystemState.Supervisor(
-          SystemState.TextFile(
-            configFile(input).absolutePath,
-            supervisorConfigContents(input, sd)
-          )
+        SystemState.TextFile(
+          configFile(input).absolutePath,
+          supervisorConfigContents(input, sd)
         )
       case _ =>
         SystemState.Empty

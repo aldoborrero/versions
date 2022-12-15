@@ -51,7 +51,7 @@ case class LocalUserSync(resolvedUser: ResolvedUser, appsFilter: Filter[Applicat
     override def name(resolved: ResolvedApp): ApplicationName = resolved.name
     override def nameFromStr(nameStr: String): ApplicationName = ApplicationName(nameStr)
 
-    override val newResolveds = resolvedServer.resolvedApps
+    override val newResolveds = resolvedUser.resolvedApps
 
     override val syncs: Seq[Sync[ResolvedApp]] =
       Vector(
@@ -59,24 +59,6 @@ case class LocalUserSync(resolvedUser: ResolvedUser, appsFilter: Filter[Applicat
         SupervisorSync(resolvedServer.supervisorDirectory),
         ApplicationInstallSync(resolvedUser.appsRootDirectory),
       ).filter(s => syncsFilter.include(s.name))
-
-//    override def additionalSteps(name: ApplicationName, newResolvedOpt: Option[ResolvedApp], currentStateOpt: Option[ApplicationDescriptor], containerSteps: Sync.ContainerSteps): Seq[Sync.Step] = {
-//
-//      val stopAppSteps =
-//        if ( containerSteps.nonEmpty)
-//          resolvedServer.appCommandStep(Phase.Pre, "stop", _.stopServerCommand, currentStateOpt)
-//        else
-//          Seq.empty
-//
-//      val startAppSteps =
-//        if (containerSteps.nonEmpty)
-//          resolvedServer.appCommandStep(Phase.Post, "start", _.startServerCommand, newResolvedOpt.map(_.descriptor))
-//        else
-//          Seq.empty
-//
-//      stopAppSteps ++ startAppSteps
-//
-//    }
 
   }
 

@@ -33,7 +33,7 @@ case class Interpretter(newState: NewState, previousState: PreviousState, action
       if (dryRunLogs.isEmpty) {
         s"dry run for ${context} is up to date"
       } else {
-        s"dry run for ${context}${"\n"}${dryRunLogs.mkString("\n").indent("    ")}"
+        s"dry run for ${context}${"\n"}${dryRunLogs.mkString("\n").indent("    ")}${"\n"}"
       }
     }
   }
@@ -42,14 +42,14 @@ case class Interpretter(newState: NewState, previousState: PreviousState, action
     SystemStateImpl.runApplyNewState(this)
 
   def runUninstallObsolete: M[Unit] =
-    SystemStateImpl.runUninstallObsolete(statesToCleanup)
+    SystemStateImpl.runUninstallObsolete(statesToUninstall)
 
-  lazy val statesToCleanup: Vector[SystemState] = {
+  lazy val statesToUninstall: Vector[SystemState] = {
 
     val newStatesByKey = newState.statesByKey
     val previousStatesByKey = previousState.statesByKey
 
-    // cleanup anything in previous not in current
+    // uninstall any state in previous not in current
     previousStatesByKey
       .filterNot(e => newStatesByKey.contains(e._1))
       .map { case (key, ss) =>

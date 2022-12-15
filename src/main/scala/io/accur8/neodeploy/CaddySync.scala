@@ -7,6 +7,7 @@ import a8.shared.app.LoggingF
 import io.accur8.neodeploy.model.CaddyDirectory
 import io.accur8.neodeploy.resolvedmodel.ResolvedApp
 import io.accur8.neodeploy.systemstate.SystemState
+import io.accur8.neodeploy.systemstate.SystemStateModel._
 import zio.{Task, ZIO}
 
 object CaddySync {
@@ -46,11 +47,25 @@ ${applicationDescriptor.resolvedDomainNames.map(_.value).mkString(", ")} {
   override def rawSystemState(input: ResolvedApp): SystemState =
     caddyConfigContents(input.descriptor) match {
       case Some(contents) =>
-        SystemState.Caddy(
-          SystemState.TextFile(
-            configFile(input).absolutePath,
-            contents,
-          )
+        val reloadCaddyCommand =
+          Overrides.sudoSystemCtlCommand
+            .appendArgs("reload", z"${input.name}")
+            .asSystemStateCommand
+        SystemState.Composite(
+          z"caddy setup for ${input.name}",
+          Vector(SystemState.TriggeredState(
+            triggerState =
+              SystemState.TextFile(
+                configFile(input).absolutePath,
+                contents,
+              ),
+            postTriggerState =
+              SystemState.RunCommandState(
+                stateKey = StateKey(z"reload caddy for ${input.name}").some,
+                installCommands = Vector(reloadCaddyCommand),
+                uninstallCommands = Vector(reloadCaddyCommand),
+              )
+          ))
         )
       case None =>
         SystemState.Empty

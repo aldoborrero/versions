@@ -153,7 +153,7 @@ object Systemd {
 
     val manageSystemdUnitState: SystemState =
       RunCommandState(
-        StateKey("enable systemd unit").some,
+        StateKey(s"enable systemd unit ${unitName}").some,
         installCommands = Vector(daemonReloadCommand) ++ enableTimerCommands ++ Vector(enableUserLingerCommand),
         uninstallCommands = uninstallTimerCommands,
       )

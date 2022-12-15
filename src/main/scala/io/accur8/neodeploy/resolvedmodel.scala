@@ -23,6 +23,17 @@ object resolvedmodel extends LoggingF {
     server: ResolvedServer,
   ) {
 
+    lazy val gitAppsDirectory =
+      server.gitServerDirectory.unresolvedDirectory.subdir(descriptor.login.value)
+
+    lazy val resolvedApps: Vector[ResolvedApp] =
+      gitAppsDirectory
+        .subdirs()
+        .flatMap { appDir =>
+          server.loadResolvedAppFromDisk(appDir, this)
+        }
+        .toVector
+
     lazy val plugins = UserPlugin.UserPlugins(descriptor.plugins, this)
 
     lazy val a8VersionsExec =
@@ -147,25 +158,6 @@ object resolvedmodel extends LoggingF {
     }
 
     def name = descriptor.name
-
-    lazy val resolvedApps: Vector[ResolvedApp] =
-      gitServerDirectory
-        .unresolvedDirectory
-        .subdirs()
-        .flatMap { userDir =>
-          fetchUserOpt(UserLogin(userDir.name)) match {
-            case None =>
-              logger.warn(z"no user found for ${userDir}")
-              None
-            case Some(user) =>
-              userDir
-                .subdirs()
-                .flatMap { appDir =>
-                  loadResolvedAppFromDisk(appDir, user)
-                }
-          }
-        }
-        .toVector
 
     def supervisorDirectory: SupervisorDirectory = descriptor.supervisorDirectory
     def caddyDirectory: CaddyDirectory = descriptor.caddyDirectory

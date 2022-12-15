@@ -7,7 +7,8 @@ import io.accur8.neodeploy.systemstate.SystemStateModel._
 
 trait HealthCheckMixin extends SystemStateMixin { self: SystemState.HealthCheck =>
 
-  override def dryRun: Vector[String] = Vector(s"healthcheck ${data.name}")
+  override def dryRunInstall: Vector[String] = Vector(s"upsert and enable healthcheck ${data.name}")
+  override def dryRunUninstall: Vector[String] = Vector(s"disable healthcheck ${data.name}")
 
   def stateKey = StateKey(s"healthcheck:${data.name}").some
 

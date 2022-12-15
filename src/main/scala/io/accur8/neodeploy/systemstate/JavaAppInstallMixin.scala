@@ -13,7 +13,7 @@ import java.nio.file.Files
 trait JavaAppInstallMixin extends SystemStateMixin { self: SystemState.JavaAppInstall =>
 
   override def stateKey: Option[StateKey] = StateKey(appInstallDir).some
-  override def dryRun: Vector[String] = Vector(s"app install into ${appInstallDir} -- ${self.fromRepo.compactJson}")
+  override def dryRunInstall: Vector[String] = Vector(s"app install into ${appInstallDir} -- ${self.fromRepo.compactJson}")
 
   /**
    * if the installed appliciation descriptor matches the descriptor then
@@ -51,7 +51,6 @@ trait JavaAppInstallMixin extends SystemStateMixin { self: SystemState.JavaAppIn
     val aid = ZFileSystem.dir(appInstallDir)
     val backupDir = aid.parentOpt.get.subdir("_backups").subdir(aid.name + "-" + FileSystem.fileSystemCompatibleTimestamp())
     for {
-      _ <- backupDir.makeDirectories
       _ <- ZIO.attemptBlocking(Files.move(aid.asNioPath, backupDir.asNioPath))
     } yield ()
   }
