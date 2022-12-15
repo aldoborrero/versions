@@ -30,7 +30,10 @@ trait TextFileContentsMixin extends SystemStateMixin {
     for {
       permissionActionNeeded0 <- SystemStateImpl.permissionsActionNeeded(file, perms)
       actualContentsOpt <- file.readAsStringOpt
-    } yield permissionActionNeeded0 || (actualContentsOpt !== some(contents))
+    } yield {
+      val contentsMatch = actualContentsOpt === some(contents)
+      permissionActionNeeded0 || !contentsMatch
+    }
   }
 
 
@@ -44,6 +47,13 @@ trait TextFileContentsMixin extends SystemStateMixin {
         else
           file.parent.makeDirectories
       _ <- file.write(contents)
+      _ <-
+        if ( perms.value.nonEmpty ) {
+          io.accur8.neodeploy.Command("chmod", perms.value, filename)
+            .execCaptureOutput
+        } else {
+          zunit
+        }
     } yield ()
   }
 

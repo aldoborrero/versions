@@ -17,11 +17,18 @@ import scala.collection.immutable.Vector
 
 object SystemStateImpl {
 
-  def dryRunUninstall(statesToUninstall: Vector[SystemState]): Vector[String] =
-    statesToUninstall
-      .flatMap { ss =>
-        rawDryRun(_.dryRunUninstall, ss, _ => Vector.empty)
-      }
+  def dryRunUninstall(statesToUninstall: Vector[SystemState]): Vector[String] = {
+    val dryRunUninstallLogs =
+      statesToUninstall
+        .flatMap { ss =>
+          rawDryRun(_.dryRunUninstall, ss, _ => Vector.empty)
+        }
+    if ( dryRunUninstallLogs.nonEmpty )
+      Vector("uninstaller actions") ++ dryRunUninstallLogs.map("   " + _)
+    else
+      Vector.empty
+
+  }
 
   def rawDryRun(getLogsFn: SystemState=>Vector[String], state: SystemState, inner: SystemState => Vector[String]): Vector[String] = {
     val stateDryRun = getLogsFn(state)
@@ -128,7 +135,7 @@ object SystemStateImpl {
           SystemStateImpl.rawDryRun(_.dryRunInstall, s0, inner)
       }
     }
-    inner(interpretter.newState.systemState) ++ SystemStateImpl.dryRunUninstall(interpretter.statesToCleanup)
+    inner(interpretter.newState.systemState) ++ SystemStateImpl.dryRunUninstall(interpretter.statesToUninstall)
   }
 
   def actionNeededCache(newState: NewState): M[ActionNeededCache] = {
