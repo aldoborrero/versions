@@ -15,101 +15,9 @@ import io.accur8.neodeploy.systemstate.SystemState
 import io.accur8.neodeploy.systemstate.SystemStateModel._
 
 object Sync extends LoggingF {
-//
-//  sealed abstract class Modification[A: JsonCodec, B] {
-//    def newStateOpt: Option[A]
-//  }
-//
-////  case class Noop[A: JsonCodec, B](newStateOpt: Option[A]) extends Modification[A, B] {
-////    override def actionRequired: Boolean = false
-////  }
-//
-//  case class Delete[A: JsonCodec, B](currentState: A) extends Modification[A, B] {
-//    def newStateOpt = None
-//  }
-//  case class Update[A: JsonCodec, B](currentState: A, newState: A, newInput: B) extends Modification[A, B] {
-//    def newStateOpt = Some(newState)
-//  }
-//  case class Insert[A: JsonCodec, B](newState: A, newInput: B) extends Modification[A, B] {
-//    def newStateOpt = Some(newState)
-//  }
-//
+
   object SyncName extends StringValue.Companion[SyncName]
   case class SyncName(value: String) extends StringValue
-//
-//
-//  case class Phase(sequence: Int)
-//  object Phase {
-//    val Pre = Phase(10)
-//    val Apply = Phase(20)
-//    val Post = Phase(30)
-//  }
-//
-//  object Step {
-//
-//    def copyFile(from: File, to: File, phase: Phase = Phase.Apply): Step = {
-//      val action = ZIO.attemptBlocking {
-//        to.parent.makeDirectories()
-//        from.copyTo(to)
-//      }
-//      Step(phase, z"copy ${from} --> ${to}", action)
-//    }
-//
-//    def chmod(perms: String, path: Path, phase: Phase = Phase.Apply): Step =
-//      runCommand(phase, Command("chmod", perms, z"${path}"))
-//
-//    def deleteFile(f: File, phase: Phase = Phase.Apply)(implicit loggerF: LoggerF): Step = {
-//      Step(
-//        phase = phase,
-//        description = z"delete file ${f}",
-//        action = ZIO.attemptBlocking {
-//          if (f.exists()) {
-//            f.delete()
-//          }
-//        }
-//      )
-//    }
-//
-//    def runCommand(
-//      phase: Phase,
-//      command: Command,
-//      workingDirectory: Option[Directory] = None,
-//      failOnNonZeroExitCode: Boolean = true
-//    )(implicit loggerF: LoggerF): Step = {
-//      Step(
-//        phase = phase,
-//        description = z"run command: ${command.args.mkString(" ")}",
-//        action =
-//          zio.process.Command(command.args.head, command.args.tail.toSeq :_*)
-//            .redirectErrorStream(true)
-//            .linesStream
-//            .foreach(line => loggerF.debug(line))
-////          ZIO.attemptBlocking {
-////            val exec = new Exec(command.args, workingDirectory)
-////            exec.execCaptureOutput(failOnNonZeroExitCode)
-////          }
-//      )
-//    }
-//
-//  }
-//
-//  case class Step(phase: Phase, description: String, action: Task[Unit])
-//  case class ResolvedSteps(syncName: SyncName, newState: Option[JsVal], steps: Vector[Step])
-//
-//  case class ContainerSteps(name: StringValue, resolvedSteps: Seq[ResolvedSteps], additionalSteps: Seq[Step]) {
-//
-//    def nonEmpty: Boolean = sortedSteps.nonEmpty
-//
-//    lazy val sortedSteps: Seq[Step] =
-//      (resolvedSteps.flatMap(_.steps) ++ additionalSteps)
-//        .sortBy(_.phase.sequence)
-//
-//    def descriptions(indent: String) =
-//      sortedSteps
-//        .map(step => s"${indent}${step.description}")
-//        .mkString("\n")
-//
-//  }
 
 }
 
@@ -124,67 +32,10 @@ abstract class Sync[A] {
   import Sync._
 
   val name: SyncName
-//
-//  def state(input: B): Task[Option[A]]
-//
-//  def resolveModification(currentState: Option[A], newInput: Option[B]): Task[(Option[A], Option[Modification[A,B]])] = {
-//    for {
-//      newState <- newInput.map(state).getOrElse(zsucceed(None))
-//    } yield {
-//      val action =
-//        (currentState, newState) match {
-//          case (None, None) =>
-//            // this won't happen
-//            None
-//          case (Some(cs), None) =>
-//            Delete[A,B](cs).some
-//          case (Some(cs), Some(ns)) if cs == ns =>
-//            None
-//          case (Some(cs), Some(ns)) =>
-//            Update[A,B](cs, ns, newInput.get).some
-//          case (None, Some(ns)) =>
-//            Insert[A,B](ns, newInput.get).some
-//        }
-//      newState -> action
-//    }
-//  }
-//
-//  def resolveStepsFromModification(modification: Modification[A,B]): Vector[Step]
-//
-//  def resolveSteps(currentStateJsv: Option[JsVal], newInput: Option[B]): Task[ResolvedSteps] = {
-//    val currentStateOpt = currentStateJsv.map(_.unsafeAs[A])
-//    resolveModification(currentStateOpt, newInput)
-//      .map { case (newState, modificationOpt) =>
-//        val newStateJsv = newState.map(_.toJsVal)
-//        modificationOpt match {
-//          case Some(modification) =>
-//            ResolvedSteps(
-//              name,
-//              newStateJsv,
-//              resolveStepsFromModification(modification),
-//            )
-//          case None =>
-//            ResolvedSteps(
-//              name,
-//              newStateJsv,
-//              Vector.empty,
-//            )
-//        }
-//      }
-//  }
 
   def systemState(input: A): M[SystemState] =
     zsucceed(rawSystemState(input))
 
   protected def rawSystemState(input: A): SystemState
-
-//  def run(currentStateJs: Option[JsVal], newInput: Option[B]): Task[Option[JsVal]] = {
-//    val currentState = currentStateJs.map(_.unsafeAs[A])
-//    actions(currentState, newInput)
-//      .flatMap { case (newState, action) =>
-//        applyAction(newInput, action)
-//          .as(newState.map(_.toJsVal))
-//      }
-//  }
 
 }

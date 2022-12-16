@@ -16,6 +16,13 @@ object Overrides {
       Command("echo", "sudo", "systemctl")
     }
 
+  lazy val sudoDockerCommand: Command =
+    if (isLinux) {
+      Command("sudo", "docker")
+    } else {
+      Command("echo", "sudo", "docker")
+    }
+
   lazy val userSystemCtlCommand: Command =
     if ( isLinux ) {
       Command("systemctl")

@@ -76,7 +76,7 @@ object RSnapshotServerSync extends Sync[ResolvedUser] {
         resolvedServer.user,
         UnitFile(
           Type = "oneshot",
-          workingDirectory = rsnapshotConfigFile.parent,
+          workingDirectory = rsnapshotConfigFile.parent.absolutePath,
           execStart = z"/bootstrap/bin/run-rsnapshot ${rsnapshotConfigFile} ${client.server.name}",
         ),
         TimerFile(

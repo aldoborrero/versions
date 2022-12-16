@@ -9,7 +9,7 @@ import a8.shared.app.{Logging, LoggingF}
 import a8.versions.RepositoryOps.RepoConfigPrefix
 import coursier.core.{ModuleName, Organization}
 import io.accur8.neodeploy.ApplicationInstallSync.Installer
-import io.accur8.neodeploy.model.Install.FromRepo
+import io.accur8.neodeploy.model.Install.JavaApp
 import io.accur8.neodeploy.model.{ApplicationDescriptor, AppsRootDirectory, Install, Version}
 import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedServer}
 import zio.{Task, ZIO}
@@ -44,7 +44,8 @@ object ApplicationInstallSync extends Logging with LoggingF {
 
     def runInstall(installMethod: Install): Task[Unit] =
       installMethod match {
-        case r: FromRepo =>
+
+        case r: JavaApp =>
           runInstallFromRepo(r)
 
         case Install.Manual =>
@@ -52,11 +53,11 @@ object ApplicationInstallSync extends Logging with LoggingF {
 
       }
 
-    def runInstallFromRepo(repo: FromRepo): Task[Unit] = (
+    def runInstallFromRepo(repo: JavaApp): Task[Unit] = (
       loggerF.debug(s"runInstallFromRepo(${repo})") *>
       ZIO.attemptBlocking {
         import a8.appinstaller._
-        val repositoryOps = RepositoryOps(applicationDescriptor.repository.getOrElse(RepoConfigPrefix.default))
+        val repositoryOps = RepositoryOps(repo.repository.getOrElse(RepoConfigPrefix.default))
         val config = AppInstallerConfig(
           organization = repo.organization.value,
           artifact = repo.artifact.value,
@@ -127,7 +128,7 @@ object ApplicationInstallSync extends Logging with LoggingF {
 
     def symlinkJavaExecutable: Task[Unit] =
       updateSymLink(
-        target = appRootBinDir.file(z"java${applicationDescriptor.javaVersion}"),
+        target = appRootBinDir.file(z"java${installState.fromRepo.javaVersion}"),
         link = appRootBinDir.file(z"${applicationDescriptor.name}"),
       )
 
@@ -218,7 +219,7 @@ case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends 
 
   override def rawSystemState(resolvedApp: ResolvedApp): SystemState =
     resolvedApp.descriptor.install match {
-      case fr: FromRepo =>
+      case fr: JavaApp =>
         SystemState.JavaAppInstall(
           gitAppDirectory = resolvedApp.gitDirectory.absolutePath,
           descriptor = resolvedApp.descriptor,

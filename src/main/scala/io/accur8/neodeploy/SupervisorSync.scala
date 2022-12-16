@@ -40,20 +40,8 @@ case class SupervisorSync(supervisorDir: SupervisorDirectory) extends Sync[Resol
     val logsDir = appsRoot.subdir("logs")
     val appDir = appsRoot.subdir(app.descriptor.name.value)
     val tempDir = appDir.subdir("tmp")
-    val commandArgs: Seq[String] =
-      Seq[ZString](
-      z"${bin}",
-        "-cp",
-        z"'lib/*'",
-        z"-Dlog.dir=${logsDir}",
-        z"-Djava.io.tmpdir=${tempDir}",
-      ).map(_.toString()) ++
-        jvmArgs ++
-        Seq[ZString](
-          z"-Dapp.name=${app.descriptor.name}",
-          z"${mainClass}",
-        ).map(_.toString()) ++
-        appArgs
+    val commandArgs = app.descriptor.install.execArgs(app.descriptor, app.user.appsRootDirectory)
+
     z"""
 [program:${app.descriptor.name}]
 

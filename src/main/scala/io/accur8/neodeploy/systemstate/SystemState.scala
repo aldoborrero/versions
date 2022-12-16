@@ -5,7 +5,7 @@ import a8.shared.{CompanionGen, ZFileSystem}
 import a8.shared.json.ast.JsObj
 import a8.shared.json.{JsonCodec, JsonTypedCodec, UnionCodecBuilder, ast}
 import io.accur8.neodeploy.{HealthchecksDotIo, LazyJsonCodec}
-import io.accur8.neodeploy.model.Install.FromRepo
+import io.accur8.neodeploy.model.Install.JavaApp
 import io.accur8.neodeploy.model.{ApplicationDescriptor, UserLogin}
 import io.accur8.neodeploy.systemstate.MxSystemState._
 import io.accur8.neodeploy.systemstate.SystemStateModel._
@@ -40,7 +40,7 @@ object SystemState {
   @CompanionGen
   case class JavaAppInstall(
     appInstallDir: String,
-    fromRepo: FromRepo,
+    fromRepo: JavaApp,
     descriptor: ApplicationDescriptor,
     gitAppDirectory: String,
   ) extends NoSubStates with JavaAppInstallMixin

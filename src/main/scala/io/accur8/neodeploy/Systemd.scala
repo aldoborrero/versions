@@ -6,7 +6,8 @@ import a8.shared.SharedImports._
 import io.accur8.neodeploy.resolvedmodel.ResolvedUser
 import zio.ZIO
 import PredefAssist._
-import a8.shared.FileSystem
+import a8.shared.{CompanionGen, FileSystem}
+import io.accur8.neodeploy.MxSystemd.MxUnitFile
 import io.accur8.neodeploy.model.OnCalendarValue
 import io.accur8.neodeploy.systemstate.SystemState
 import io.accur8.neodeploy.systemstate.SystemState.{RunCommandState, TriggeredState, jsonCodec}
@@ -19,9 +20,12 @@ import io.accur8.neodeploy.systemstate.SystemStateModel._
  */
 object Systemd {
 
+  object UnitFile extends MxUnitFile
+  @CompanionGen
   case class UnitFile(
     Type: String,
-    workingDirectory: Directory,
+    environment: Vector[String] = Vector.empty,
+    workingDirectory: String,
     execStart: String,
   )
 
@@ -34,28 +38,6 @@ object Systemd {
         ++ persistent.map(p => z"Persistent=${p}")
     )
   }
-
-//  def removeStep(
-//    unitName: String,
-//    user: ResolvedUser,
-//  ): Step = {
-//    val systemdUserDir = user.home.subdir(z".config/systemd/user")
-//    (
-//      Step.runCommand("systemctl", "stop", unitName)
-//        >> Step.runCommand("systemctl", "disable", unitName)
-//        >> Step.delete(systemdUserDir.file(s"${unitName}.service"))
-//        >> Step.delete(systemdUserDir.file(s"${unitName}.timer"))
-//    )
-//  }
-
-    //  systemctl stop [servicename]
-    //    systemctl disable [servicename]
-    //    rm /etc/systemd/system/[servicename]
-    //      rm /etc/systemd/system/[servicename] # and symlinks that might be related
-    //    rm /usr/lib/systemd/system/[servicename]
-    //      rm /usr/lib/systemd/system/[servicename] # and symlinks that might be related
-    //    systemctl daemon-reload
-    //  systemctl reset-failed
 
   /**
    * from here https://wiki.archlinux.org/title/systemd/User#Automatic_start-up_of_systemd_user_instances
@@ -74,8 +56,10 @@ object Systemd {
       z"""
          |[Unit]
          |Description=$description
+         |${unitFile.environment.map("Environment=" + _).mkString("\n")}
          |
          |[Service]
+         |Type=${unitFile.Type}
          |WorkingDirectory=${unitFile.workingDirectory}
          |StandardOutput=journal
          |ExecStart=${unitFile.execStart}

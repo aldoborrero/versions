@@ -14,7 +14,7 @@ import a8.shared.json.ast.{JsDoc, JsObj, JsVal}
 import a8.versions.RepositoryOps.RepoConfigPrefix
 import com.softwaremill.sttp.Uri
 import io.accur8.neodeploy.model._
-import io.accur8.neodeploy.model.Install.{FromRepo, Manual}
+import io.accur8.neodeploy.model.Install.{JavaApp, Manual}
 
 //====
 
@@ -24,66 +24,86 @@ import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
 
 object Mxmodel {
   
-  trait MxFromRepo {
+  trait MxJavaApp {
   
-    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[FromRepo,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[FromRepo,parameters.type] = builder
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[JavaApp,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[JavaApp,parameters.type] = builder
     
-    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[FromRepo,a8.shared.json.ast.JsObj] =
+    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[JavaApp,a8.shared.json.ast.JsObj] =
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.organization)
           .addField(_.artifact)
           .addField(_.version)
           .addField(_.webappExplode)
+          .addField(_.jvmArgs)
+          .addField(_.appArgs)
+          .addField(_.mainClass)
+          .addField(_.javaVersion)
+          .addField(_.repository)
       )
       .build
     
-    implicit val zioEq: zio.prelude.Equal[FromRepo] = zio.prelude.Equal.default
+    implicit val zioEq: zio.prelude.Equal[JavaApp] = zio.prelude.Equal.default
     
-    implicit val catsEq: cats.Eq[FromRepo] = cats.Eq.fromUniversalEquals
+    implicit val catsEq: cats.Eq[JavaApp] = cats.Eq.fromUniversalEquals
     
-    lazy val generator: Generator[FromRepo,parameters.type] =  {
-      val constructors = Constructors[FromRepo](4, unsafe.iterRawConstruct)
+    lazy val generator: Generator[JavaApp,parameters.type] =  {
+      val constructors = Constructors[JavaApp](9, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
-      lazy val organization: CaseClassParm[FromRepo,Organization] = CaseClassParm[FromRepo,Organization]("organization", _.organization, (d,v) => d.copy(organization = v), None, 0)
-      lazy val artifact: CaseClassParm[FromRepo,Artifact] = CaseClassParm[FromRepo,Artifact]("artifact", _.artifact, (d,v) => d.copy(artifact = v), None, 1)
-      lazy val version: CaseClassParm[FromRepo,Version] = CaseClassParm[FromRepo,Version]("version", _.version, (d,v) => d.copy(version = v), None, 2)
-      lazy val webappExplode: CaseClassParm[FromRepo,Boolean] = CaseClassParm[FromRepo,Boolean]("webappExplode", _.webappExplode, (d,v) => d.copy(webappExplode = v), Some(()=> true), 3)
+      lazy val organization: CaseClassParm[JavaApp,Organization] = CaseClassParm[JavaApp,Organization]("organization", _.organization, (d,v) => d.copy(organization = v), None, 0)
+      lazy val artifact: CaseClassParm[JavaApp,Artifact] = CaseClassParm[JavaApp,Artifact]("artifact", _.artifact, (d,v) => d.copy(artifact = v), None, 1)
+      lazy val version: CaseClassParm[JavaApp,Version] = CaseClassParm[JavaApp,Version]("version", _.version, (d,v) => d.copy(version = v), None, 2)
+      lazy val webappExplode: CaseClassParm[JavaApp,Boolean] = CaseClassParm[JavaApp,Boolean]("webappExplode", _.webappExplode, (d,v) => d.copy(webappExplode = v), Some(()=> true), 3)
+      lazy val jvmArgs: CaseClassParm[JavaApp,Iterable[String]] = CaseClassParm[JavaApp,Iterable[String]]("jvmArgs", _.jvmArgs, (d,v) => d.copy(jvmArgs = v), Some(()=> None), 4)
+      lazy val appArgs: CaseClassParm[JavaApp,Iterable[String]] = CaseClassParm[JavaApp,Iterable[String]]("appArgs", _.appArgs, (d,v) => d.copy(appArgs = v), Some(()=> Iterable.empty), 5)
+      lazy val mainClass: CaseClassParm[JavaApp,String] = CaseClassParm[JavaApp,String]("mainClass", _.mainClass, (d,v) => d.copy(mainClass = v), None, 6)
+      lazy val javaVersion: CaseClassParm[JavaApp,JavaVersion] = CaseClassParm[JavaApp,JavaVersion]("javaVersion", _.javaVersion, (d,v) => d.copy(javaVersion = v), Some(()=> JavaVersion(11)), 7)
+      lazy val repository: CaseClassParm[JavaApp,Option[RepoConfigPrefix]] = CaseClassParm[JavaApp,Option[RepoConfigPrefix]]("repository", _.repository, (d,v) => d.copy(repository = v), Some(()=> None), 8)
     }
     
     
     object unsafe {
     
-      def rawConstruct(values: IndexedSeq[Any]): FromRepo = {
-        FromRepo(
+      def rawConstruct(values: IndexedSeq[Any]): JavaApp = {
+        JavaApp(
           organization = values(0).asInstanceOf[Organization],
           artifact = values(1).asInstanceOf[Artifact],
           version = values(2).asInstanceOf[Version],
           webappExplode = values(3).asInstanceOf[Boolean],
+          jvmArgs = values(4).asInstanceOf[Iterable[String]],
+          appArgs = values(5).asInstanceOf[Iterable[String]],
+          mainClass = values(6).asInstanceOf[String],
+          javaVersion = values(7).asInstanceOf[JavaVersion],
+          repository = values(8).asInstanceOf[Option[RepoConfigPrefix]],
         )
       }
-      def iterRawConstruct(values: Iterator[Any]): FromRepo = {
+      def iterRawConstruct(values: Iterator[Any]): JavaApp = {
         val value =
-          FromRepo(
+          JavaApp(
             organization = values.next().asInstanceOf[Organization],
             artifact = values.next().asInstanceOf[Artifact],
             version = values.next().asInstanceOf[Version],
             webappExplode = values.next().asInstanceOf[Boolean],
+            jvmArgs = values.next().asInstanceOf[Iterable[String]],
+            appArgs = values.next().asInstanceOf[Iterable[String]],
+            mainClass = values.next().asInstanceOf[String],
+            javaVersion = values.next().asInstanceOf[JavaVersion],
+            repository = values.next().asInstanceOf[Option[RepoConfigPrefix]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(organization: Organization, artifact: Artifact, version: Version, webappExplode: Boolean): FromRepo =
-        FromRepo(organization, artifact, version, webappExplode)
+      def typedConstruct(organization: Organization, artifact: Artifact, version: Version, webappExplode: Boolean, jvmArgs: Iterable[String], appArgs: Iterable[String], mainClass: String, javaVersion: JavaVersion, repository: Option[RepoConfigPrefix]): JavaApp =
+        JavaApp(organization, artifact, version, webappExplode, jvmArgs, appArgs, mainClass, javaVersion, repository)
     
     }
     
     
-    lazy val typeName = "FromRepo"
+    lazy val typeName = "JavaApp"
   
   }
   
@@ -163,7 +183,7 @@ object Mxmodel {
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[SystemdDescriptor,a8.shared.json.ast.JsObj] =
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
-          .addField(_.description)
+          .addField(_.unitName)
       )
       .build
     
@@ -177,7 +197,7 @@ object Mxmodel {
     }
     
     object parameters {
-      lazy val description: CaseClassParm[SystemdDescriptor,Option[String]] = CaseClassParm[SystemdDescriptor,Option[String]]("description", _.description, (d,v) => d.copy(description = v), Some(()=> None), 0)
+      lazy val unitName: CaseClassParm[SystemdDescriptor,Option[String]] = CaseClassParm[SystemdDescriptor,Option[String]]("unitName", _.unitName, (d,v) => d.copy(unitName = v), Some(()=> None), 0)
     }
     
     
@@ -185,25 +205,83 @@ object Mxmodel {
     
       def rawConstruct(values: IndexedSeq[Any]): SystemdDescriptor = {
         SystemdDescriptor(
-          description = values(0).asInstanceOf[Option[String]],
+          unitName = values(0).asInstanceOf[Option[String]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): SystemdDescriptor = {
         val value =
           SystemdDescriptor(
-            description = values.next().asInstanceOf[Option[String]],
+            unitName = values.next().asInstanceOf[Option[String]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(description: Option[String]): SystemdDescriptor =
-        SystemdDescriptor(description)
+      def typedConstruct(unitName: Option[String]): SystemdDescriptor =
+        SystemdDescriptor(unitName)
     
     }
     
     
     lazy val typeName = "SystemdDescriptor"
+  
+  }
+  
+  
+  
+  
+  trait MxDockerDescriptor {
+  
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[DockerDescriptor,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[DockerDescriptor,parameters.type] = builder
+    
+    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[DockerDescriptor,a8.shared.json.ast.JsObj] =
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.name)
+          .addField(_.args)
+      )
+      .build
+    
+    implicit val zioEq: zio.prelude.Equal[DockerDescriptor] = zio.prelude.Equal.default
+    
+    implicit val catsEq: cats.Eq[DockerDescriptor] = cats.Eq.fromUniversalEquals
+    
+    lazy val generator: Generator[DockerDescriptor,parameters.type] =  {
+      val constructors = Constructors[DockerDescriptor](2, unsafe.iterRawConstruct)
+      Generator(constructors, parameters)
+    }
+    
+    object parameters {
+      lazy val name: CaseClassParm[DockerDescriptor,String] = CaseClassParm[DockerDescriptor,String]("name", _.name, (d,v) => d.copy(name = v), None, 0)
+      lazy val args: CaseClassParm[DockerDescriptor,Vector[String]] = CaseClassParm[DockerDescriptor,Vector[String]]("args", _.args, (d,v) => d.copy(args = v), None, 1)
+    }
+    
+    
+    object unsafe {
+    
+      def rawConstruct(values: IndexedSeq[Any]): DockerDescriptor = {
+        DockerDescriptor(
+          name = values(0).asInstanceOf[String],
+          args = values(1).asInstanceOf[Vector[String]],
+        )
+      }
+      def iterRawConstruct(values: Iterator[Any]): DockerDescriptor = {
+        val value =
+          DockerDescriptor(
+            name = values.next().asInstanceOf[String],
+            args = values.next().asInstanceOf[Vector[String]],
+          )
+        if ( values.hasNext )
+           sys.error("")
+        value
+      }
+      def typedConstruct(name: String, args: Vector[String]): DockerDescriptor =
+        DockerDescriptor(name, args)
+    
+    }
+    
+    
+    lazy val typeName = "DockerDescriptor"
   
   }
   
@@ -219,16 +297,12 @@ object Mxmodel {
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.name)
           .addField(_.install)
-          .addField(_.jvmArgs)
-          .addField(_.appArgs)
-          .addField(_.mainClass)
+          .addField(_.caddyConfig)
           .addField(_.listenPort)
-          .addField(_.javaVersion)
           .addField(_.stopServerCommand)
           .addField(_.startServerCommand)
           .addField(_.domainName)
           .addField(_.domainNames)
-          .addField(_.repository)
           .addField(_.restartOnCalendar)
           .addField(_.startOnCalendar)
           .addField(_.launcher)
@@ -240,26 +314,22 @@ object Mxmodel {
     implicit val catsEq: cats.Eq[ApplicationDescriptor] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[ApplicationDescriptor,parameters.type] =  {
-      val constructors = Constructors[ApplicationDescriptor](15, unsafe.iterRawConstruct)
+      val constructors = Constructors[ApplicationDescriptor](11, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
       lazy val name: CaseClassParm[ApplicationDescriptor,ApplicationName] = CaseClassParm[ApplicationDescriptor,ApplicationName]("name", _.name, (d,v) => d.copy(name = v), None, 0)
-      lazy val install: CaseClassParm[ApplicationDescriptor,Install] = CaseClassParm[ApplicationDescriptor,Install]("install", _.install, (d,v) => d.copy(install = v), None, 1)
-      lazy val jvmArgs: CaseClassParm[ApplicationDescriptor,Iterable[String]] = CaseClassParm[ApplicationDescriptor,Iterable[String]]("jvmArgs", _.jvmArgs, (d,v) => d.copy(jvmArgs = v), Some(()=> None), 2)
-      lazy val appArgs: CaseClassParm[ApplicationDescriptor,Iterable[String]] = CaseClassParm[ApplicationDescriptor,Iterable[String]]("appArgs", _.appArgs, (d,v) => d.copy(appArgs = v), Some(()=> Iterable.empty), 3)
-      lazy val mainClass: CaseClassParm[ApplicationDescriptor,String] = CaseClassParm[ApplicationDescriptor,String]("mainClass", _.mainClass, (d,v) => d.copy(mainClass = v), None, 4)
-      lazy val listenPort: CaseClassParm[ApplicationDescriptor,Option[ListenPort]] = CaseClassParm[ApplicationDescriptor,Option[ListenPort]]("listenPort", _.listenPort, (d,v) => d.copy(listenPort = v), Some(()=> None), 5)
-      lazy val javaVersion: CaseClassParm[ApplicationDescriptor,JavaVersion] = CaseClassParm[ApplicationDescriptor,JavaVersion]("javaVersion", _.javaVersion, (d,v) => d.copy(javaVersion = v), Some(()=> JavaVersion(11)), 6)
-      lazy val stopServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("stopServerCommand", _.stopServerCommand, (d,v) => d.copy(stopServerCommand = v), Some(()=> None), 7)
-      lazy val startServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("startServerCommand", _.startServerCommand, (d,v) => d.copy(startServerCommand = v), Some(()=> None), 8)
-      lazy val domainName: CaseClassParm[ApplicationDescriptor,Option[DomainName]] = CaseClassParm[ApplicationDescriptor,Option[DomainName]]("domainName", _.domainName, (d,v) => d.copy(domainName = v), Some(()=> None), 9)
-      lazy val domainNames: CaseClassParm[ApplicationDescriptor,Iterable[DomainName]] = CaseClassParm[ApplicationDescriptor,Iterable[DomainName]]("domainNames", _.domainNames, (d,v) => d.copy(domainNames = v), Some(()=> Iterable.empty), 10)
-      lazy val repository: CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]] = CaseClassParm[ApplicationDescriptor,Option[RepoConfigPrefix]]("repository", _.repository, (d,v) => d.copy(repository = v), Some(()=> None), 11)
-      lazy val restartOnCalendar: CaseClassParm[ApplicationDescriptor,Option[OnCalendarValue]] = CaseClassParm[ApplicationDescriptor,Option[OnCalendarValue]]("restartOnCalendar", _.restartOnCalendar, (d,v) => d.copy(restartOnCalendar = v), None, 12)
-      lazy val startOnCalendar: CaseClassParm[ApplicationDescriptor,Option[OnCalendarValue]] = CaseClassParm[ApplicationDescriptor,Option[OnCalendarValue]]("startOnCalendar", _.startOnCalendar, (d,v) => d.copy(startOnCalendar = v), None, 13)
-      lazy val launcher: CaseClassParm[ApplicationDescriptor,Launcher] = CaseClassParm[ApplicationDescriptor,Launcher]("launcher", _.launcher, (d,v) => d.copy(launcher = v), Some(()=> SupervisorDescriptor.empty), 14)
+      lazy val install: CaseClassParm[ApplicationDescriptor,Install] = CaseClassParm[ApplicationDescriptor,Install]("install", _.install, (d,v) => d.copy(install = v), Some(()=> Install.Manual), 1)
+      lazy val caddyConfig: CaseClassParm[ApplicationDescriptor,Option[String]] = CaseClassParm[ApplicationDescriptor,Option[String]]("caddyConfig", _.caddyConfig, (d,v) => d.copy(caddyConfig = v), Some(()=> None), 2)
+      lazy val listenPort: CaseClassParm[ApplicationDescriptor,Option[ListenPort]] = CaseClassParm[ApplicationDescriptor,Option[ListenPort]]("listenPort", _.listenPort, (d,v) => d.copy(listenPort = v), Some(()=> None), 3)
+      lazy val stopServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("stopServerCommand", _.stopServerCommand, (d,v) => d.copy(stopServerCommand = v), Some(()=> None), 4)
+      lazy val startServerCommand: CaseClassParm[ApplicationDescriptor,Option[Command]] = CaseClassParm[ApplicationDescriptor,Option[Command]]("startServerCommand", _.startServerCommand, (d,v) => d.copy(startServerCommand = v), Some(()=> None), 5)
+      lazy val domainName: CaseClassParm[ApplicationDescriptor,Option[DomainName]] = CaseClassParm[ApplicationDescriptor,Option[DomainName]]("domainName", _.domainName, (d,v) => d.copy(domainName = v), Some(()=> None), 6)
+      lazy val domainNames: CaseClassParm[ApplicationDescriptor,Iterable[DomainName]] = CaseClassParm[ApplicationDescriptor,Iterable[DomainName]]("domainNames", _.domainNames, (d,v) => d.copy(domainNames = v), Some(()=> Iterable.empty), 7)
+      lazy val restartOnCalendar: CaseClassParm[ApplicationDescriptor,Option[OnCalendarValue]] = CaseClassParm[ApplicationDescriptor,Option[OnCalendarValue]]("restartOnCalendar", _.restartOnCalendar, (d,v) => d.copy(restartOnCalendar = v), None, 8)
+      lazy val startOnCalendar: CaseClassParm[ApplicationDescriptor,Option[OnCalendarValue]] = CaseClassParm[ApplicationDescriptor,Option[OnCalendarValue]]("startOnCalendar", _.startOnCalendar, (d,v) => d.copy(startOnCalendar = v), None, 9)
+      lazy val launcher: CaseClassParm[ApplicationDescriptor,Launcher] = CaseClassParm[ApplicationDescriptor,Launcher]("launcher", _.launcher, (d,v) => d.copy(launcher = v), Some(()=> SupervisorDescriptor.empty), 10)
     }
     
     
@@ -269,19 +339,15 @@ object Mxmodel {
         ApplicationDescriptor(
           name = values(0).asInstanceOf[ApplicationName],
           install = values(1).asInstanceOf[Install],
-          jvmArgs = values(2).asInstanceOf[Iterable[String]],
-          appArgs = values(3).asInstanceOf[Iterable[String]],
-          mainClass = values(4).asInstanceOf[String],
-          listenPort = values(5).asInstanceOf[Option[ListenPort]],
-          javaVersion = values(6).asInstanceOf[JavaVersion],
-          stopServerCommand = values(7).asInstanceOf[Option[Command]],
-          startServerCommand = values(8).asInstanceOf[Option[Command]],
-          domainName = values(9).asInstanceOf[Option[DomainName]],
-          domainNames = values(10).asInstanceOf[Iterable[DomainName]],
-          repository = values(11).asInstanceOf[Option[RepoConfigPrefix]],
-          restartOnCalendar = values(12).asInstanceOf[Option[OnCalendarValue]],
-          startOnCalendar = values(13).asInstanceOf[Option[OnCalendarValue]],
-          launcher = values(14).asInstanceOf[Launcher],
+          caddyConfig = values(2).asInstanceOf[Option[String]],
+          listenPort = values(3).asInstanceOf[Option[ListenPort]],
+          stopServerCommand = values(4).asInstanceOf[Option[Command]],
+          startServerCommand = values(5).asInstanceOf[Option[Command]],
+          domainName = values(6).asInstanceOf[Option[DomainName]],
+          domainNames = values(7).asInstanceOf[Iterable[DomainName]],
+          restartOnCalendar = values(8).asInstanceOf[Option[OnCalendarValue]],
+          startOnCalendar = values(9).asInstanceOf[Option[OnCalendarValue]],
+          launcher = values(10).asInstanceOf[Launcher],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): ApplicationDescriptor = {
@@ -289,16 +355,12 @@ object Mxmodel {
           ApplicationDescriptor(
             name = values.next().asInstanceOf[ApplicationName],
             install = values.next().asInstanceOf[Install],
-            jvmArgs = values.next().asInstanceOf[Iterable[String]],
-            appArgs = values.next().asInstanceOf[Iterable[String]],
-            mainClass = values.next().asInstanceOf[String],
+            caddyConfig = values.next().asInstanceOf[Option[String]],
             listenPort = values.next().asInstanceOf[Option[ListenPort]],
-            javaVersion = values.next().asInstanceOf[JavaVersion],
             stopServerCommand = values.next().asInstanceOf[Option[Command]],
             startServerCommand = values.next().asInstanceOf[Option[Command]],
             domainName = values.next().asInstanceOf[Option[DomainName]],
             domainNames = values.next().asInstanceOf[Iterable[DomainName]],
-            repository = values.next().asInstanceOf[Option[RepoConfigPrefix]],
             restartOnCalendar = values.next().asInstanceOf[Option[OnCalendarValue]],
             startOnCalendar = values.next().asInstanceOf[Option[OnCalendarValue]],
             launcher = values.next().asInstanceOf[Launcher],
@@ -307,8 +369,8 @@ object Mxmodel {
            sys.error("")
         value
       }
-      def typedConstruct(name: ApplicationName, install: Install, jvmArgs: Iterable[String], appArgs: Iterable[String], mainClass: String, listenPort: Option[ListenPort], javaVersion: JavaVersion, stopServerCommand: Option[Command], startServerCommand: Option[Command], domainName: Option[DomainName], domainNames: Iterable[DomainName], repository: Option[RepoConfigPrefix], restartOnCalendar: Option[OnCalendarValue], startOnCalendar: Option[OnCalendarValue], launcher: Launcher): ApplicationDescriptor =
-        ApplicationDescriptor(name, install, jvmArgs, appArgs, mainClass, listenPort, javaVersion, stopServerCommand, startServerCommand, domainName, domainNames, repository, restartOnCalendar, startOnCalendar, launcher)
+      def typedConstruct(name: ApplicationName, install: Install, caddyConfig: Option[String], listenPort: Option[ListenPort], stopServerCommand: Option[Command], startServerCommand: Option[Command], domainName: Option[DomainName], domainNames: Iterable[DomainName], restartOnCalendar: Option[OnCalendarValue], startOnCalendar: Option[OnCalendarValue], launcher: Launcher): ApplicationDescriptor =
+        ApplicationDescriptor(name, install, caddyConfig, listenPort, stopServerCommand, startServerCommand, domainName, domainNames, restartOnCalendar, startOnCalendar, launcher)
     
     }
     

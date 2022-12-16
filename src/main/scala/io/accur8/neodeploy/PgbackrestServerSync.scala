@@ -55,7 +55,7 @@ object PgbackrestServerSync extends Sync[ResolvedUser] {
         resolvedServer.user,
         UnitFile(
           Type = "oneshot",
-          workingDirectory = resolvedServer.user.home,
+          workingDirectory = resolvedServer.user.home.absolutePath,
           execStart = z"/bootstrap/bin/run-pgbackrest ${client.stanzaName} ${client.server.name}",
         ),
         TimerFile(

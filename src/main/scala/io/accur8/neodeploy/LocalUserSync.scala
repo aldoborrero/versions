@@ -58,6 +58,7 @@ case class LocalUserSync(resolvedUser: ResolvedUser, appsFilter: Filter[Applicat
         CaddySync(resolvedServer.caddyDirectory),
         SupervisorSync(resolvedServer.supervisorDirectory),
         ApplicationInstallSync(resolvedUser.appsRootDirectory),
+        DockerSync,
       ).filter(s => syncsFilter.include(s.name))
 
   }

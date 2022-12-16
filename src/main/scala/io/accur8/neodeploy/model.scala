@@ -18,6 +18,7 @@ import zio.process.CommandError.NonZeroErrorCode
 import zio.{Chunk, ExitCode, UIO, ZIO}
 
 import scala.collection.Iterable
+import PredefAssist._
 
 object model extends LoggingF {
 
@@ -83,6 +84,7 @@ object model extends LoggingF {
   case class GitRootDirectory(value: String) extends DirectoryValue
 
   sealed trait Install {
+    def execArgs(applicationDescriptor: ApplicationDescriptor, appsRootDirectory: AppsRootDirectory): Vector[String]
     def description: String
   }
   object Install {
@@ -91,24 +93,56 @@ object model extends LoggingF {
       UnionCodecBuilder[Install]
         .typeFieldName("kind")
         .addSingleton("manual", Manual)
-        .defaultType[FromRepo]
-        .addType[FromRepo]("repo")
+        .defaultType[JavaApp]
+        .addType[JavaApp]("javaapp")
         .build
 
 
-    object FromRepo extends MxFromRepo
+    object JavaApp extends MxJavaApp
     @CompanionGen
-    case class FromRepo(
+    case class JavaApp(
       organization: Organization,
       artifact: Artifact,
       version: Version,
       webappExplode: Boolean = true,
+      jvmArgs: Iterable[String] = None,
+      appArgs: Iterable[String] = Iterable.empty,
+      mainClass: String,
+      javaVersion: JavaVersion = JavaVersion(11),
+      repository: Option[RepoConfigPrefix] = None,
     ) extends Install {
+
       override def description: String = s"$organization:$artifact:$version"
+
+      override def execArgs(applicationDescriptor: ApplicationDescriptor, appsRootDirectory: AppsRootDirectory): Vector[String] = {
+        val appsRoot = appsRootDirectory.unresolvedDirectory
+        val bin = appsRoot.subdir("bin").file(applicationDescriptor.name.value)
+        val logsDir = appsRoot.subdir("logs")
+        val appDir = appsRoot.subdir(applicationDescriptor.name.value)
+        val tempDir = appDir.subdir("tmp")
+        val baseArgs =
+          Vector[ZString](
+            z"${bin}",
+            "-cp",
+            z"'lib/*'",
+            z"-Dlog.dir=${logsDir}",
+            z"-Djava.io.tmpdir=${tempDir}",
+          ).map(_.toString()) ++
+            jvmArgs ++
+            Seq[ZString](
+              z"-Dapp.name=${applicationDescriptor.name}",
+              z"${mainClass}",
+            ).map(_.toString())
+          baseArgs ++ appArgs
+
+      }
+
     }
 
     case object Manual extends Install {
       override def description: String = "Manual install"
+      override def execArgs(applicationDescriptor: ApplicationDescriptor, appsRootDirectory: AppsRootDirectory): Vector[String] =
+        Vector.empty
     }
 
   }
@@ -134,7 +168,15 @@ object model extends LoggingF {
   }
   @CompanionGen
   case class SystemdDescriptor(
-    description: Option[String] = None,
+    unitName: Option[String] = None,
+  ) extends Launcher
+
+  object DockerDescriptor extends MxDockerDescriptor {
+  }
+  @CompanionGen
+  case class DockerDescriptor(
+    name: String,
+    args: Vector[String],
   ) extends Launcher
 
   object Launcher {
@@ -144,6 +186,7 @@ object model extends LoggingF {
         .defaultType[SupervisorDescriptor]
         .addType[SystemdDescriptor]("systemd")
         .addType[SupervisorDescriptor]("supervisor")
+        .addType[DockerDescriptor]("docker")
         .build
   }
 
@@ -154,17 +197,13 @@ object model extends LoggingF {
   @CompanionGen
   case class ApplicationDescriptor(
     name: ApplicationName,
-    install: Install,
-    jvmArgs: Iterable[String] = None,
-    appArgs: Iterable[String] = Iterable.empty,
-    mainClass: String,
+    install: Install = Install.Manual,
+    caddyConfig: Option[String] = None,
     listenPort: Option[ListenPort] = None,
-    javaVersion: JavaVersion = JavaVersion(11),
     stopServerCommand: Option[Command] = None,
     startServerCommand: Option[Command] = None,
     domainName: Option[DomainName] = None,
     domainNames: Iterable[DomainName] = Iterable.empty,
-    repository: Option[RepoConfigPrefix] = None,
     restartOnCalendar: Option[OnCalendarValue],
     startOnCalendar: Option[OnCalendarValue],
     launcher: Launcher = SupervisorDescriptor.empty

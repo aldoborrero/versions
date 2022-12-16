@@ -11,7 +11,7 @@ package io.accur8.neodeploy.systemstate
 //====
 import io.accur8.neodeploy.HealthchecksDotIo
 import io.accur8.neodeploy.model.ApplicationDescriptor
-import io.accur8.neodeploy.model.Install.FromRepo
+import io.accur8.neodeploy.model.Install.JavaApp
 import io.accur8.neodeploy.systemstate.SystemState._
 import io.accur8.neodeploy.systemstate.SystemStateModel._
 
@@ -172,7 +172,7 @@ object MxSystemState {
     
     object parameters {
       lazy val appInstallDir: CaseClassParm[JavaAppInstall,String] = CaseClassParm[JavaAppInstall,String]("appInstallDir", _.appInstallDir, (d,v) => d.copy(appInstallDir = v), None, 0)
-      lazy val fromRepo: CaseClassParm[JavaAppInstall,FromRepo] = CaseClassParm[JavaAppInstall,FromRepo]("fromRepo", _.fromRepo, (d,v) => d.copy(fromRepo = v), None, 1)
+      lazy val fromRepo: CaseClassParm[JavaAppInstall,JavaApp] = CaseClassParm[JavaAppInstall,JavaApp]("fromRepo", _.fromRepo, (d,v) => d.copy(fromRepo = v), None, 1)
       lazy val descriptor: CaseClassParm[JavaAppInstall,ApplicationDescriptor] = CaseClassParm[JavaAppInstall,ApplicationDescriptor]("descriptor", _.descriptor, (d,v) => d.copy(descriptor = v), None, 2)
       lazy val gitAppDirectory: CaseClassParm[JavaAppInstall,String] = CaseClassParm[JavaAppInstall,String]("gitAppDirectory", _.gitAppDirectory, (d,v) => d.copy(gitAppDirectory = v), None, 3)
     }
@@ -183,7 +183,7 @@ object MxSystemState {
       def rawConstruct(values: IndexedSeq[Any]): JavaAppInstall = {
         JavaAppInstall(
           appInstallDir = values(0).asInstanceOf[String],
-          fromRepo = values(1).asInstanceOf[FromRepo],
+          fromRepo = values(1).asInstanceOf[JavaApp],
           descriptor = values(2).asInstanceOf[ApplicationDescriptor],
           gitAppDirectory = values(3).asInstanceOf[String],
         )
@@ -192,7 +192,7 @@ object MxSystemState {
         val value =
           JavaAppInstall(
             appInstallDir = values.next().asInstanceOf[String],
-            fromRepo = values.next().asInstanceOf[FromRepo],
+            fromRepo = values.next().asInstanceOf[JavaApp],
             descriptor = values.next().asInstanceOf[ApplicationDescriptor],
             gitAppDirectory = values.next().asInstanceOf[String],
           )
@@ -200,7 +200,7 @@ object MxSystemState {
            sys.error("")
         value
       }
-      def typedConstruct(appInstallDir: String, fromRepo: FromRepo, descriptor: ApplicationDescriptor, gitAppDirectory: String): JavaAppInstall =
+      def typedConstruct(appInstallDir: String, fromRepo: JavaApp, descriptor: ApplicationDescriptor, gitAppDirectory: String): JavaAppInstall =
         JavaAppInstall(appInstallDir, fromRepo, descriptor, gitAppDirectory)
     
     }
