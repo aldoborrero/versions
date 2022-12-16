@@ -12,6 +12,7 @@ import a8.shared.json.ast.{JsDoc, JsObj, JsVal}
 import io.accur8.neodeploy.PushRemoteSyncSubCommand.Filter
 import io.accur8.neodeploy.Sync.SyncName
 import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedRSnapshotServer, ResolvedServer, ResolvedUser}
+import io.accur8.neodeploy.systemstate.SystemdSync
 import systemstate.SystemStateModel._
 
 
@@ -59,6 +60,7 @@ case class LocalUserSync(resolvedUser: ResolvedUser, appsFilter: Filter[Applicat
         SupervisorSync(resolvedServer.supervisorDirectory),
         ApplicationInstallSync(resolvedUser.appsRootDirectory),
         DockerSync,
+        SystemdSync,
       ).filter(s => syncsFilter.include(s.name))
 
   }

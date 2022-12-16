@@ -48,7 +48,7 @@ object ApplicationInstallSync extends Logging with LoggingF {
         case r: JavaApp =>
           runInstallFromRepo(r)
 
-        case Install.Manual =>
+        case _: Install.Manual =>
           zunit
 
       }
@@ -226,7 +226,7 @@ case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends 
           appInstallDir = appsRootDirectory.unresolvedDirectory.subdir(resolvedApp.descriptor.name.value).toString(),
           fromRepo = fr,
         )
-      case Install.Manual =>
+      case _: Install.Manual =>
         SystemState.Empty
     }
 

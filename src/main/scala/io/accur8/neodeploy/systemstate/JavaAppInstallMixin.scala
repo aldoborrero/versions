@@ -12,7 +12,7 @@ import java.nio.file.Files
 
 trait JavaAppInstallMixin extends SystemStateMixin { self: SystemState.JavaAppInstall =>
 
-  override def stateKey: Option[StateKey] = StateKey(appInstallDir).some
+  override def stateKey: Option[StateKey] = StateKey("app install", appInstallDir).some
   override def dryRunInstall: Vector[String] = Vector(s"app install into ${appInstallDir} -- ${self.fromRepo.compactJson}")
 
   /**

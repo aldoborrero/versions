@@ -17,13 +17,16 @@ import io.accur8.neodeploy.systemstate.SystemStateModel._
  * user level systemd service and timers
  *        https://gist.github.com/oprypin/0f0c3479ab53e00988b52919e5d7c144
  *        https://opensource.com/article/20/7/systemd-timers
+ *
+ *  a good systemd reference
+ *        https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files
  */
 object Systemd {
 
   object UnitFile extends MxUnitFile
   @CompanionGen
   case class UnitFile(
-    Type: String,
+    Type: String = "simple",
     environment: Vector[String] = Vector.empty,
     workingDirectory: String,
     execStart: String,
@@ -66,7 +69,7 @@ object Systemd {
          |
          |[Install]
          |WantedBy=multi-user.target
-         |""".stripMargin
+         |""".stripMargin.ltrim
 
     val unitFileState =
       SystemState.TextFile(
@@ -87,7 +90,7 @@ object Systemd {
              |
              |[Install]
              |WantedBy=timers.target
-          """.stripMargin
+          """.stripMargin.ltrim
 
         SystemState.TextFile(
           filename = directory.file(z"${unitName}.timer").absolutePath,
@@ -137,7 +140,7 @@ object Systemd {
 
     val manageSystemdUnitState: SystemState =
       RunCommandState(
-        StateKey(s"enable systemd unit ${unitName}").some,
+        StateKey("enable/disable systemd", unitName).some,
         installCommands = Vector(daemonReloadCommand) ++ enableTimerCommands ++ Vector(enableUserLingerCommand),
         uninstallCommands = uninstallTimerCommands,
       )

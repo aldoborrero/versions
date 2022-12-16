@@ -5,7 +5,7 @@ import a8.shared.{FileSystem, StringValue, ZFileSystem}
 import a8.shared.SharedImports._
 import a8.sync.qubes.QubesApiClient
 import io.accur8.neodeploy.ApplicationInstallSync.Installer
-import io.accur8.neodeploy.systemstate.Interpretter.ActionNeededCache
+import io.accur8.neodeploy.systemstate.Interpreter.ActionNeededCache
 import io.accur8.neodeploy.systemstate.SystemState.TriggeredState
 import io.accur8.neodeploy.systemstate.SystemStateModel._
 import io.accur8.neodeploy.{Command, HealthchecksDotIo}
@@ -64,7 +64,7 @@ object SystemStateImpl {
       .as(())
   }
 
-  def runApplyNewState(state: SystemState, interpretter: Interpretter, inner: SystemState => M[Unit]): M[Unit] =
+  def runApplyNewState(state: SystemState, interpreter: Interpreter, inner: SystemState => M[Unit]): M[Unit] =
     for {
       _ <- state.runApplyNewState
       _ <-
@@ -77,7 +77,7 @@ object SystemStateImpl {
           case _: SystemState.NoSubStates =>
             zunit
           case triggeredState: SystemState.TriggeredState =>
-            interpretter.actionNeededCache.cache(triggeredState.triggerState) match {
+            interpreter.actionNeededCache.cache(triggeredState.triggerState) match {
               case true =>
                 for {
                   _ <- inner(triggeredState.preTriggerState)
@@ -126,7 +126,7 @@ object SystemStateImpl {
           zunit
       }
 
-  def dryRun(interpretter: Interpretter): Vector[String] = {
+  def dryRun(interpretter: Interpreter): Vector[String] = {
     def inner(s0: SystemState): Vector[String] = {
       interpretter.actionNeededCache.cache.get(s0) match {
         case Some(false) =>
@@ -174,7 +174,7 @@ object SystemStateImpl {
                     zsucceed(
                       Vector(triggeredState.preTriggerState, triggeredState.postTriggerState)
                         .map(_ -> false)
-                        .toMap
+                        .toMap ++ anc
                     )
                 }
           }
@@ -197,7 +197,7 @@ object SystemStateImpl {
         false
     }
 
-  def runApplyNewState(interpretter: Interpretter): M[Unit] = {
+  def runApplyNewState(interpretter: Interpreter): M[Unit] = {
     def inner(s0: SystemState): M[Unit] =
       if (interpretter.actionNeededCache.cache(s0)) {
         SystemStateImpl.runApplyNewState(s0, interpretter, inner)

@@ -19,6 +19,64 @@ import a8.shared.Meta.{CaseClassParm, Generator, Constructors}
 
 object MxSystemStateModel {
   
+  trait MxStateKey {
+  
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[StateKey,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[StateKey,parameters.type] = builder
+    
+    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[StateKey,a8.shared.json.ast.JsObj] =
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.kind)
+          .addField(_.value)
+      )
+      .build
+    
+    implicit val zioEq: zio.prelude.Equal[StateKey] = zio.prelude.Equal.default
+    
+    implicit val catsEq: cats.Eq[StateKey] = cats.Eq.fromUniversalEquals
+    
+    lazy val generator: Generator[StateKey,parameters.type] =  {
+      val constructors = Constructors[StateKey](2, unsafe.iterRawConstruct)
+      Generator(constructors, parameters)
+    }
+    
+    object parameters {
+      lazy val kind: CaseClassParm[StateKey,String] = CaseClassParm[StateKey,String]("kind", _.kind, (d,v) => d.copy(kind = v), None, 0)
+      lazy val value: CaseClassParm[StateKey,String] = CaseClassParm[StateKey,String]("value", _.value, (d,v) => d.copy(value = v), None, 1)
+    }
+    
+    
+    object unsafe {
+    
+      def rawConstruct(values: IndexedSeq[Any]): StateKey = {
+        StateKey(
+          kind = values(0).asInstanceOf[String],
+          value = values(1).asInstanceOf[String],
+        )
+      }
+      def iterRawConstruct(values: Iterator[Any]): StateKey = {
+        val value =
+          StateKey(
+            kind = values.next().asInstanceOf[String],
+            value = values.next().asInstanceOf[String],
+          )
+        if ( values.hasNext )
+           sys.error("")
+        value
+      }
+      def typedConstruct(kind: String, value: String): StateKey =
+        StateKey(kind, value)
+    
+    }
+    
+    
+    lazy val typeName = "StateKey"
+  
+  }
+  
+  
+  
+  
   trait MxPreviousState {
   
     protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[PreviousState,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[PreviousState,parameters.type] = builder

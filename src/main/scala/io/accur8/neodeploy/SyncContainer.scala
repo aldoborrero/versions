@@ -13,7 +13,7 @@ import io.accur8.neodeploy.PushRemoteSyncSubCommand.Filter
 import io.accur8.neodeploy.Sync.SyncName
 import io.accur8.neodeploy.SyncContainer.Prefix
 import io.accur8.neodeploy.model.ApplicationName
-import io.accur8.neodeploy.systemstate.{Interpretter, SystemState}
+import io.accur8.neodeploy.systemstate.{Interpreter, SystemState}
 import io.accur8.neodeploy.systemstate.SystemStateModel._
 import zio.prelude.Equal
 import zio.{Task, UIO, ZIO}
@@ -103,7 +103,7 @@ abstract class SyncContainer[Resolved, Name <: StringValue : Equal](
     val effect: M[Unit] =
       for {
         newState <- newStateEffect
-        interpretter <- systemstate.Interpretter(newState, previousState)
+        interpretter <- systemstate.Interpreter(newState, previousState)
         _ <- interpretter.dryRunLog.map(m => loggerF.info(m)).getOrElse(zunit)
         _ <- interpretter.runApplyNewState
         _ <- interpretter.runUninstallObsolete

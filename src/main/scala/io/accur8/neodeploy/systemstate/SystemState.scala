@@ -6,7 +6,7 @@ import a8.shared.json.ast.JsObj
 import a8.shared.json.{JsonCodec, JsonTypedCodec, UnionCodecBuilder, ast}
 import io.accur8.neodeploy.{HealthchecksDotIo, LazyJsonCodec}
 import io.accur8.neodeploy.model.Install.JavaApp
-import io.accur8.neodeploy.model.{ApplicationDescriptor, UserLogin}
+import io.accur8.neodeploy.model.{ApplicationDescriptor, DockerDescriptor, UserLogin}
 import io.accur8.neodeploy.systemstate.MxSystemState._
 import io.accur8.neodeploy.systemstate.SystemStateModel._
 import zio.Chunk
@@ -101,6 +101,13 @@ object SystemState {
   ) extends NoSubStates with RunCommandStateMixin
 
 
+  object DockerState extends MxDockerState
+  @CompanionGen
+  case class DockerState(
+    descriptor: DockerDescriptor,
+  ) extends NoSubStates with DockerStateMixin
+
+
   object TriggeredState extends MxTriggeredState
   /**
    * if any changes are needed in triggerState then preTriggeredState will get applied
@@ -123,6 +130,7 @@ object SystemState {
         .addSingleton("empty", Empty)
         .addType[Composite]("composite")
         .addType[Directory]("directory")
+        .addType[DockerState]("docker")
         .addType[HealthCheck]("healthcheck")
         .addType[JavaAppInstall]("javaappinstall")
         .addType[RunCommandState]("runcommand")

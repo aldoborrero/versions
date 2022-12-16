@@ -23,7 +23,7 @@ case class CaddySync(caddyDir: CaddyDirectory) extends Sync[ResolvedApp] {
 
   def caddyConfigContents(applicationDescriptor: model.ApplicationDescriptor): Option[String] = {
     import applicationDescriptor._
-    val result =
+    val result0 =
       for {
         listenPort <- applicationDescriptor.listenPort.toIterable
         _ <- applicationDescriptor.resolvedDomainNames.nonEmpty.toOption(())
@@ -35,7 +35,12 @@ ${applicationDescriptor.resolvedDomainNames.map(_.value).mkString(", ")} {
 }
 """.trim
 
-    result match {
+    val result1 =
+      applicationDescriptor
+        .caddyConfig
+        .toVector
+
+    (result0 ++ result1) match {
       case r if r.isEmpty =>
         None
       case r =>
@@ -49,7 +54,7 @@ ${applicationDescriptor.resolvedDomainNames.map(_.value).mkString(", ")} {
       case Some(contents) =>
         val reloadCaddyCommand =
           Overrides.sudoSystemCtlCommand
-            .appendArgs("reload", z"${input.name}")
+            .appendArgs("reload", "caddy")
             .asSystemStateCommand
         SystemState.Composite(
           z"caddy setup for ${input.name}",
@@ -61,7 +66,7 @@ ${applicationDescriptor.resolvedDomainNames.map(_.value).mkString(", ")} {
               ),
             postTriggerState =
               SystemState.RunCommandState(
-                stateKey = StateKey(z"reload caddy for ${input.name}").some,
+                stateKey = StateKey("caddy", input.name.value).some,
                 installCommands = Vector(reloadCaddyCommand),
                 uninstallCommands = Vector(reloadCaddyCommand),
               )
@@ -71,5 +76,5 @@ ${applicationDescriptor.resolvedDomainNames.map(_.value).mkString(", ")} {
         SystemState.Empty
     }
 
-
 }
+

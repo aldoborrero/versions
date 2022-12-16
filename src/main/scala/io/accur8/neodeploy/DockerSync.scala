@@ -15,24 +15,7 @@ object DockerSync extends Sync[ResolvedApp] {
   override def rawSystemState(input: ResolvedApp): SystemState =
     input.descriptor.launcher match {
       case dd: DockerDescriptor =>
-        SystemState.RunCommandState(
-          installCommands = Vector(
-            Overrides.sudoDockerCommand
-              .appendArgs("run", "-d", "--name", dd.name)
-              .appendArgsSeq(dd.args)
-              .asSystemStateCommand,
-          ),
-          uninstallCommands = Vector(
-            Overrides.sudoDockerCommand
-              .appendArgs("stop", dd.name)
-              .appendArgsSeq(dd.args)
-              .asSystemStateCommand,
-            Overrides.sudoDockerCommand
-              .appendArgs("update", "--restart=no", dd.name)
-              .appendArgsSeq(dd.args)
-              .asSystemStateCommand,
-          ),
-        )
+        SystemState.DockerState(dd)
       case _ =>
         SystemState.Empty
     }

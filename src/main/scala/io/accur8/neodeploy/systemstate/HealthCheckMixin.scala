@@ -10,7 +10,7 @@ trait HealthCheckMixin extends SystemStateMixin { self: SystemState.HealthCheck 
   override def dryRunInstall: Vector[String] = Vector(s"upsert and enable healthcheck ${data.name}")
   override def dryRunUninstall: Vector[String] = Vector(s"disable healthcheck ${data.name}")
 
-  def stateKey = StateKey(s"healthcheck:${data.name}").some
+  def stateKey = StateKey("healthcheck", data.name).some
 
   def isActionNeeded: M[Boolean] =
     for {

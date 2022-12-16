@@ -5,22 +5,22 @@ import a8.shared.SharedImports._
 import a8.shared.app.LoggerF
 import io.accur8.neodeploy.HealthchecksDotIo
 import io.accur8.neodeploy.model.ApplicationDescriptor
-import io.accur8.neodeploy.systemstate.Interpretter.ActionNeededCache
+import io.accur8.neodeploy.systemstate.Interpreter.ActionNeededCache
 import io.accur8.neodeploy.systemstate.SystemStateModel._
 import zio.{Ref, ZIO}
 
-object Interpretter {
+object Interpreter {
 
   case class ActionNeededCache(cache: Map[SystemState,Boolean])
 
-  def apply(newState: NewState, previousState: PreviousState): M[Interpretter] =
+  def apply(newState: NewState, previousState: PreviousState): M[Interpreter] =
     SystemStateImpl.actionNeededCache(newState)
-      .map(anc => Interpretter(newState, previousState, anc))
+      .map(anc => Interpreter(newState, previousState, anc))
 
 }
 
 
-case class Interpretter(newState: NewState, previousState: PreviousState, actionNeededCache: ActionNeededCache) {
+case class Interpreter(newState: NewState, previousState: PreviousState, actionNeededCache: ActionNeededCache) {
 
   lazy val dryRunLog: Option[String] = {
     val newIsEmpty = SystemStateImpl.isEmpty(newState.systemState)

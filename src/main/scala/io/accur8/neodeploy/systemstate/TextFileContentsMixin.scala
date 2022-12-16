@@ -14,7 +14,7 @@ trait TextFileContentsMixin extends SystemStateMixin {
 
   def prefix: String
 
-  override def stateKey: Option[StateKey] = StateKey(filename).some
+  override def stateKey: Option[StateKey] = StateKey("text file", filename).some
 
   override def dryRunInstall: Vector[String] = {
     val permsStr =

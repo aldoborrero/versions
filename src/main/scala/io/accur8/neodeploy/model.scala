@@ -8,7 +8,7 @@ import a8.shared.SharedImports._
 import a8.shared.ZString.ZStringer
 import a8.shared.app.{LoggerF, Logging, LoggingF}
 import a8.shared.json.ast.{JsArr, JsDoc, JsNothing, JsObj, JsStr, JsVal}
-import a8.shared.json.{JsonCodec, JsonTypedCodec, UnionCodecBuilder}
+import a8.shared.json.{EnumCodecBuilder, JsonCodec, JsonTypedCodec, UnionCodecBuilder}
 import a8.versions.RepositoryOps.RepoConfigPrefix
 import com.softwaremill.sttp.Uri
 import io.accur8.neodeploy.Sync.SyncName
@@ -19,6 +19,7 @@ import zio.{Chunk, ExitCode, UIO, ZIO}
 
 import scala.collection.Iterable
 import PredefAssist._
+import io.accur8.neodeploy.model.DockerDescriptor.UninstallAction
 
 object model extends LoggingF {
 
@@ -84,7 +85,7 @@ object model extends LoggingF {
   case class GitRootDirectory(value: String) extends DirectoryValue
 
   sealed trait Install {
-    def execArgs(applicationDescriptor: ApplicationDescriptor, appsRootDirectory: AppsRootDirectory): Vector[String]
+    def execArgs(applicationDescriptor: ApplicationDescriptor, appDirectory: Directory, appsRootDirectory: AppsRootDirectory): Vector[String]
     def description: String
   }
   object Install {
@@ -92,9 +93,9 @@ object model extends LoggingF {
     implicit val jsonCodec =
       UnionCodecBuilder[Install]
         .typeFieldName("kind")
-        .addSingleton("manual", Manual)
         .defaultType[JavaApp]
         .addType[JavaApp]("javaapp")
+        .addType[Manual]("manual")
         .build
 
 
@@ -114,7 +115,8 @@ object model extends LoggingF {
 
       override def description: String = s"$organization:$artifact:$version"
 
-      override def execArgs(applicationDescriptor: ApplicationDescriptor, appsRootDirectory: AppsRootDirectory): Vector[String] = {
+
+      override def execArgs(applicationDescriptor: ApplicationDescriptor, appDirectory: Directory, appsRootDirectory: AppsRootDirectory): Vector[String] = {
         val appsRoot = appsRootDirectory.unresolvedDirectory
         val bin = appsRoot.subdir("bin").file(applicationDescriptor.name.value)
         val logsDir = appsRoot.subdir("logs")
@@ -139,10 +141,16 @@ object model extends LoggingF {
 
     }
 
-    case object Manual extends Install {
-      override def description: String = "Manual install"
-      override def execArgs(applicationDescriptor: ApplicationDescriptor, appsRootDirectory: AppsRootDirectory): Vector[String] =
-        Vector.empty
+    object Manual extends MxManual {
+      val empty = Manual()
+    }
+    @CompanionGen
+    case class Manual(
+      description: String = "manual install",
+      execArgs: Vector[String] = Vector.empty,
+    ) extends Install {
+      override def execArgs(applicationDescriptor: ApplicationDescriptor, appDirectory: Directory, appsRootDirectory: AppsRootDirectory): Vector[String] =
+        execArgs
     }
 
   }
@@ -169,14 +177,25 @@ object model extends LoggingF {
   @CompanionGen
   case class SystemdDescriptor(
     unitName: Option[String] = None,
+    environment: Map[String,String] = Map.empty,
+    Type: String = "simple",
   ) extends Launcher
 
   object DockerDescriptor extends MxDockerDescriptor {
+    sealed trait UninstallAction extends enumeratum.EnumEntry
+    object UninstallAction extends enumeratum.Enum[UninstallAction] {
+      val values = findValues
+//      case object RemoveAndInstallOnChange extends UninstallAction
+      case object Remove extends UninstallAction
+      case object Stop extends UninstallAction
+      implicit val jsonCodec = EnumCodecBuilder(this)
+    }
   }
   @CompanionGen
   case class DockerDescriptor(
     name: String,
     args: Vector[String],
+    uninstallAction: UninstallAction = UninstallAction.Stop,
   ) extends Launcher
 
   object Launcher {
@@ -197,15 +216,15 @@ object model extends LoggingF {
   @CompanionGen
   case class ApplicationDescriptor(
     name: ApplicationName,
-    install: Install = Install.Manual,
+    install: Install = Install.Manual.empty,
     caddyConfig: Option[String] = None,
     listenPort: Option[ListenPort] = None,
     stopServerCommand: Option[Command] = None,
     startServerCommand: Option[Command] = None,
     domainName: Option[DomainName] = None,
     domainNames: Iterable[DomainName] = Iterable.empty,
-    restartOnCalendar: Option[OnCalendarValue],
-    startOnCalendar: Option[OnCalendarValue],
+//    restartOnCalendar: Option[OnCalendarValue] = None,
+//    startOnCalendar: Option[OnCalendarValue] = None,
     launcher: Launcher = SupervisorDescriptor.empty
   ) {
     def resolvedDomainNames = domainName ++ domainNames

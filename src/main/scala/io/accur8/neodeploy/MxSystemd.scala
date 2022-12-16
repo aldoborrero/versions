@@ -43,7 +43,7 @@ object MxSystemd {
     }
     
     object parameters {
-      lazy val Type: CaseClassParm[UnitFile,String] = CaseClassParm[UnitFile,String]("Type", _.Type, (d,v) => d.copy(Type = v), None, 0)
+      lazy val Type: CaseClassParm[UnitFile,String] = CaseClassParm[UnitFile,String]("Type", _.Type, (d,v) => d.copy(Type = v), Some(()=> "simple"), 0)
       lazy val environment: CaseClassParm[UnitFile,Vector[String]] = CaseClassParm[UnitFile,Vector[String]]("environment", _.environment, (d,v) => d.copy(environment = v), Some(()=> Vector.empty), 1)
       lazy val workingDirectory: CaseClassParm[UnitFile,String] = CaseClassParm[UnitFile,String]("workingDirectory", _.workingDirectory, (d,v) => d.copy(workingDirectory = v), None, 2)
       lazy val execStart: CaseClassParm[UnitFile,String] = CaseClassParm[UnitFile,String]("execStart", _.execStart, (d,v) => d.copy(execStart = v), None, 3)

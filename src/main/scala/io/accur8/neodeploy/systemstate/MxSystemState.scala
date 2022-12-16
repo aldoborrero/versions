@@ -10,7 +10,7 @@ package io.accur8.neodeploy.systemstate
 
 //====
 import io.accur8.neodeploy.HealthchecksDotIo
-import io.accur8.neodeploy.model.ApplicationDescriptor
+import io.accur8.neodeploy.model.{ApplicationDescriptor, DockerDescriptor}
 import io.accur8.neodeploy.model.Install.JavaApp
 import io.accur8.neodeploy.systemstate.SystemState._
 import io.accur8.neodeploy.systemstate.SystemStateModel._
@@ -429,6 +429,60 @@ object MxSystemState {
     
     
     lazy val typeName = "RunCommandState"
+  
+  }
+  
+  
+  
+  
+  trait MxDockerState {
+  
+    protected def jsonCodecBuilder(builder: a8.shared.json.JsonObjectCodecBuilder[DockerState,parameters.type]): a8.shared.json.JsonObjectCodecBuilder[DockerState,parameters.type] = builder
+    
+    implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[DockerState,a8.shared.json.ast.JsObj] =
+      jsonCodecBuilder(
+        a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.descriptor)
+      )
+      .build
+    
+    implicit val zioEq: zio.prelude.Equal[DockerState] = zio.prelude.Equal.default
+    
+    implicit val catsEq: cats.Eq[DockerState] = cats.Eq.fromUniversalEquals
+    
+    lazy val generator: Generator[DockerState,parameters.type] =  {
+      val constructors = Constructors[DockerState](1, unsafe.iterRawConstruct)
+      Generator(constructors, parameters)
+    }
+    
+    object parameters {
+      lazy val descriptor: CaseClassParm[DockerState,DockerDescriptor] = CaseClassParm[DockerState,DockerDescriptor]("descriptor", _.descriptor, (d,v) => d.copy(descriptor = v), None, 0)
+    }
+    
+    
+    object unsafe {
+    
+      def rawConstruct(values: IndexedSeq[Any]): DockerState = {
+        DockerState(
+          descriptor = values(0).asInstanceOf[DockerDescriptor],
+        )
+      }
+      def iterRawConstruct(values: Iterator[Any]): DockerState = {
+        val value =
+          DockerState(
+            descriptor = values.next().asInstanceOf[DockerDescriptor],
+          )
+        if ( values.hasNext )
+           sys.error("")
+        value
+      }
+      def typedConstruct(descriptor: DockerDescriptor): DockerState =
+        DockerState(descriptor)
+    
+    }
+    
+    
+    lazy val typeName = "DockerState"
   
   }
   

@@ -9,6 +9,7 @@ import io.accur8.neodeploy.systemstate.MxSystemStateModel._
 import zio.{&, Task, Trace, ZIO, ZLayer}
 import a8.shared.SharedImports._
 import a8.shared.app.LoggingF
+import io.accur8.neodeploy.model.{AppsRootDirectory, CaddyDirectory, SupervisorDirectory}
 
 import java.nio.file.attribute.PosixFilePermission
 
@@ -17,10 +18,11 @@ object SystemStateModel {
   object SecretContent extends SecretValue.Companion[SecretContent]
   case class SecretContent(value: String) extends SecretValue
 
-  object StateKey extends StringValue.Companion[StateKey] {
-    val empty = StateKey("")
+  object StateKey extends MxStateKey {
+    val empty = StateKey("empty", "")
   }
-  case class StateKey(value: String) extends StringValue
+  @CompanionGen
+  case class StateKey(kind: String, value: String) extends StringValue
 
   object UnixPerms extends StringValue.Companion[UnixPerms] {
     val empty = UnixPerms("")
@@ -133,6 +135,7 @@ object SystemStateModel {
   }
 
   type Environ = SystemStateLogger & HealthchecksDotIo
+//  type Environ = SystemStateLogger & HealthchecksDotIo & SupervisorDirectory & CaddyDirectory & AppsRootDirectory
 
   type M[A] = zio.ZIO[Environ, Throwable, A]
 

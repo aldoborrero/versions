@@ -188,6 +188,7 @@ object resolvedmodel extends LoggingF {
     user: ResolvedUser,
   ) {
     def name = descriptor.name
+    def appDirectory = user.appsRootDirectory.unresolvedDirectory.subdir(descriptor.name.value)
   }
 
 
