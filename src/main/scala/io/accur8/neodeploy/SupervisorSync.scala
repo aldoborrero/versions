@@ -1,7 +1,7 @@
 package io.accur8.neodeploy
 
 
-import a8.shared.FileSystem.{Directory, File}
+import a8.shared.ZFileSystem.{Directory, File}
 import zio.{Task, ZIO}
 import a8.shared.SharedImports._
 import a8.shared.{FileSystem, ZString}
@@ -9,17 +9,18 @@ import a8.shared.ZString.ZStringer
 import io.accur8.neodeploy.model.{SupervisorDescriptor, SupervisorDirectory}
 import io.accur8.neodeploy.resolvedmodel.ResolvedApp
 import io.accur8.neodeploy.systemstate.SystemState
+import io.accur8.neodeploy.systemstate.SystemStateModel.M
 
 case class SupervisorSync(supervisorDir: SupervisorDirectory) extends Sync[ResolvedApp] {
 
   override val name: Sync.SyncName = Sync.SyncName("supervisor")
 
   def configFile(input: ResolvedApp): File =
-    supervisorDir.unresolvedDirectory.file(z"${input.descriptor.name}.conf")
+    supervisorDir.file(z"${input.descriptor.name}.conf")
 
   def supervisorConfigContents(app: ResolvedApp, supervisor: SupervisorDescriptor) = {
 
-    def pathZStringer[A <: a8.shared.FileSystem.Path]: ZStringer[A] =
+    def pathZStringer[A <: a8.shared.ZFileSystem.Path]: ZStringer[A] =
       new ZStringer[A] {
         override def toZString(a: A): ZString =
           a.asNioPath.toAbsolutePath.toString
@@ -35,7 +36,7 @@ case class SupervisorSync(supervisorDir: SupervisorDirectory) extends Sync[Resol
     val resolvedAutoRestart = supervisor.autoRestart.getOrElse(true)
     val resolvedStartSecs = supervisor.startSecs.getOrElse(5)
 
-    val appsRoot = app.user.appsRootDirectory.unresolvedDirectory
+    val appsRoot = app.user.appsRootDirectory
     val bin = appsRoot.subdir("bin").file(app.descriptor.name.value)
     val logsDir = appsRoot.subdir("logs")
     val appDir = appsRoot.subdir(app.descriptor.name.value)
@@ -61,12 +62,15 @@ user            = ${app.user.login}
   }
 
 
-  override def rawSystemState(input: ResolvedApp): SystemState =
-    input.descriptor.launcher match {
+  override def systemState(user: ResolvedApp): M[SystemState] =
+    zsucceed(rawSystemState(user))
+
+  def rawSystemState(user: ResolvedApp): SystemState =
+    user.descriptor.launcher match {
       case sd: SupervisorDescriptor =>
         SystemState.TextFile(
-          configFile(input).absolutePath,
-          supervisorConfigContents(input, sd)
+          configFile(user),
+          supervisorConfigContents(user, sd)
         )
       case _ =>
         SystemState.Empty

@@ -4,13 +4,13 @@ package io.accur8.neodeploy
 import a8.shared.app.BootstrappedIOApp
 import a8.shared.app.BootstrappedIOApp.BootstrapEnv
 import io.accur8.neodeploy.model.{ApplicationName, ServerName, UserLogin}
-import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedServer, ResolvedUser}
+import io.accur8.neodeploy.resolvedmodel.{ResolvedApp, ResolvedRepository, ResolvedServer, ResolvedUser}
 import zio.{Chunk, Task, UIO, ZIO}
 import a8.shared.SharedImports._
 import zio.process.CommandError
 
 import scala.util.Try
-import a8.shared.FileSystem
+import a8.shared.ZFileSystem
 import a8.shared.ZString.ZStringer
 import io.accur8.neodeploy.PushRemoteSyncSubCommand.Filter
 import io.accur8.neodeploy.Sync.SyncName
@@ -45,13 +45,11 @@ object PushRemoteSyncSubCommand {
 }
 
 case class PushRemoteSyncSubCommand(
-  serversFilter: Filter[ServerName],
-  usersFilter: Filter[UserLogin],
-  appsFilter: Filter[ApplicationName],
-  syncsFilter: Filter[SyncName],
-  remoteDebug: Boolean,
-  remoteTrace: Boolean,
-) extends BootstrappedIOApp {
+  resolvedRepository: ResolvedRepository,
+  runner: Runner,
+) {
+
+  import runner._
 
   lazy val validateParameters =
     if ( serversFilter.hasValues || usersFilter.hasValues || appsFilter.hasValues ) {
@@ -60,8 +58,6 @@ case class PushRemoteSyncSubCommand(
       ZIO.fail(new RuntimeException("must supply servers, users or apps"))
     }
 
-  lazy val resolvedRepository = LocalUserSyncSubCommand(Filter.allowAll, Filter.allowAll).resolvedRepository
-
   lazy val validateRepo = ValidateRepo(resolvedRepository)
 
   lazy val fitleredServers =
@@ -69,7 +65,7 @@ case class PushRemoteSyncSubCommand(
       .servers
       .filter(s => serversFilter.include(s.name))
 
-  override def runT: ZIO[BootstrapEnv, Throwable, Unit] =
+  lazy val run: Task[Unit] =
     for {
       _ <- validateParameters
       _ <- validateRepo.run
@@ -88,34 +84,36 @@ case class PushRemoteSyncSubCommand(
     )
   }
 
-  def copyManagedPublicKeysToStagingEffect(stagingDir: FileSystem.Directory): Task[Unit] =
-    ZIO.attemptBlocking {
-      val publicKeysDir =
-        stagingDir
-          .subdir("public-keys")
-          .resolve
-      for {
-        user <- resolvedRepository.allUsers
-        publicKey <- user.publicKeys
-        qualifiedUserName <- user.qualifiedUserNames
-      } yield {
-        publicKeysDir
-          .file(qualifiedUserName.value)
-          .write(publicKey.value)
+  def copyManagedPublicKeysToStagingEffect(stagingDir: ZFileSystem.Directory): Task[Unit] = {
+    val publicKeysDir = stagingDir.subdir("public-keys")
+    val writes =
+      resolvedRepository.allUsers.map { user =>
+        for {
+          _ <- publicKeysDir.makeDirectories
+          publicKeys <- user.publicKeys
+          _ <-
+            user
+              .qualifiedUserNames
+              .map(qualifiedUserName =>
+                publicKeysDir
+                  .file(qualifiedUserName.value)
+                  .write(publicKeys.map(_.value).mkString("\n"))
+              ).sequencePar
+        } yield ()
       }
-      ()
-    }
+    writes
+      .sequencePar
+      .as(())
+  }
 
   def pushRemoteUserSync(resolvedUser: ResolvedUser): UIO[Either[Throwable,Command.Result]] = {
 
     val remoteServer = resolvedUser.server.name
 
-    val stagingDir = resolvedRepository.gitRootDirectory.resolvedDirectory.subdir(s".staging/${resolvedUser.qname}").resolve
-
-    stagingDir.deleteChildren()
+    val stagingDir = resolvedRepository.gitRootDirectory.subdir(s".staging/${resolvedUser.qname}")
 
     val setupStagingDataEffect =  
-      FileSystemAssist.FileSet(resolvedRepository.gitRootDirectory.resolvedDirectory)
+      FileSystemAssist.FileSet(resolvedRepository.gitRootDirectory.unresolved)
         .addPath("config.hocon")
         .addPath("public-keys")
         .addPath(z"${remoteServer}/${resolvedUser.login}")
@@ -136,7 +134,13 @@ case class PushRemoteSyncSubCommand(
         .appendArgsSeq(syncsFilter.args)
         .execLogOutput
 
-    (copyManagedPublicKeysToStagingEffect(stagingDir) *> setupStagingDataEffect *> rsyncEffect *> sshEffect)
+    (
+      stagingDir.deleteChildren
+        *> copyManagedPublicKeysToStagingEffect(stagingDir)
+        *> setupStagingDataEffect
+        *> rsyncEffect
+        *> sshEffect
+    )
       .either
       .tap {
         case Left(ce) =>

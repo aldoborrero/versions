@@ -17,7 +17,7 @@ object SystemState {
   object TextFile extends MxTextFile
   @CompanionGen
   case class TextFile(
-    filename: String,
+    file: ZFileSystem.File,
     contents: String,
     perms: UnixPerms = UnixPerms.empty,
   ) extends NoSubStates with TextFileContentsMixin {
@@ -28,7 +28,7 @@ object SystemState {
   }
   @CompanionGen
   case class SecretsTextFile(
-    filename: String,
+    file: ZFileSystem.File,
     secretContents: SecretContent,
     perms: UnixPerms = UnixPerms.empty,
   ) extends NoSubStates with TextFileContentsMixin {
@@ -39,16 +39,16 @@ object SystemState {
   object JavaAppInstall extends MxJavaAppInstall
   @CompanionGen
   case class JavaAppInstall(
-    appInstallDir: String,
+    appInstallDir: ZFileSystem.Directory,
     fromRepo: JavaApp,
     descriptor: ApplicationDescriptor,
-    gitAppDirectory: String,
+    gitAppDirectory: ZFileSystem.Directory,
   ) extends NoSubStates with JavaAppInstallMixin
 
   object Directory extends MxDirectory
   @CompanionGen
   case class Directory(
-    path: String,
+    path: ZFileSystem.Directory,
     perms: UnixPerms = UnixPerms.empty,
   ) extends NoSubStates with DirectoryMixin
 

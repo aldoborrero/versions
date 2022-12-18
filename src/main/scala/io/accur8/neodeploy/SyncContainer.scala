@@ -1,10 +1,10 @@
 package io.accur8.neodeploy
 
 
-import a8.shared.FileSystem.Directory
+import a8.shared.ZFileSystem.Directory
 import a8.shared.json.JsonCodec
 import a8.shared.SharedImports._
-import a8.shared.StringValue
+import a8.shared.{StringValue, ZFileSystem}
 import a8.shared.ZString.ZStringer
 import a8.shared.app.{Logging, LoggingF}
 import a8.shared.jdbcf.ISeriesDialect.logger
@@ -23,6 +23,15 @@ object SyncContainer extends Logging {
 
   case class Prefix(value: String)
 
+  def loadState(stateDirectory: ZFileSystem.Directory, prefix: Prefix): Task[Vector[PreviousState]] =
+    stateDirectory
+      .files
+      .flatMap(
+        _.filter(f => f.name.startsWith(prefix.value) && f.name.endsWith(".json"))
+          .toVector
+          .map(json.fromFile[PreviousState])
+          .sequence
+      )
 }
 
 abstract class SyncContainer[Resolved, Name <: StringValue : Equal](
@@ -33,6 +42,7 @@ abstract class SyncContainer[Resolved, Name <: StringValue : Equal](
   extends LoggingF
 {
 
+  val previousStates: Vector[PreviousState]
   val newResolveds: Vector[Resolved]
   val syncs: Seq[Sync[Resolved]]
 
@@ -45,8 +55,6 @@ abstract class SyncContainer[Resolved, Name <: StringValue : Equal](
   def nameFromStr(nameStr: String): Name
 
   case class NamePair(syncName: SyncName, resolvedName: Name)
-
-  lazy val previousStates: Vector[PreviousState] = loadState
 
   lazy val previousStatesByNamePair: Map[NamePair, PreviousState] =
     previousStates
@@ -125,37 +133,21 @@ abstract class SyncContainer[Resolved, Name <: StringValue : Equal](
     val isEmpty = newState.isEmpty
     val stateFile = stateDirectory.file(z"${prefix.value}-${newState.resolvedName}-${newState.syncName}.json")
     if (isEmpty) {
-      if ( stateFile.exists() ) {
-        loggerF.debug(z"deleting state ${stateFile}") *>
-          ZIO.attemptBlocking(
-            stateFile.delete()
-          )
-      } else {
-        zunit
-      }
+      for {
+        exists <- stateFile.exists
+        _ <-
+          if (exists) {
+            loggerF.debug(z"deleting state ${stateFile}") *>
+              stateFile.delete
+          } else {
+            zunit
+          }
+      } yield ()
     } else {
       loggerF.debug(z"updating state ${stateFile}") *>
-        ZIO.attemptBlocking(
-          stateFile.write(newState.prettyJson)
-        )
+        stateFile.write(newState.prettyJson)
     }
   }
 
-  def loadState: Vector[PreviousState] = {
-    stateDirectory
-      .files()
-      .filter(f => f.name.startsWith(prefix.value) && f.name.endsWith(".json"))
-      .toVector
-      .flatMap { f =>
-        try {
-          val jsonStr = f.readAsString()
-          json.unsafeRead[PreviousState](jsonStr).some
-        } catch {
-          case e: Throwable =>
-            logger.error(s"error reading file ${f.canonicalPath}", e)
-            None
-        }
-      }
-  }
 
 }

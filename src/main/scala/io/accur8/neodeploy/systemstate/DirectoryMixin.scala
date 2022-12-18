@@ -6,35 +6,33 @@ import io.accur8.neodeploy.systemstate.SystemStateModel._
 
 trait DirectoryMixin extends SystemStateMixin { self: SystemState.Directory =>
 
-  override def stateKey: Option[StateKey] = StateKey("directory", path).some
-  override def dryRunInstall: Vector[String] = Vector(s"directory ${path} with ${perms}")
+  override def stateKey: Option[StateKey] = StateKey("directory", path.absolutePath).some
+  override def dryRunInstall: Vector[String] = Vector(z"directory ${path} with ${perms}")
 
   override def isActionNeeded = {
-    val dir = ZFileSystem.dir(path)
-    SystemStateImpl.permissionsActionNeeded(dir, perms)
+    SystemStateImpl.permissionsActionNeeded(path, perms)
   }
 
   override def runApplyNewState = {
-    val dir = ZFileSystem.dir(path)
     for {
-      exists <- dir.exists
+      exists <- path.exists
       _ <-
         if ( exists ) {
           zunit
         } else {
-          dir.makeDirectories
+          path.makeDirectories
         }
-      _ <- SystemStateImpl.applyPermissions(dir, perms)
+      _ <- SystemStateImpl.applyPermissions(path, perms)
     } yield ()
   }
 
   override def runUninstallObsolete = {
-    val dir = ZFileSystem.dir(path)
+
     for {
-      entries <- dir.entries
+      entries <- path.entries
       _ <-
         if (entries.isEmpty) {
-          dir.delete
+          path.delete
         } else {
           zunit
         }

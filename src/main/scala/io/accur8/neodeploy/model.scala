@@ -1,7 +1,7 @@
 package io.accur8.neodeploy
 
 
-import a8.shared.FileSystem.{Directory, dir}
+import a8.shared.ZFileSystem.{Directory, File, Z, dir}
 import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, Exec, LongValue, StringValue, ZString}
 import io.accur8.neodeploy.Mxmodel._
 import a8.shared.SharedImports._
@@ -20,6 +20,7 @@ import zio.{Chunk, ExitCode, UIO, ZIO}
 import scala.collection.Iterable
 import PredefAssist._
 import io.accur8.neodeploy.model.DockerDescriptor.UninstallAction
+import io.accur8.neodeploy.systemstate.SystemStateModel.M
 
 object model extends LoggingF {
 
@@ -48,19 +49,41 @@ object model extends LoggingF {
     implicit def zstringer[A <: DirectoryValue]: ZStringer[A] =
       new ZStringer[A] {
         override def toZString(a: A): ZString =
-          a.unresolvedDirectory.asNioPath.toFile.getAbsolutePath
+          a.asNioPath.toFile.getAbsolutePath
       }
   }
 
   abstract class DirectoryValue extends StringValue {
-    lazy val resolvedDirectory: Directory = {
-      val d = unresolvedDirectory
-      if ( !d.exists() ) {
-        d.makeDirectories()
-      }
-      d
+
+    def absolutePath =
+      asNioPath.toFile.getAbsolutePath
+
+    lazy val resolved: M[Directory] = {
+      val d = unresolved
+      d.exists
+        .map {
+          case true =>
+            d.makeDirectories
+          case false =>
+            zunit
+        }
+        .as(d)
     }
-    lazy val unresolvedDirectory: Directory = dir(value)
+
+    lazy val unresolved: Directory = dir(value)
+
+    def asNioPath =
+      unresolved.asNioPath
+
+    def subdir(path: String): Directory =
+      unresolved.subdir(path)
+
+    def file(path: String): File =
+      unresolved.file(path)
+
+    def exists: Z[Boolean] =
+      unresolved.exists
+
   }
 
   object RSnapshotRootDirectory extends StringValue.Companion[RSnapshotRootDirectory]
@@ -117,7 +140,7 @@ object model extends LoggingF {
 
 
       override def execArgs(applicationDescriptor: ApplicationDescriptor, appDirectory: Directory, appsRootDirectory: AppsRootDirectory): Vector[String] = {
-        val appsRoot = appsRootDirectory.unresolvedDirectory
+        val appsRoot = appsRootDirectory
         val bin = appsRoot.subdir("bin").file(applicationDescriptor.name.value)
         val logsDir = appsRoot.subdir("logs")
         val appDir = appsRoot.subdir(applicationDescriptor.name.value)
@@ -242,7 +265,7 @@ object model extends LoggingF {
   case class UserDescriptor(
     login: UserLogin,
     aliases: Vector[QualifiedUserName] = Vector.empty,
-    home: Option[String] = None,
+    home: Option[Directory] = None,
     authorizedKeys: Vector[QualifiedUserName] = Vector.empty,
     a8VersionsExec: Option[String] = None,
     manageSshKeys: Boolean = true,

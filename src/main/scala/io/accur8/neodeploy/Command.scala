@@ -6,7 +6,7 @@ import a8.shared.json.ast.{JsArr, JsStr}
 import zio.{Chunk, ExitCode, Trace, UIO, ZIO}
 import a8.shared.SharedImports._
 import PredefAssist._
-import a8.shared.FileSystem.Directory
+import a8.shared.ZFileSystem.Directory
 import a8.shared.app.{LoggerF, LoggingF}
 import io.accur8.neodeploy.Command.CommandException
 import io.accur8.neodeploy.systemstate.SystemState.RunCommandState
@@ -38,7 +38,7 @@ case class Command(args: Iterable[String], workingDirectory: Option[Directory] =
   def asSystemStateCommand =
     systemstate.SystemStateModel.Command(
       args = args,
-      workingDirectory = workingDirectory.map(_.absolutePath),
+      workingDirectory = workingDirectory,
     )
 
   def workingDirectory(wd: Directory): Command =

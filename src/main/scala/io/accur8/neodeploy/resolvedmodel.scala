@@ -15,6 +15,7 @@ import PredefAssist._
 import a8.versions.model.ResolvedPersonnel
 import com.typesafe.config.{Config, ConfigFactory, ConfigValue}
 import io.accur8.neodeploy.resolvedmodel.ResolvedPgbackrestServer
+import io.accur8.neodeploy.systemstate.SystemStateModel.M
 
 object resolvedmodel extends LoggingF {
 
@@ -25,15 +26,16 @@ object resolvedmodel extends LoggingF {
   ) {
 
     lazy val gitAppsDirectory =
-      server.gitServerDirectory.unresolvedDirectory.subdir(descriptor.login.value)
+      server.gitServerDirectory.subdir(descriptor.login.value)
 
-    lazy val resolvedApps: Vector[ResolvedApp] =
+    lazy val resolvedAppsM: M[Vector[ResolvedApp]] =
       gitAppsDirectory
-        .subdirs()
-        .flatMap { appDir =>
-          server.loadResolvedAppFromDisk(appDir, this)
-        }
-        .toVector
+        .subdirs
+        .flatMap(
+          _.map(appDir => server.loadResolvedAppFromDisk(appDir, this))
+            .sequence
+            .map(_.flatten.toVector)
+        )
 
     lazy val plugins = UserPlugin.UserPlugins(descriptor.plugins, this)
 
@@ -63,9 +65,7 @@ object resolvedmodel extends LoggingF {
     lazy val repoDir =
       server
         .gitServerDirectory
-        .resolvedDirectory
         .subdir(descriptor.login.value)
-        .resolve
 
     def repoFile(subPath: String): File =
       repoDir
@@ -86,19 +86,32 @@ object resolvedmodel extends LoggingF {
     def sshPublicKeyFileInHome =
       home.subdir(".ssh").file("id_ed25519.pub")
 
-    def publicKeys: Vector[AuthorizedKey] =
+    def publicKeys: Task[Vector[AuthorizedKey]] =
       sshPublicKeyFileInRepo
-        .readAsStringOpt()
-        .map(line => Vector(AuthorizedKey(line)))
-        .getOrElse(server.repository.authorizedKeys(qualifiedUserName))
+        .readAsStringOpt
+        .map(
+          _.map(line => Vector(AuthorizedKey(line)))
+        )
+        .flatMap {
+          case Some(v) =>
+            zsucceed(v)
+          case None =>
+            server.repository.authorizedKeys(qualifiedUserName)
+        }
 
-    def resolvedAuthorizedKeys =
-      descriptorAuthorizedKeys ++ plugins.authorizedKeys
+    def resolvedAuthorizedKeys = {
+      for {
+        pak <- plugins.authorizedKeys
+        dak <- descriptorAuthorizedKeys
+      } yield pak ++ dak
+    }
 
-    def descriptorAuthorizedKeys: Vector[AuthorizedKey] =
+    def descriptorAuthorizedKeys: Task[Vector[AuthorizedKey]] =
       descriptor
         .authorizedKeys
-        .flatMap(n => server.repository.authorizedKeys(n))
+        .map(n => server.repository.authorizedKeys(n))
+        .sequence
+        .map(_.flatten)
 
   }
 
@@ -109,10 +122,10 @@ object resolvedmodel extends LoggingF {
     repository: ResolvedRepository,
   ) {
 
-    def fetchUser(login: UserLogin): ResolvedUser =
-      resolvedUsers
-        .find(_.login == login)
-        .getOrError(s"cannot find ${login}")
+    def fetchUserZ(login: UserLogin): ZIO[Any, Throwable, ResolvedUser] =
+      fetchUserOpt(login)
+        .map(u => zsucceed(u))
+        .getOrElse(zfail(new RuntimeException(z"user ${login} not found")))
 
     def fetchUserOpt(login: UserLogin): Option[ResolvedUser] =
       resolvedUsers
@@ -124,7 +137,7 @@ object resolvedmodel extends LoggingF {
         .map( userDescriptor =>
           ResolvedUser(
             descriptor = userDescriptor,
-            home = dir(userDescriptor.home.getOrElse(z"/home/${userDescriptor.login}")),
+            home = userDescriptor.home.getOrElse(dir(z"/home/${userDescriptor.login}")),
             server = this,
           )
         )
@@ -150,15 +163,23 @@ object resolvedmodel extends LoggingF {
     def supervisorDirectory: SupervisorDirectory = descriptor.supervisorDirectory
     def caddyDirectory: CaddyDirectory = descriptor.caddyDirectory
 
-    def loadResolvedAppFromDisk(appConfigDir: Directory, resolvedUser: ResolvedUser): Option[ResolvedApp] = {
-      val appDescriptorFiles =
+    def loadResolvedAppFromDisk(appConfigDir: Directory, resolvedUser: ResolvedUser): Task[Option[ResolvedApp]] = {
+      val appDescriptorFilesZ =
         Vector(
           appConfigDir.file("secret.props.priv"),
           appConfigDir.file("application.json"),
           appConfigDir.file("application.hocon"),
-        ).filter(_.exists())
+        )
+          .map(f => f.exists.map(_ -> f))
+          .sequence
+          .map(
+            _.collect {
+              case (true, f) =>
+                f
+            }
+          )
 
-      val appDir = resolvedUser.appsRootDirectory.unresolvedDirectory.subdir(appConfigDir.name)
+      val appDir = resolvedUser.appsRootDirectory.subdir(appConfigDir.name)
 
 
       val baseConfigMap =
@@ -169,29 +190,33 @@ object resolvedmodel extends LoggingF {
 
       val baseConfig = ConfigFactory.parseMap(baseConfigMap.asJava)
 
-      try {
-        import HoconOps._
+      appDescriptorFilesZ
+        .map { appDescriptorFiles =>
+          try {
+            import HoconOps._
 
-        val configs =
-          appDescriptorFiles
-            .map(f => HoconOps.impl.loadConfig(f.asNioPath))
-        if (configs.isEmpty) {
-          None
-        } else {
-          val resolvedConfig =
-            (configs ++ Vector(baseConfig))
-              .reduceLeft(_.resolveWith(_))
+            val configs =
+              appDescriptorFiles
+                .map(f => HoconOps.impl.loadConfig(f.asNioPath))
+            if (configs.isEmpty) {
+              None
+            } else {
+              val resolvedConfig =
+                (configs ++ Vector(baseConfig))
+                  .reduceLeft(_.resolveWith(_))
 
-          val descriptor =
-            resolvedConfig
-              .read[ApplicationDescriptor]
-          ResolvedApp(descriptor, appConfigDir, resolvedUser).some
+              val descriptor =
+                resolvedConfig
+                  .read[ApplicationDescriptor]
+              ResolvedApp(descriptor, appConfigDir, resolvedUser).some
+            }
+          } catch {
+            case IsNonFatal(e) =>
+              logger.error(s"Failed to load application descriptor file: $appDescriptorFiles", e)
+              None
+          }
+
         }
-      } catch {
-        case IsNonFatal(e) =>
-          logger.error(s"Failed to load application descriptor file: $appDescriptorFiles", e)
-          None
-      }
     }
   }
 
@@ -205,7 +230,7 @@ object resolvedmodel extends LoggingF {
   ) {
     def server = user.server
     def name = descriptor.name
-    def appDirectory = user.appsRootDirectory.unresolvedDirectory.subdir(descriptor.name.value)
+    def appDirectory = user.appsRootDirectory.subdir(descriptor.name.value)
   }
 
 
@@ -214,7 +239,7 @@ object resolvedmodel extends LoggingF {
     def loadFromDisk(gitRootDirectory: GitRootDirectory): ResolvedRepository = {
       val cascadingHocon =
         CascadingHocon
-          .loadConfigsInDirectory(gitRootDirectory.unresolvedDirectory.asNioPath, recurse = false)
+          .loadConfigsInDirectory(gitRootDirectory.asNioPath, recurse = false)
           .resolve
       val configMojo =
         ConfigMojoOps.impl.ConfigMojoRoot(
@@ -250,36 +275,52 @@ object resolvedmodel extends LoggingF {
         .find(_.name == serverName)
         .getOrError(z"server ${serverName} not found")
 
-    def authorizedKeys(id: QualifiedUserName): Vector[AuthorizedKey] = {
+    def authorizedKeys(id: QualifiedUserName): Task[Vector[AuthorizedKey]] = {
 
-      def personnelFinder =
+      def personnelFinderZ =
         personnel
           .find(_.id === id)
-          .map(_.resolvedKeys)
+          .map(_.resolvedKeysZ)
+          .getOrElse(zsucceed(Vector.empty))
 
-      def publicKeysFinder =
+      def publicKeysFinderZ =
         gitRootDirectory
-          .resolvedDirectory
           .subdir("public-keys")
           .file(id.value)
-          .readAsStringOpt()
-          .map { contents =>
-            Vector(AuthorizedKey(s"# from ${id}"), AuthorizedKey(contents))
+          .readAsStringOpt
+          .map {
+            case Some(contents) =>
+              val keys =
+                contents
+                  .linesIterator
+                  .filterNot(_.isBlank)
+                  .map(AuthorizedKey.apply)
+                  .toVector
+              Vector(AuthorizedKey(s"# start ${id}")) ++ keys ++ Vector(AuthorizedKey(s"# end ${id}"))
+            case None =>
+              Vector.empty
           }
 
-      def usersFinder =
+      def usersFinderZ =
         users
           .find(_.qualifiedUserName === id)
           .map(_.publicKeys)
+          .getOrElse(zsucceed(Vector.empty))
 
-      val result = personnelFinder orElse publicKeysFinder orElse usersFinder
+      for {
+        personnelFinder <- personnelFinderZ
+        publicKeys <- publicKeysFinderZ
+        usersKeys <- usersFinderZ
+      } yield {
+        val result = personnelFinder ++ publicKeys ++ usersKeys
 
-      result match {
-        case Some(v) =>
-          v
-        case None =>
-          logger.warn(s"unable to find keys for ${id}")
-          Vector.empty
+        result match {
+          case v if v.nonEmpty =>
+            v
+          case _ =>
+            logger.warn(s"unable to find keys for ${id}")
+            Vector.empty
+        }
       }
 
     }
@@ -311,7 +352,7 @@ object resolvedmodel extends LoggingF {
         .map { serverDescriptor =>
           ResolvedServer(
             serverDescriptor,
-            GitServerDirectory(gitRootDirectory.unresolvedDirectory.subdir(serverDescriptor.name.value).asNioPath.toString),
+            GitServerDirectory(gitRootDirectory.subdir(serverDescriptor.name.value).asNioPath.toString),
             this,
           )
         }
@@ -359,17 +400,19 @@ object resolvedmodel extends LoggingF {
         }
         .mkString("\n")
 
-    override def authorizedKeys: Vector[AuthorizedKey] =
+    override def authorizedKeys: Task[Vector[AuthorizedKey]] =
       user
         .server
         .repository
         .userPlugins
-        .flatMap {
+        .map {
           case rss: ResolvedRSnapshotServer =>
             rss.user.publicKeys
           case _ =>
-            Vector.empty
+            zsucceed(Vector.empty)
         }
+        .sequence
+        .map(_.flatten)
 
   }
 
@@ -383,9 +426,6 @@ object resolvedmodel extends LoggingF {
     def descriptorJson = descriptor.toJsVal
 
     def name = "rsnapshotServer"
-
-    override def authorizedKeys: Vector[AuthorizedKey] =
-      Vector.empty
 
     lazy val server: ResolvedServer = user.server
 
@@ -421,17 +461,19 @@ object resolvedmodel extends LoggingF {
         .resolvedPgbackrestServerOpt
         .getOrError("must have a pgbackrest server configured")
 
-    override def authorizedKeys: Vector[AuthorizedKey] =
+    override def authorizedKeys: Task[Vector[AuthorizedKey]] =
       user
         .server
         .repository
         .userPlugins
-        .flatMap {
+        .map {
           case rps: ResolvedPgbackrestServer =>
             rps.user.publicKeys
           case _ =>
-            Vector.empty
+            zsucceed(Vector.empty)
         }
+        .sequence
+        .map(_.flatten)
 
     lazy val server: ResolvedServer = user.server
 
@@ -449,17 +491,19 @@ object resolvedmodel extends LoggingF {
 
     override def name: String = "pgbackrestServer"
 
-    override def authorizedKeys: Vector[AuthorizedKey] =
+    override def authorizedKeys: Task[Vector[AuthorizedKey]] =
       user
         .server
         .repository
         .userPlugins
-        .flatMap {
+        .map {
           case rpc: ResolvedPgbackrestClient =>
             rpc.user.publicKeys
           case _ =>
-            Vector.empty
+            zsucceed(Vector.empty)
         }
+        .sequence
+        .map(_.flatten)
 
     lazy val server: ResolvedServer = user.server
 

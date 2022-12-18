@@ -9,6 +9,7 @@ package io.accur8.neodeploy.systemstate
 */
 
 //====
+import a8.shared.ZFileSystem
 import io.accur8.neodeploy.HealthchecksDotIo
 import io.accur8.neodeploy.model.{ApplicationDescriptor, DockerDescriptor}
 import io.accur8.neodeploy.model.Install.JavaApp
@@ -30,7 +31,7 @@ object MxSystemState {
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[TextFile,a8.shared.json.ast.JsObj] =
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
-          .addField(_.filename)
+          .addField(_.file)
           .addField(_.contents)
           .addField(_.perms)
       )
@@ -46,7 +47,7 @@ object MxSystemState {
     }
     
     object parameters {
-      lazy val filename: CaseClassParm[TextFile,String] = CaseClassParm[TextFile,String]("filename", _.filename, (d,v) => d.copy(filename = v), None, 0)
+      lazy val file: CaseClassParm[TextFile,ZFileSystem.File] = CaseClassParm[TextFile,ZFileSystem.File]("file", _.file, (d,v) => d.copy(file = v), None, 0)
       lazy val contents: CaseClassParm[TextFile,String] = CaseClassParm[TextFile,String]("contents", _.contents, (d,v) => d.copy(contents = v), None, 1)
       lazy val perms: CaseClassParm[TextFile,UnixPerms] = CaseClassParm[TextFile,UnixPerms]("perms", _.perms, (d,v) => d.copy(perms = v), Some(()=> UnixPerms.empty), 2)
     }
@@ -56,7 +57,7 @@ object MxSystemState {
     
       def rawConstruct(values: IndexedSeq[Any]): TextFile = {
         TextFile(
-          filename = values(0).asInstanceOf[String],
+          file = values(0).asInstanceOf[ZFileSystem.File],
           contents = values(1).asInstanceOf[String],
           perms = values(2).asInstanceOf[UnixPerms],
         )
@@ -64,7 +65,7 @@ object MxSystemState {
       def iterRawConstruct(values: Iterator[Any]): TextFile = {
         val value =
           TextFile(
-            filename = values.next().asInstanceOf[String],
+            file = values.next().asInstanceOf[ZFileSystem.File],
             contents = values.next().asInstanceOf[String],
             perms = values.next().asInstanceOf[UnixPerms],
           )
@@ -72,8 +73,8 @@ object MxSystemState {
            sys.error("")
         value
       }
-      def typedConstruct(filename: String, contents: String, perms: UnixPerms): TextFile =
-        TextFile(filename, contents, perms)
+      def typedConstruct(file: ZFileSystem.File, contents: String, perms: UnixPerms): TextFile =
+        TextFile(file, contents, perms)
     
     }
     
@@ -92,7 +93,7 @@ object MxSystemState {
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[SecretsTextFile,a8.shared.json.ast.JsObj] =
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
-          .addField(_.filename)
+          .addField(_.file)
           .addField(_.secretContents)
           .addField(_.perms)
       )
@@ -108,7 +109,7 @@ object MxSystemState {
     }
     
     object parameters {
-      lazy val filename: CaseClassParm[SecretsTextFile,String] = CaseClassParm[SecretsTextFile,String]("filename", _.filename, (d,v) => d.copy(filename = v), None, 0)
+      lazy val file: CaseClassParm[SecretsTextFile,ZFileSystem.File] = CaseClassParm[SecretsTextFile,ZFileSystem.File]("file", _.file, (d,v) => d.copy(file = v), None, 0)
       lazy val secretContents: CaseClassParm[SecretsTextFile,SecretContent] = CaseClassParm[SecretsTextFile,SecretContent]("secretContents", _.secretContents, (d,v) => d.copy(secretContents = v), None, 1)
       lazy val perms: CaseClassParm[SecretsTextFile,UnixPerms] = CaseClassParm[SecretsTextFile,UnixPerms]("perms", _.perms, (d,v) => d.copy(perms = v), Some(()=> UnixPerms.empty), 2)
     }
@@ -118,7 +119,7 @@ object MxSystemState {
     
       def rawConstruct(values: IndexedSeq[Any]): SecretsTextFile = {
         SecretsTextFile(
-          filename = values(0).asInstanceOf[String],
+          file = values(0).asInstanceOf[ZFileSystem.File],
           secretContents = values(1).asInstanceOf[SecretContent],
           perms = values(2).asInstanceOf[UnixPerms],
         )
@@ -126,7 +127,7 @@ object MxSystemState {
       def iterRawConstruct(values: Iterator[Any]): SecretsTextFile = {
         val value =
           SecretsTextFile(
-            filename = values.next().asInstanceOf[String],
+            file = values.next().asInstanceOf[ZFileSystem.File],
             secretContents = values.next().asInstanceOf[SecretContent],
             perms = values.next().asInstanceOf[UnixPerms],
           )
@@ -134,8 +135,8 @@ object MxSystemState {
            sys.error("")
         value
       }
-      def typedConstruct(filename: String, secretContents: SecretContent, perms: UnixPerms): SecretsTextFile =
-        SecretsTextFile(filename, secretContents, perms)
+      def typedConstruct(file: ZFileSystem.File, secretContents: SecretContent, perms: UnixPerms): SecretsTextFile =
+        SecretsTextFile(file, secretContents, perms)
     
     }
     
@@ -171,10 +172,10 @@ object MxSystemState {
     }
     
     object parameters {
-      lazy val appInstallDir: CaseClassParm[JavaAppInstall,String] = CaseClassParm[JavaAppInstall,String]("appInstallDir", _.appInstallDir, (d,v) => d.copy(appInstallDir = v), None, 0)
+      lazy val appInstallDir: CaseClassParm[JavaAppInstall,ZFileSystem.Directory] = CaseClassParm[JavaAppInstall,ZFileSystem.Directory]("appInstallDir", _.appInstallDir, (d,v) => d.copy(appInstallDir = v), None, 0)
       lazy val fromRepo: CaseClassParm[JavaAppInstall,JavaApp] = CaseClassParm[JavaAppInstall,JavaApp]("fromRepo", _.fromRepo, (d,v) => d.copy(fromRepo = v), None, 1)
       lazy val descriptor: CaseClassParm[JavaAppInstall,ApplicationDescriptor] = CaseClassParm[JavaAppInstall,ApplicationDescriptor]("descriptor", _.descriptor, (d,v) => d.copy(descriptor = v), None, 2)
-      lazy val gitAppDirectory: CaseClassParm[JavaAppInstall,String] = CaseClassParm[JavaAppInstall,String]("gitAppDirectory", _.gitAppDirectory, (d,v) => d.copy(gitAppDirectory = v), None, 3)
+      lazy val gitAppDirectory: CaseClassParm[JavaAppInstall,ZFileSystem.Directory] = CaseClassParm[JavaAppInstall,ZFileSystem.Directory]("gitAppDirectory", _.gitAppDirectory, (d,v) => d.copy(gitAppDirectory = v), None, 3)
     }
     
     
@@ -182,25 +183,25 @@ object MxSystemState {
     
       def rawConstruct(values: IndexedSeq[Any]): JavaAppInstall = {
         JavaAppInstall(
-          appInstallDir = values(0).asInstanceOf[String],
+          appInstallDir = values(0).asInstanceOf[ZFileSystem.Directory],
           fromRepo = values(1).asInstanceOf[JavaApp],
           descriptor = values(2).asInstanceOf[ApplicationDescriptor],
-          gitAppDirectory = values(3).asInstanceOf[String],
+          gitAppDirectory = values(3).asInstanceOf[ZFileSystem.Directory],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): JavaAppInstall = {
         val value =
           JavaAppInstall(
-            appInstallDir = values.next().asInstanceOf[String],
+            appInstallDir = values.next().asInstanceOf[ZFileSystem.Directory],
             fromRepo = values.next().asInstanceOf[JavaApp],
             descriptor = values.next().asInstanceOf[ApplicationDescriptor],
-            gitAppDirectory = values.next().asInstanceOf[String],
+            gitAppDirectory = values.next().asInstanceOf[ZFileSystem.Directory],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(appInstallDir: String, fromRepo: JavaApp, descriptor: ApplicationDescriptor, gitAppDirectory: String): JavaAppInstall =
+      def typedConstruct(appInstallDir: ZFileSystem.Directory, fromRepo: JavaApp, descriptor: ApplicationDescriptor, gitAppDirectory: ZFileSystem.Directory): JavaAppInstall =
         JavaAppInstall(appInstallDir, fromRepo, descriptor, gitAppDirectory)
     
     }
@@ -235,7 +236,7 @@ object MxSystemState {
     }
     
     object parameters {
-      lazy val path: CaseClassParm[Directory,String] = CaseClassParm[Directory,String]("path", _.path, (d,v) => d.copy(path = v), None, 0)
+      lazy val path: CaseClassParm[Directory,ZFileSystem.Directory] = CaseClassParm[Directory,ZFileSystem.Directory]("path", _.path, (d,v) => d.copy(path = v), None, 0)
       lazy val perms: CaseClassParm[Directory,UnixPerms] = CaseClassParm[Directory,UnixPerms]("perms", _.perms, (d,v) => d.copy(perms = v), Some(()=> UnixPerms.empty), 1)
     }
     
@@ -244,21 +245,21 @@ object MxSystemState {
     
       def rawConstruct(values: IndexedSeq[Any]): Directory = {
         Directory(
-          path = values(0).asInstanceOf[String],
+          path = values(0).asInstanceOf[ZFileSystem.Directory],
           perms = values(1).asInstanceOf[UnixPerms],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): Directory = {
         val value =
           Directory(
-            path = values.next().asInstanceOf[String],
+            path = values.next().asInstanceOf[ZFileSystem.Directory],
             perms = values.next().asInstanceOf[UnixPerms],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(path: String, perms: UnixPerms): Directory =
+      def typedConstruct(path: ZFileSystem.Directory, perms: UnixPerms): Directory =
         Directory(path, perms)
     
     }

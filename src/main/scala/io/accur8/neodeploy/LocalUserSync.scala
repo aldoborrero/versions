@@ -2,7 +2,7 @@ package io.accur8.neodeploy
 
 
 import a8.shared.{CompanionGen, StringValue}
-import a8.shared.FileSystem.Directory
+import a8.shared.ZFileSystem.Directory
 import io.accur8.neodeploy.model.{ApplicationDescriptor, ApplicationName, AppsRootDirectory, CaddyDirectory, DomainName, GitServerDirectory, Install, SupervisorDirectory, UserDescriptor, UserLogin}
 import zio.{Task, UIO, ZIO}
 import a8.shared.SharedImports._
@@ -16,6 +16,7 @@ import io.accur8.neodeploy.systemstate.SystemdSync
 import systemstate.SystemStateModel._
 
 
+
 case class LocalUserSync(resolvedUser: ResolvedUser, appsFilter: Filter[ApplicationName], syncsFilter: Filter[SyncName]) extends LoggingF {
 
   lazy val resolvedServer = resolvedUser.server
@@ -24,11 +25,10 @@ case class LocalUserSync(resolvedUser: ResolvedUser, appsFilter: Filter[Applicat
     resolvedUser
       .home
       .subdir(".neodeploy-state")
-      .resolve
 
   lazy val healthchecksDotIo = HealthchecksDotIo(resolvedServer.repository.descriptor.healthchecksApiToken)
 
-  case object userSync extends SyncContainer[ResolvedUser, UserLogin](SyncContainer.Prefix("user"), stateDirectory, Filter.allowAll) {
+  case class UserSync(previousStates: Vector[PreviousState]) extends SyncContainer[ResolvedUser, UserLogin](SyncContainer.Prefix("user"), stateDirectory, Filter.allowAll) {
 
     override def name(resolved: ResolvedUser): UserLogin = resolved.login
     override def nameFromStr(nameStr: String): UserLogin = UserLogin(nameStr)
@@ -47,12 +47,10 @@ case class LocalUserSync(resolvedUser: ResolvedUser, appsFilter: Filter[Applicat
 
   }
 
-  case object appSync extends SyncContainer[ResolvedApp, ApplicationName](SyncContainer.Prefix("app"), stateDirectory, appsFilter) {
+  case class AppSync(newResolveds: Vector[ResolvedApp], previousStates: Vector[PreviousState]) extends SyncContainer[ResolvedApp, ApplicationName](SyncContainer.Prefix("app"), stateDirectory, appsFilter) {
 
     override def name(resolved: ResolvedApp): ApplicationName = resolved.name
     override def nameFromStr(nameStr: String): ApplicationName = ApplicationName(nameStr)
-
-    override val newResolveds = resolvedUser.resolvedApps
 
     override val syncs: Seq[Sync[ResolvedApp]] =
       Vector(
@@ -65,16 +63,47 @@ case class LocalUserSync(resolvedUser: ResolvedUser, appsFilter: Filter[Applicat
 
   }
 
+  def appSyncRun: ZIO[Environ, Nothing, Either[Throwable, Unit]] =
+    resolvedUser
+      .resolvedAppsM
+      .either
+      .flatMap {
+        case Right(resolvedApps) =>
+          SyncContainer.loadState(stateDirectory, SyncContainer.Prefix("user"))
+            .either
+            .flatMap {
+              case Right(previousStates) =>
+                AppSync(resolvedApps, previousStates)
+                  .run
+              case Left(th) =>
+                zsucceed(Left(th))
+            }
+        case Left(e) =>
+          loggerF.error("unable to process apps", e) *>
+            zsucceed(Left(e))
+      }
+
+  def userSyncRun: ZIO[Environ, Nothing, Either[Throwable, Unit]] =
+    SyncContainer.loadState(stateDirectory, SyncContainer.Prefix("user"))
+      .either
+      .flatMap {
+        case Right(previousStates) =>
+          UserSync(previousStates)
+            .run
+        case Left(th) =>
+          zsucceed(Left(th))
+      }
+
   def run: ZIO[Environ, Nothing, Either[Throwable, Unit]] =
     for {
-      _ <-loggerF.info(z"running for ${resolvedUser.qualifiedUserName}")
+      _ <- loggerF.info(z"running for ${resolvedUser.qualifiedUserName}")
       _ <- loggerF.debug(z"resolved user ${resolvedUser.qualifiedUserName} -- ${resolvedUser.descriptor.prettyJson.indent("    ")}")
       _ <- loggerF.debug(z"resolved user plugins ${resolvedUser.qualifiedUserName} -- ${resolvedUser.plugins.descriptorJson.prettyJson.indent("    ")}")
-      userResult <- userSync.run
+      userResult <- userSyncRun
       result <-
         userResult match {
           case Right(_) =>
-            appSync.run
+            appSyncRun
           case l =>
             zsucceed(l)
         }

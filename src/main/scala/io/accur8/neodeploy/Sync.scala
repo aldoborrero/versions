@@ -1,7 +1,7 @@
 package io.accur8.neodeploy
 
 
-import a8.shared.FileSystem.{Directory, File, Path}
+import a8.shared.ZFileSystem.{Directory, File, Path}
 import a8.shared.json.JsonCodec
 import zio.{Task, ZIO}
 import a8.shared.SharedImports._
@@ -33,9 +33,6 @@ abstract class Sync[A] {
 
   val name: SyncName
 
-  def systemState(input: A): M[SystemState] =
-    zsucceed(rawSystemState(input))
-
-  protected def rawSystemState(input: A): SystemState
+  def systemState(input: A): M[SystemState]
 
 }

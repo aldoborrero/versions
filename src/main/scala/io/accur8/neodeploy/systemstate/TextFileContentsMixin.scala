@@ -7,14 +7,15 @@ import a8.shared.SharedImports._
 
 trait TextFileContentsMixin extends SystemStateMixin {
 
-  val filename: String
+  val file: ZFileSystem.File
   val perms: UnixPerms
+  def filename = file.absolutePath
 
   def contents: String
 
   def prefix: String
 
-  override def stateKey: Option[StateKey] = StateKey("text file", filename).some
+  override def stateKey: Option[StateKey] = StateKey("text file", file.absolutePath).some
 
   override def dryRunInstall: Vector[String] = {
     val permsStr =

@@ -21,7 +21,7 @@ import io.accur8.neodeploy.model.{ApplicationName, ServerName, UserLogin}
 import wvlet.log.{LogLevel, Logger}
 
 import scala.annotation.tailrec
-import io.accur8.neodeploy.ValidateRepo
+import io.accur8.neodeploy.{PushRemoteSyncSubCommand, ValidateRepo, Runner => NeodeployRunner}
 
 object Main extends Logging {
 
@@ -156,19 +156,15 @@ object Main extends Logging {
       val syncs = opt[String](descr = syncsDescription, required = false)
 
       override def run(main: Main) = {
-
-        val pushRemoteSync =
-          io.accur8.neodeploy.PushRemoteSyncSubCommand(
-            serversFilter = resolveArgs[ServerName](server, servers),
-            usersFilter = resolveArgs[UserLogin](user, users),
-            appsFilter = resolveArgs[ApplicationName](app, apps),
-            syncsFilter = resolveArgs[SyncName](sync, syncs),
-            debug.toOption.getOrElse(false),
-            trace.toOption.getOrElse(false),
-          )
-
-        pushRemoteSync.main(Array.empty)
-
+        NeodeployRunner(
+          serversFilter = resolveArgs[ServerName](server, servers),
+          usersFilter = resolveArgs[UserLogin](user, users),
+          appsFilter = resolveArgs[ApplicationName](app, apps),
+          syncsFilter = resolveArgs[SyncName](sync, syncs),
+          debug.toOption.getOrElse(false),
+          trace.toOption.getOrElse(false),
+          (rr, parms) => PushRemoteSyncSubCommand(rr, parms).run,
+        ).unsafeRun()
       }
 
     }
@@ -177,8 +173,9 @@ object Main extends Logging {
 
       descr("will validate the server app config repo, for example creating any missing ssh keys")
 
-      override def run(main: Main) = 
-        ValidateRepo.main(Array.empty)
+      override def run(main: Main) =
+        NeodeployRunner(runnerFn = (rr, parms) => ValidateRepo(rr).run)
+          .unsafeRun()
 
     }
 
@@ -336,8 +333,7 @@ object Main extends Logging {
 }
 
 
-class Main(args: Seq[String]) {
-
+case class Main(args: Seq[String]) {
 
   implicit def buildType = BuildType.ArtifactoryBuild
 

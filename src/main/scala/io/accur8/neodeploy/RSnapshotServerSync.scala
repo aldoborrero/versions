@@ -10,6 +10,7 @@ import a8.shared.json.ast.JsDoc
 import io.accur8.neodeploy.Systemd.{TimerFile, UnitFile}
 import io.accur8.neodeploy.model.{OnCalendarValue, QualifiedUserName, RSnapshotClientDescriptor, RSnapshotServerDescriptor}
 import io.accur8.neodeploy.systemstate.SystemState
+import io.accur8.neodeploy.systemstate.SystemStateModel.M
 
 object RSnapshotServerSync extends Sync[ResolvedUser] {
 
@@ -24,8 +25,12 @@ object RSnapshotServerSync extends Sync[ResolvedUser] {
 
   override val name: Sync.SyncName = Sync.SyncName("rsnapshotServer")
 
-  override def rawSystemState(input: ResolvedUser): SystemState =
-    input
+
+  override def systemState(user: ResolvedUser): M[SystemState] =
+    zsucceed(rawSystemState(user))
+
+  def rawSystemState(user: ResolvedUser): SystemState =
+    user
       .plugins
       .resolvedRSnapshotServerOpt
       .map(systemState)
@@ -49,12 +54,11 @@ object RSnapshotServerSync extends Sync[ResolvedUser] {
       resolvedServer
         .descriptor
         .configDir
-        .resolvedDirectory
         .file(z"rsnapshot-${client.server.name}.conf")
 
     lazy val configFileState =
       SystemState.TextFile(
-        rsnapshotConfigFile.absolutePath,
+        rsnapshotConfigFile,
         RSnapshotConfig.serverConfigForClient(resolvedServer, client),
       )
 

@@ -6,6 +6,7 @@ import io.accur8.neodeploy.Systemd.{TimerFile, UnitFile}
 import io.accur8.neodeploy.model.{OnCalendarValue, PgbackrestClientDescriptor, PgbackrestServerDescriptor, QualifiedUserName, RSnapshotClientDescriptor, RSnapshotServerDescriptor}
 import io.accur8.neodeploy.resolvedmodel.ResolvedUser
 import io.accur8.neodeploy.systemstate.SystemState
+import io.accur8.neodeploy.systemstate.SystemStateModel.M
 import zio.Task
 
 object PgbackrestServerSync extends Sync[ResolvedUser] {
@@ -21,8 +22,10 @@ object PgbackrestServerSync extends Sync[ResolvedUser] {
 
   override val name: Sync.SyncName = Sync.SyncName("pgbackrestServer")
 
+  override def systemState(input: ResolvedUser): M[SystemState] =
+    zsucceed(rawSystemState(input))
 
-  override def rawSystemState(input: ResolvedUser): SystemState =
+  def rawSystemState(input: ResolvedUser): SystemState =
     input
       .plugins
       .pgbackrestServerOpt

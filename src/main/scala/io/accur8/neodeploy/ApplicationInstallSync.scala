@@ -3,7 +3,7 @@ package io.accur8.neodeploy
 
 import a8.appinstaller.AppInstallerConfig.LibDirKind
 import a8.shared.{CompanionGen, Exec}
-import a8.shared.FileSystem.{Directory, File, Path, dir}
+import a8.shared.ZFileSystem.{Directory, File, Path, dir}
 import a8.shared.SharedImports._
 import a8.shared.app.{Logging, LoggingF}
 import a8.versions.RepositoryOps.RepoConfigPrefix
@@ -16,6 +16,7 @@ import zio.{Task, ZIO}
 import a8.versions.RepositoryOps
 import io.accur8.neodeploy.systemstate.SystemState
 import io.accur8.neodeploy.systemstate.SystemState.JavaAppInstall
+import io.accur8.neodeploy.systemstate.SystemStateModel.M
 
 import java.nio.file.Paths
 
@@ -23,24 +24,20 @@ object ApplicationInstallSync extends Logging with LoggingF {
 
   case class Installer(installState: SystemState.JavaAppInstall) {
 
-    lazy val gitAppDirectory = dir(installState.gitAppDirectory)
+    lazy val gitAppDirectory = installState.gitAppDirectory
 
-    lazy val appDir = dir(installState.appInstallDir)
+    lazy val appDir = installState.appInstallDir
 
     def applicationDescriptor: ApplicationDescriptor =
       installState.descriptor
 
-    def appRootBinDir = appDir.parentOpt.get.subdir("bin").resolve
+    def appRootBinDir = appDir.parentOpt.get.subdir("bin")
 
     def deleteAppDir: Task[Unit] =
-      ZIO.attemptBlocking(
-        appDir.delete()
-      )
+      appDir.delete
 
     def createAppDir: Task[Unit] =
-      ZIO.attemptBlocking(
-        appDir.makeDirectories()
-      )
+      appDir.makeDirectories
 
     def runInstall(installMethod: Install): Task[Unit] =
       installMethod match {
@@ -124,7 +121,7 @@ object ApplicationInstallSync extends Logging with LoggingF {
 //    }
 
     def symlinkConfig: Task[Unit] =
-      updateSymLink(dir(installState.gitAppDirectory), appDir.file("config"))
+      updateSymLink(installState.gitAppDirectory, appDir.file("config"))
 
     def symlinkJavaExecutable: Task[Unit] =
       updateSymLink(
@@ -169,61 +166,17 @@ case class ApplicationInstallSync(appsRootDirectory: AppsRootDirectory) extends 
 
   override val name: Sync.SyncName = Sync.SyncName("installer")
 
-//  override def state(resolvedApp: ResolvedApp): Task[Option[State]] =
-//    resolvedApp.descriptor.install match {
-//      case fr: FromRepo =>
-//        zsucceed(Some(
-//          State(
-//            appInstallDir = appsRootDirectory.unresolvedDirectory.subdir(resolvedApp.descriptor.name.value).toString(),
-//            fromRepo = fr,
-//            gitAppDirectory = resolvedApp.gitDirectory.toString(),
-//            applicationDescriptor = resolvedApp.descriptor,
-//          )
-//        ))
-//      case Install.Manual =>
-//        zsucceed(None)
-//    }
 
+  override def systemState(input: ResolvedApp): M[SystemState] =
+    zsucceed(rawSystemState(input))
 
-//  override def resolveStepsFromModification(modification: Sync.Modification[State, ResolvedApp]): Vector[Sync.Step] = {
-//    modification match {
-//      case Sync.Update(_, newState, newInput) =>
-//        val javaAppInstall =
-//          JavaAppInstall(
-//            appInstallDir = ???,
-//            fromRepo = ???,
-//            descriptor = ???,
-//            gitAppDirectory = ???
-//          )
-//        Installer(javaAppInstall).asSteps
-//      case Sync.Delete(currentState) =>
-//        Vector(Step(
-//          Phase.Apply,
-//          z"uninstall ${currentState.applicationDescriptor.name} by deleting it's ${currentState.appInstallDir} installed directory",
-//          ZIO.attemptBlocking(
-//            dir(currentState.appInstallDir).delete()
-//          )
-//        ))
-//      case Sync.Insert(newState, newInput) =>
-//        val javaAppInstall =
-//          JavaAppInstall(
-//            gitAppDirectory = newInput.gitDirectory.absolutePath,
-//            descriptor = newInput.descriptor,
-//            fromRepo = newState.fromRepo,
-//            appInstallDir = newState.appInstallDir,
-//          )
-//        Installer(javaAppInstall)
-//          .asSteps
-//    }
-//  }
-
-  override def rawSystemState(resolvedApp: ResolvedApp): SystemState =
+  def rawSystemState(resolvedApp: ResolvedApp): SystemState =
     resolvedApp.descriptor.install match {
       case fr: JavaApp =>
         SystemState.JavaAppInstall(
-          gitAppDirectory = resolvedApp.gitDirectory.absolutePath,
+          gitAppDirectory = resolvedApp.gitDirectory,
           descriptor = resolvedApp.descriptor,
-          appInstallDir = appsRootDirectory.unresolvedDirectory.subdir(resolvedApp.descriptor.name.value).toString(),
+          appInstallDir = appsRootDirectory.subdir(resolvedApp.descriptor.name.value),
           fromRepo = fr,
         )
       case _: Install.Manual =>

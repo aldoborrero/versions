@@ -11,6 +11,7 @@ import a8.versions.RepositoryOps.RepoConfigPrefix
 import io.accur8.neodeploy.CodeBits
 import io.accur8.neodeploy.model.{AuthorizedKey, Personnel}
 import io.accur8.neodeploy.resolvedmodel.ResolvedRepository
+import zio.Task
 
 object model {
 
@@ -326,7 +327,7 @@ object model {
 
     val id = descriptor.id
 
-    lazy val resolvedKeys: Vector[AuthorizedKey] = {
+    lazy val resolvedKeysZ: Task[Vector[AuthorizedKey]] = {
 
       val keysFromUrl =
         descriptor
@@ -336,19 +337,21 @@ object model {
             Vector(AuthorizedKey(s"# from ${url}")) ++ CodeBits.downloadKeys(url)
           }
 
-      val keysFromMembers =
+      val keysFromMembersZ =
         descriptor
           .members
-          .flatMap(member =>
+          .map(member =>
             repository.authorizedKeys(member)
           )
+          .sequence
+          .map(_.flatten.toVector)
 
-      (
+      keysFromMembersZ.map ( keysFromMembers =>
         Vector(AuthorizedKey(s"# start for ${descriptor.id.value}"))
-        ++ descriptor.authorizedKeys
-        ++ keysFromUrl
-        ++ keysFromMembers
-        ++ Vector(AuthorizedKey(s"# end for ${descriptor.id.value}"))
+          ++ descriptor.authorizedKeys
+          ++ keysFromUrl
+          ++ keysFromMembers
+          ++ Vector(AuthorizedKey(s"# end for ${descriptor.id.value}"))
       )
 
     }

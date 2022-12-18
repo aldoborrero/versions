@@ -9,6 +9,7 @@ package io.accur8.neodeploy.systemstate
 */
 
 //====
+import a8.shared.ZFileSystem.Directory
 import io.accur8.neodeploy.Sync.SyncName
 import io.accur8.neodeploy.systemstate.SystemStateModel._
 //====
@@ -270,7 +271,7 @@ object MxSystemStateModel {
     
     object parameters {
       lazy val args: CaseClassParm[Command,Iterable[String]] = CaseClassParm[Command,Iterable[String]]("args", _.args, (d,v) => d.copy(args = v), None, 0)
-      lazy val workingDirectory: CaseClassParm[Command,Option[String]] = CaseClassParm[Command,Option[String]]("workingDirectory", _.workingDirectory, (d,v) => d.copy(workingDirectory = v), Some(()=> None), 1)
+      lazy val workingDirectory: CaseClassParm[Command,Option[Directory]] = CaseClassParm[Command,Option[Directory]]("workingDirectory", _.workingDirectory, (d,v) => d.copy(workingDirectory = v), Some(()=> None), 1)
     }
     
     
@@ -279,20 +280,20 @@ object MxSystemStateModel {
       def rawConstruct(values: IndexedSeq[Any]): Command = {
         Command(
           args = values(0).asInstanceOf[Iterable[String]],
-          workingDirectory = values(1).asInstanceOf[Option[String]],
+          workingDirectory = values(1).asInstanceOf[Option[Directory]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): Command = {
         val value =
           Command(
             args = values.next().asInstanceOf[Iterable[String]],
-            workingDirectory = values.next().asInstanceOf[Option[String]],
+            workingDirectory = values.next().asInstanceOf[Option[Directory]],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(args: Iterable[String], workingDirectory: Option[String]): Command =
+      def typedConstruct(args: Iterable[String], workingDirectory: Option[Directory]): Command =
         Command(args, workingDirectory)
     
     }

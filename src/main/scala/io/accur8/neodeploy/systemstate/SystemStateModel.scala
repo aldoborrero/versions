@@ -1,15 +1,17 @@
 package io.accur8.neodeploy.systemstate
 
 
-import a8.shared.FileSystem.Directory
+import a8.shared.ZFileSystem.Directory
 import a8.shared.{CompanionGen, FileSystem, SecretValue, StringValue}
-import io.accur8.neodeploy.HealthchecksDotIo
+import io.accur8.neodeploy.{HealthchecksDotIo, LocalUserSyncSubCommand}
 import io.accur8.neodeploy.Sync.SyncName
 import io.accur8.neodeploy.systemstate.MxSystemStateModel._
 import zio.{&, Task, Trace, ZIO, ZLayer}
 import a8.shared.SharedImports._
 import a8.shared.app.LoggingF
+import com.typesafe.config.Config
 import io.accur8.neodeploy.model.{AppsRootDirectory, CaddyDirectory, SupervisorDirectory}
+import io.accur8.neodeploy.resolvedmodel.{ResolvedRepository, ResolvedServer, ResolvedUser}
 
 import java.nio.file.attribute.PosixFilePermission
 
@@ -104,9 +106,9 @@ object SystemStateModel {
 
   object Command extends MxCommand
   @CompanionGen
-  case class Command(args: Iterable[String], workingDirectory: Option[String] = None) {
+  case class Command(args: Iterable[String], workingDirectory: Option[Directory] = None) {
     def asRunnableCommand =
-      io.accur8.neodeploy.Command(args, workingDirectory = workingDirectory.map(FileSystem.dir))
+      io.accur8.neodeploy.Command(args, workingDirectory = workingDirectory)
   }
 
   sealed trait HasResolvedState {
@@ -134,7 +136,7 @@ object SystemStateModel {
     def warn(message: String)(implicit trace: Trace): zio.Task[Unit]
   }
 
-  type Environ = SystemStateLogger & HealthchecksDotIo
+  type Environ = SystemStateLogger with HealthchecksDotIo with ResolvedRepository with ResolvedServer with ResolvedUser
 //  type Environ = SystemStateLogger & HealthchecksDotIo & SupervisorDirectory & CaddyDirectory & AppsRootDirectory
 
   type M[A] = zio.ZIO[Environ, Throwable, A]

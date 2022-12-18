@@ -1,6 +1,6 @@
 package io.accur8.neodeploy.systemstate
 
-import a8.shared.FileSystem
+import a8.shared.ZFileSystem
 import a8.shared.SharedImports._
 import a8.shared.app.LoggerF
 import io.accur8.neodeploy.HealthchecksDotIo

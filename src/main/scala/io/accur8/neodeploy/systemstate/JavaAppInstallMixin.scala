@@ -12,7 +12,7 @@ import java.nio.file.Files
 
 trait JavaAppInstallMixin extends SystemStateMixin { self: SystemState.JavaAppInstall =>
 
-  override def stateKey: Option[StateKey] = StateKey("app install", appInstallDir).some
+  override def stateKey: Option[StateKey] = StateKey("app install", appInstallDir.absolutePath).some
   override def dryRunInstall: Vector[String] = Vector(s"app install into ${appInstallDir} -- ${self.fromRepo.compactJson}")
 
   /**
@@ -20,8 +20,7 @@ trait JavaAppInstallMixin extends SystemStateMixin { self: SystemState.JavaAppIn
    * no install is needed, otherwise an install is needed
    */
   override def isActionNeeded =
-    ZFileSystem
-      .dir(appInstallDir)
+    appInstallDir
       .subdir("config")
       .file("application.json")
       .readAsStringOpt
@@ -48,7 +47,7 @@ trait JavaAppInstallMixin extends SystemStateMixin { self: SystemState.JavaAppIn
 
 
   override def runUninstallObsolete = {
-    val aid = ZFileSystem.dir(appInstallDir)
+    val aid = appInstallDir
     val backupDir = aid.parentOpt.get.subdir("_backups").subdir(aid.name + "-" + FileSystem.fileSystemCompatibleTimestamp())
     for {
       _ <- ZIO.attemptBlocking(Files.move(aid.asNioPath, backupDir.asNioPath))

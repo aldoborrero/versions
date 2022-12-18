@@ -8,6 +8,7 @@ import org.typelevel.ci.CIString
 import a8.shared.SharedImports._
 import a8.shared.app.Logging
 import io.accur8.neodeploy.model.AuthorizedKey
+import zio.Task
 
 object UserPlugin extends Logging {
 
@@ -50,16 +51,20 @@ object UserPlugin extends Logging {
           .toList
       )
 
-    def authorizedKeys: Vector[AuthorizedKey] =
+    def authorizedKeys: Task[Vector[AuthorizedKey]] =
       pluginInstances
-        .flatMap { p =>
-          p.authorizedKeys match {
-            case v if v.isEmpty =>
-              v
-            case v =>
-              Vector(AuthorizedKey(s"# start from ${p.name}")) ++ v ++ Vector(AuthorizedKey(s"# end from ${p.name}"))
-          }
+        .map { plugin =>
+          plugin
+            .authorizedKeys
+            .map {
+              case v if v.isEmpty =>
+                v
+              case v =>
+                Vector(AuthorizedKey(s"# start from ${plugin.name}")) ++ v ++ Vector(AuthorizedKey(s"# end from ${plugin.name}"))
+            }
         }
+        .sequence
+        .map(_.flatten)
 
     lazy val pluginInstances: Vector[UserPlugin] = {
       val errors = rawPluginInstances.flatMap(_.left.toOption)
@@ -150,6 +155,6 @@ object UserPlugin extends Logging {
 trait UserPlugin {
   def name: String
   def descriptorJson: JsVal
-  def authorizedKeys: Vector[AuthorizedKey] = Vector.empty
+  def authorizedKeys: Task[Vector[AuthorizedKey]] = zsucceed(Vector.empty)
 }
 

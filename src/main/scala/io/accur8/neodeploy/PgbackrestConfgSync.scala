@@ -1,10 +1,11 @@
 package io.accur8.neodeploy
 
-import a8.shared.FileSystem
+import a8.shared.ZFileSystem
 import a8.shared.SharedImports._
 import io.accur8.neodeploy.Systemd.{TimerFile, UnitFile}
 import io.accur8.neodeploy.resolvedmodel.{ResolvedPgbackrestClient, ResolvedPgbackrestServer, ResolvedRSnapshotServer, ResolvedUser}
 import io.accur8.neodeploy.systemstate.SystemState
+import io.accur8.neodeploy.systemstate.SystemStateModel.M
 import zio.Task
 
 
@@ -12,15 +13,16 @@ object PgbackrestConfgSync extends Sync[ResolvedUser] {
 
   override val name: Sync.SyncName = Sync.SyncName("pgbackrestConfig")
 
-  def configFile(input: ResolvedUser): FileSystem.File =
-    FileSystem.file(
+  def configFile(input: ResolvedUser): ZFileSystem.File =
+    ZFileSystem.file(
       input
         .plugins
         .pgbackrestClientOpt
         .map(_.descriptor.configFile)
         .orElse(input.plugins.pgbackrestServerOpt.map(_.descriptor.configFile))
         .flatten
-        .getOrElse("/etc/pgbackrest/pgbackrest.conf"))
+        .getOrElse("/etc/pgbackrest/pgbackrest.conf")
+    )
 
   def fileContents(input: ResolvedUser): Option[String] =
     input
@@ -74,15 +76,18 @@ pg1-path=${resolvedClient.descriptor.pgdata}
     s"${resolvedServer.descriptor.configHeader}\n\n${clientConfigs}"
   }
 
-  override def rawSystemState(input: ResolvedUser): SystemState =
+
+  override def systemState(input: ResolvedUser): M[SystemState] =
     fileContents(input) match {
       case Some(contents) =>
-        SystemState.TextFile(
-          configFile(input).absolutePath,
-          contents,
+        zsucceed(
+          SystemState.TextFile(
+            configFile(input),
+            contents,
+          )
         )
       case None =>
-        SystemState.Empty
+        zsucceed(SystemState.Empty)
     }
 
 }

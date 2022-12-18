@@ -1,7 +1,7 @@
 package io.accur8.neodeploy
 
 
-import a8.shared.FileSystem.Directory
+import a8.shared.ZFileSystem.Directory
 import a8.shared.SharedImports._
 import io.accur8.neodeploy.resolvedmodel.ResolvedUser
 import zio.ZIO
@@ -73,7 +73,7 @@ object Systemd {
 
     val unitFileState =
       SystemState.TextFile(
-        filename = directory.file(z"${unitName}.service").absolutePath,
+        file = directory.file(z"${unitName}.service"),
         contents = unitFileContents,
       )
 
@@ -93,7 +93,7 @@ object Systemd {
           """.stripMargin.ltrim
 
         SystemState.TextFile(
-          filename = directory.file(z"${unitName}.timer").absolutePath,
+          file = directory.file(z"${unitName}.timer"),
           contents = timerFileContents,
         )
       }
