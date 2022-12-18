@@ -204,7 +204,7 @@ object SystemStateImpl {
       } else {
         zunit
       }
-    runApplyNewState(interpretter.newState.systemState, interpretter, inner)
+    inner(interpretter.newState.systemState)
   }
 
 

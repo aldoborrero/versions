@@ -1,8 +1,8 @@
 package io.accur8.neodeploy
 
 
-import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, ConfigMojoOps, Exec, StringValue, ZString}
-import a8.shared.FileSystem.{Directory, File, dir, userHome}
+import a8.shared.{CascadingHocon, CompanionGen, ConfigMojo, ConfigMojoOps, Exec, HoconOps, StringValue, ZString}
+import a8.shared.ZFileSystem.{Directory, File, dir, userHome}
 import model._
 import a8.shared.SharedImports._
 import a8.shared.ZString.ZStringer
@@ -13,6 +13,7 @@ import io.accur8.neodeploy.Sync.SyncName
 import zio.{Chunk, Task, UIO, ZIO}
 import PredefAssist._
 import a8.versions.model.ResolvedPersonnel
+import com.typesafe.config.{Config, ConfigFactory, ConfigValue}
 import io.accur8.neodeploy.resolvedmodel.ResolvedPgbackrestServer
 
 object resolvedmodel extends LoggingF {
@@ -135,19 +136,6 @@ object resolvedmodel extends LoggingF {
         applicationName.value
       ))
 
-//    def appCommandStep(phase: Phase, supervisorAction: String, commandGetter: ApplicationDescriptor=>Option[Command], currentApplicationOpt: Option[ApplicationDescriptor]): Seq[Step] = {
-//      currentApplicationOpt match {
-//        case None =>
-//          Seq.empty
-//        case Some(currentApplication) =>
-//          val command =
-//            commandGetter(currentApplication)
-//              .getOrElse(supervisorCommand(supervisorAction, currentApplication.name))
-//          Seq(Step.runCommand(phase, command, failOnNonZeroExitCode = false))
-//      }
-//    }
-
-
     def execCommand(command: Command): Task[Unit] = {
       val logLinesEffect: Chunk[String] => UIO[Unit] = { lines: Chunk[String] =>
         loggerF.debug(s"command output chunk -- ${lines.mkString("\n    ", "\n    ", "\n    ")}")
@@ -163,18 +151,47 @@ object resolvedmodel extends LoggingF {
     def caddyDirectory: CaddyDirectory = descriptor.caddyDirectory
 
     def loadResolvedAppFromDisk(appConfigDir: Directory, resolvedUser: ResolvedUser): Option[ResolvedApp] = {
-      val appDescriptorFile = appConfigDir.file("application.json")
-      appDescriptorFile
-        .readAsStringOpt()
-        .flatMap { appDescriptorJsonStr =>
-          json.read[ApplicationDescriptor](appDescriptorJsonStr) match {
-            case Left(e) =>
-              logger.error(s"Failed to load application descriptor file: $appDescriptorFile -- ${e.prettyMessage}")
-              None
-            case Right(v) =>
-              Some(ResolvedApp(v, this, appConfigDir, resolvedUser))
-          }
+      val appDescriptorFiles =
+        Vector(
+          appConfigDir.file("secret.props.priv"),
+          appConfigDir.file("application.json"),
+          appConfigDir.file("application.hocon"),
+        ).filter(_.exists())
+
+      val appDir = resolvedUser.appsRootDirectory.unresolvedDirectory.subdir(appConfigDir.name)
+
+
+      val baseConfigMap =
+        Map(
+          "appDir" -> appDir.absolutePath,
+          "dataDir" -> appDir.subdir("data"),
+        )
+
+      val baseConfig = ConfigFactory.parseMap(baseConfigMap.asJava)
+
+      try {
+        import HoconOps._
+
+        val configs =
+          appDescriptorFiles
+            .map(f => HoconOps.impl.loadConfig(f.asNioPath))
+        if (configs.isEmpty) {
+          None
+        } else {
+          val resolvedConfig =
+            (configs ++ Vector(baseConfig))
+              .reduceLeft(_.resolveWith(_))
+
+          val descriptor =
+            resolvedConfig
+              .read[ApplicationDescriptor]
+          ResolvedApp(descriptor, appConfigDir, resolvedUser).some
         }
+      } catch {
+        case IsNonFatal(e) =>
+          logger.error(s"Failed to load application descriptor file: $appDescriptorFiles", e)
+          None
+      }
     }
   }
 
@@ -183,10 +200,10 @@ object resolvedmodel extends LoggingF {
 
   case class ResolvedApp(
     descriptor: ApplicationDescriptor,
-    server: ResolvedServer,
     gitDirectory: Directory,
     user: ResolvedUser,
   ) {
+    def server = user.server
     def name = descriptor.name
     def appDirectory = user.appsRootDirectory.unresolvedDirectory.subdir(descriptor.name.value)
   }
@@ -304,39 +321,6 @@ object resolvedmodel extends LoggingF {
         .flatMap(_.resolvedUsers)
 
   }
-
-
-//  object StoredSyncState extends MxStoredSyncState {
-//    def fromResolvedSteps[A : JsonCodec](name: StringValue, descriptor: A, containerSteps: ContainerSteps): StoredSyncState = {
-//      val statesJsoValues =
-//        containerSteps
-//          .resolvedSteps
-//          .flatMap(rs => rs.newState.map(rs.syncName.value -> _))
-//          .toMap
-//
-//      new StoredSyncState(
-//        name.value,
-//        descriptor.toJsDoc,
-//        JsObj(statesJsoValues).toJsDoc,
-//      )
-//    }
-//  }
-//  @CompanionGen
-//  case class StoredSyncState(
-//    name: String,
-//    descriptor: JsDoc,
-//    states: JsDoc,
-//  ) {
-//    def syncState(name: SyncName): Option[JsVal] =
-//      states.actualJsVal match {
-//        case jso: JsObj =>
-//          jso
-//            .values
-//            .get(name.value)
-//        case _ =>
-//          None
-//      }
-//  }
 
   object ResolvedRSnapshotClient extends UserPlugin.Factory.AbstractFactory[RSnapshotClientDescriptor]("rsnapshotClient")
 

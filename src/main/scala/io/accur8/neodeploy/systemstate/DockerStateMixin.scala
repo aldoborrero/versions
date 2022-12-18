@@ -2,11 +2,12 @@ package io.accur8.neodeploy.systemstate
 
 
 import a8.shared.SharedImports._
+import a8.shared.app.LoggingF
 import io.accur8.neodeploy.Overrides
 import io.accur8.neodeploy.model.DockerDescriptor.UninstallAction
 import io.accur8.neodeploy.systemstate.SystemStateModel.{M, StateKey}
 
-trait DockerStateMixin extends SystemStateMixin { self: SystemState.DockerState =>
+trait DockerStateMixin extends SystemStateMixin with LoggingF { self: SystemState.DockerState =>
 
   // sudo docker ps -a --format {{.Names}}
 
@@ -18,24 +19,26 @@ trait DockerStateMixin extends SystemStateMixin { self: SystemState.DockerState 
 
   override def isActionNeeded: M[Boolean] =
     isContainerInstalled
+      .map(!_)
+//      .tap(v => loggerF.debug(s"docker ${descriptor.name} isActionNeeded = ${v}"))
 
   def isContainerInstalled: M[Boolean] =
     Overrides.sudoDockerCommand
       .appendArgs("ps", "-a", "--format", "{{.Names}}")
-      .execCaptureOutput
+      .execLogOutput
       .map { output =>
         output
           .outputLines
           .map(_.trim)
           .filter(_.toLowerCase === descriptor.name.toLowerCase)
-          .isEmpty
+          .nonEmpty
       }
 
   /**
    * applies the state for just this system state and no sub states
    */
   override def runApplyNewState: M[Unit] =
-    runDockerStart
+    runDockerRun
 
   /**
    * uninstalls the state for just this system state and no sub states
@@ -60,9 +63,9 @@ trait DockerStateMixin extends SystemStateMixin { self: SystemState.DockerState 
       .execCaptureOutput
       .as(())
 
-  def runDockerStart =
+  def runDockerRun =
     Overrides.sudoDockerCommand
-      .appendArgs("start", "-d", "--name", descriptor.name)
+      .appendArgs("run", "-d", "--name", descriptor.name)
       .appendArgsSeq(descriptor.args)
       .execCaptureOutput
       .as(())
