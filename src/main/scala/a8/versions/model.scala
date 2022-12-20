@@ -297,12 +297,21 @@ object model {
   @CompanionGen
   case class ArtifactResponse(
     url: String,
-    checksums: Iterable[String],
-  )
+    organization: String,
+    module: String,
+    version: String,
+    extension: String,
+  ) {
+
+    lazy val m2RepoPath =
+      organization.replace('.', '/') + "/" + module + "/" + version + "/" + module + "-" + version + "." + extension
+
+  }
 
   object ResolutionResponse extends MxResolutionResponse
   @CompanionGen
   case class ResolutionResponse(
+    request: ResolutionRequest,
     version: String,
     artifacts: Iterable[ArtifactResponse],
   )

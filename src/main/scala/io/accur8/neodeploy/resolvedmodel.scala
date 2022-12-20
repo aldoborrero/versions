@@ -185,7 +185,7 @@ object resolvedmodel extends LoggingF {
       val baseConfigMap =
         Map(
           "appDir" -> appDir.absolutePath,
-          "dataDir" -> appDir.subdir("data"),
+          "dataDir" -> appDir.subdir("data").absolutePath,
         )
 
       val baseConfig = ConfigFactory.parseMap(baseConfigMap.asJava)

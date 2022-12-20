@@ -22,7 +22,7 @@ object ManagedSshKeysSync extends Sync[ResolvedUser] with LoggingF {
       privateKeyContents <- user.sshPrivateKeyFileInRepo.readAsString
     } yield
       SystemState.Composite(
-        "authorized keys 2",
+        "managed ssh keys",
         Vector(
           SystemState.Directory(publicKey.parent, UnixPerms("0700")),
           SystemState.TextFile(publicKey, publicKeyContents, UnixPerms("0644")),

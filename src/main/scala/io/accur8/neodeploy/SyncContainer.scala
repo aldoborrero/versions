@@ -19,19 +19,32 @@ import zio.prelude.Equal
 import zio.{Task, UIO, ZIO}
 import PredefAssist._
 
-object SyncContainer extends Logging {
+object SyncContainer extends LoggingF {
 
   case class Prefix(value: String)
 
   def loadState(stateDirectory: ZFileSystem.Directory, prefix: Prefix): Task[Vector[PreviousState]] =
     stateDirectory
       .files
-      .flatMap(
-        _.filter(f => f.name.startsWith(prefix.value) && f.name.endsWith(".json"))
-          .toVector
-          .map(json.fromFile[PreviousState])
-          .sequence
-      )
+      .flatMap { files =>
+        val effect: Vector[UIO[Option[PreviousState]]] =
+          files
+            .filter(f => f.name.startsWith(prefix.value) && f.name.endsWith(".json"))
+            .toVector
+            .map(file =>
+              json.fromFile[PreviousState](file)
+                .either
+                .flatMap {
+                  case Left(e) =>
+                    loggerF.warn("error loading previous state", e)
+                      .as(None)
+                  case Right(ps) =>
+                    zsucceed(ps.some)
+                }
+              )
+        ZIO.collectAll(effect)
+          .map(_.flatten)
+      }
 }
 
 abstract class SyncContainer[Resolved, Name <: StringValue : Equal](

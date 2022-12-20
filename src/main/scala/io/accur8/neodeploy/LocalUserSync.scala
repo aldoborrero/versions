@@ -69,7 +69,7 @@ case class LocalUserSync(resolvedUser: ResolvedUser, appsFilter: Filter[Applicat
       .either
       .flatMap {
         case Right(resolvedApps) =>
-          SyncContainer.loadState(stateDirectory, SyncContainer.Prefix("user"))
+          SyncContainer.loadState(stateDirectory, SyncContainer.Prefix("app"))
             .either
             .flatMap {
               case Right(previousStates) =>

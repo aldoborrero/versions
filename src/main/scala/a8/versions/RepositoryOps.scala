@@ -118,16 +118,25 @@ object RepositoryOps extends Logging {
 
     lazy val artifactResponses: Seq[ArtifactResponse] =
       resolution
-        .artifacts()
-        .map { a =>
+        .dependencyArtifacts(None)
+        .collect {
+          case t@ (dep, pub, artifact) if Resolution.defaultTypes(pub.`type`) =>
+            t
+        }
+        .distinctBy(_._3)
+        .map { case (dep, pub, artifact) =>
           ArtifactResponse(
-            a.url,
-            a.checksumUrls.keySet.toSeq,
+            artifact.url,
+            dep.module.organization.value,
+            dep.module.name.value,
+            dep.version,
+            pub.ext.value,
           )
         }
 
     lazy val response =
       ResolutionResponse(
+        request,
         resolvedVersion.toString(),
         artifactResponses,
       )

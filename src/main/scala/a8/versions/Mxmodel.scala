@@ -28,7 +28,10 @@ object Mxmodel {
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
           .addField(_.url)
-          .addField(_.checksums)
+          .addField(_.organization)
+          .addField(_.module)
+          .addField(_.version)
+          .addField(_.extension)
       )
       .build
     
@@ -37,13 +40,16 @@ object Mxmodel {
     implicit val catsEq: cats.Eq[ArtifactResponse] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[ArtifactResponse,parameters.type] =  {
-      val constructors = Constructors[ArtifactResponse](2, unsafe.iterRawConstruct)
+      val constructors = Constructors[ArtifactResponse](5, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
       lazy val url: CaseClassParm[ArtifactResponse,String] = CaseClassParm[ArtifactResponse,String]("url", _.url, (d,v) => d.copy(url = v), None, 0)
-      lazy val checksums: CaseClassParm[ArtifactResponse,Iterable[String]] = CaseClassParm[ArtifactResponse,Iterable[String]]("checksums", _.checksums, (d,v) => d.copy(checksums = v), None, 1)
+      lazy val organization: CaseClassParm[ArtifactResponse,String] = CaseClassParm[ArtifactResponse,String]("organization", _.organization, (d,v) => d.copy(organization = v), None, 1)
+      lazy val module: CaseClassParm[ArtifactResponse,String] = CaseClassParm[ArtifactResponse,String]("module", _.module, (d,v) => d.copy(module = v), None, 2)
+      lazy val version: CaseClassParm[ArtifactResponse,String] = CaseClassParm[ArtifactResponse,String]("version", _.version, (d,v) => d.copy(version = v), None, 3)
+      lazy val extension: CaseClassParm[ArtifactResponse,String] = CaseClassParm[ArtifactResponse,String]("extension", _.extension, (d,v) => d.copy(extension = v), None, 4)
     }
     
     
@@ -52,21 +58,27 @@ object Mxmodel {
       def rawConstruct(values: IndexedSeq[Any]): ArtifactResponse = {
         ArtifactResponse(
           url = values(0).asInstanceOf[String],
-          checksums = values(1).asInstanceOf[Iterable[String]],
+          organization = values(1).asInstanceOf[String],
+          module = values(2).asInstanceOf[String],
+          version = values(3).asInstanceOf[String],
+          extension = values(4).asInstanceOf[String],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): ArtifactResponse = {
         val value =
           ArtifactResponse(
             url = values.next().asInstanceOf[String],
-            checksums = values.next().asInstanceOf[Iterable[String]],
+            organization = values.next().asInstanceOf[String],
+            module = values.next().asInstanceOf[String],
+            version = values.next().asInstanceOf[String],
+            extension = values.next().asInstanceOf[String],
           )
         if ( values.hasNext )
            sys.error("")
         value
       }
-      def typedConstruct(url: String, checksums: Iterable[String]): ArtifactResponse =
-        ArtifactResponse(url, checksums)
+      def typedConstruct(url: String, organization: String, module: String, version: String, extension: String): ArtifactResponse =
+        ArtifactResponse(url, organization, module, version, extension)
     
     }
     
@@ -85,6 +97,7 @@ object Mxmodel {
     implicit lazy val jsonCodec: a8.shared.json.JsonTypedCodec[ResolutionResponse,a8.shared.json.ast.JsObj] =
       jsonCodecBuilder(
         a8.shared.json.JsonObjectCodecBuilder(generator)
+          .addField(_.request)
           .addField(_.version)
           .addField(_.artifacts)
       )
@@ -95,13 +108,14 @@ object Mxmodel {
     implicit val catsEq: cats.Eq[ResolutionResponse] = cats.Eq.fromUniversalEquals
     
     lazy val generator: Generator[ResolutionResponse,parameters.type] =  {
-      val constructors = Constructors[ResolutionResponse](2, unsafe.iterRawConstruct)
+      val constructors = Constructors[ResolutionResponse](3, unsafe.iterRawConstruct)
       Generator(constructors, parameters)
     }
     
     object parameters {
-      lazy val version: CaseClassParm[ResolutionResponse,String] = CaseClassParm[ResolutionResponse,String]("version", _.version, (d,v) => d.copy(version = v), None, 0)
-      lazy val artifacts: CaseClassParm[ResolutionResponse,Iterable[ArtifactResponse]] = CaseClassParm[ResolutionResponse,Iterable[ArtifactResponse]]("artifacts", _.artifacts, (d,v) => d.copy(artifacts = v), None, 1)
+      lazy val request: CaseClassParm[ResolutionResponse,ResolutionRequest] = CaseClassParm[ResolutionResponse,ResolutionRequest]("request", _.request, (d,v) => d.copy(request = v), None, 0)
+      lazy val version: CaseClassParm[ResolutionResponse,String] = CaseClassParm[ResolutionResponse,String]("version", _.version, (d,v) => d.copy(version = v), None, 1)
+      lazy val artifacts: CaseClassParm[ResolutionResponse,Iterable[ArtifactResponse]] = CaseClassParm[ResolutionResponse,Iterable[ArtifactResponse]]("artifacts", _.artifacts, (d,v) => d.copy(artifacts = v), None, 2)
     }
     
     
@@ -109,13 +123,15 @@ object Mxmodel {
     
       def rawConstruct(values: IndexedSeq[Any]): ResolutionResponse = {
         ResolutionResponse(
-          version = values(0).asInstanceOf[String],
-          artifacts = values(1).asInstanceOf[Iterable[ArtifactResponse]],
+          request = values(0).asInstanceOf[ResolutionRequest],
+          version = values(1).asInstanceOf[String],
+          artifacts = values(2).asInstanceOf[Iterable[ArtifactResponse]],
         )
       }
       def iterRawConstruct(values: Iterator[Any]): ResolutionResponse = {
         val value =
           ResolutionResponse(
+            request = values.next().asInstanceOf[ResolutionRequest],
             version = values.next().asInstanceOf[String],
             artifacts = values.next().asInstanceOf[Iterable[ArtifactResponse]],
           )
@@ -123,8 +139,8 @@ object Mxmodel {
            sys.error("")
         value
       }
-      def typedConstruct(version: String, artifacts: Iterable[ArtifactResponse]): ResolutionResponse =
-        ResolutionResponse(version, artifacts)
+      def typedConstruct(request: ResolutionRequest, version: String, artifacts: Iterable[ArtifactResponse]): ResolutionResponse =
+        ResolutionResponse(request, version, artifacts)
     
     }
     
