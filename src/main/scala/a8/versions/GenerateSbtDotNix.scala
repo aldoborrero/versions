@@ -11,7 +11,7 @@ import coursier.ModuleName
 import coursier.core.Module
 import zio.ZIO
 
-import java.io.File
+import java.io.{File, BufferedWriter, FileWriter}
 import java.net.URL
 import java.security.MessageDigest
 import java.util.Base64
@@ -50,22 +50,31 @@ object GenerateSbtDotNix extends App {
     val attributes =
       Vector(
         "url" -> artifact.url,
-        "sha256" -> nixPrefetchResult.nixHash,
-        "organization" -> artifact.organization,
-        "module" -> artifact.module,
+        "groupId" -> artifact.organization,
+        "artifactId" -> artifact.module,
         "version" -> artifact.version,
-        "m2RepoPath" -> artifact.m2RepoPath,
+        "sha256" -> nixPrefetchResult.nixHash,
+        // "m2RepoPath" -> artifact.m2RepoPath
       )
-    s"""    (fetchJar { ${attributes.map(t => s"""${t._1} = "${t._2}"; """).mkString(" ")} })"""
+    s"""    {name = "${artifact.organization}/${artifact.module}"; maven = {${attributes.map(t => s"""${t._1} = "${t._2}"; """).mkString(" ")}}; }"""
+  }
+
+  def writeFile(file: File, s: String): Unit = {
+    val bw = new BufferedWriter(new FileWriter(file))
+    bw.write(s)
+    bw.close()
   }
 
 
-  println(
-  s"""
-{fetchJar}: [
+  val sbtNixDeps = 
+    s"""
+[
 ${artifacts.map(t => fetchLine(t._1, t._2)).mkString("\n")}
 ]
-""".trim + "\n")
+""".trim + "\n"
+
+  val sbtDepsfile = new File("sbt-deps.nix").getAbsoluteFile
+  writeFile(sbtDepsfile, sbtNixDeps)
 
 
   case class NixPrefetchResult(
